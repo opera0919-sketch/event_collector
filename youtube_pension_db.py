@@ -35,9 +35,20 @@ import sqlite3
 from datetime import datetime, timezone
 
 try:
-    from googleapiclient.discovery import build
+    import requests
 except ImportError:
-    sys.exit("googleapiclient 가 없습니다.  pip install google-api-python-client")
+    sys.exit("requests 가 없습니다.  pip install requests")
+
+YT_API_BASE = "https://www.googleapis.com/youtube/v3"
+
+def _yt_get(endpoint: str, key: str, **params) -> dict:
+    resp = requests.get(
+        f"{YT_API_BASE}/{endpoint}",
+        params={"key": key, **params},
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return resp.json()
 
 # pandas/openpyxl 은 Excel/CSV 출력에만 사용 (없으면 SQLite만 생성)
 try:
@@ -174,50 +185,52 @@ def first_match(text: str, mapping, default):
 
 
 # ────────────────────────────────────────────────────────────────────
-# 4. YouTube Data API 수집
+# 4. YouTube Data API 수집 (requests 사용)
 # ────────────────────────────────────────────────────────────────────
-def get_uploads_playlist(youtube, channel_id: str) -> str:
-    resp = youtube.channels().list(part="contentDetails", id=channel_id).execute()
-    items = resp.get("items", [])
+def get_uploads_playlist(key: str, channel_id: str) -> str:
+    data = _yt_get("channels", key, part="contentDetails", id=channel_id)
+    items = data.get("items", [])
     if not items:
         raise RuntimeError(f"채널을 찾을 수 없음: {channel_id}")
     return items[0]["contentDetails"]["relatedPlaylists"]["uploads"]
 
-def iter_video_ids(youtube, playlist_id: str):
+def iter_video_ids(key: str, playlist_id: str):
     token = None
     while True:
-        resp = youtube.playlistItems().list(
-            part="contentDetails", playlistId=playlist_id,
-            maxResults=50, pageToken=token,
-        ).execute()
-        for it in resp.get("items", []):
+        params = dict(part="contentDetails", playlistId=playlist_id, maxResults=50)
+        if token:
+            params["pageToken"] = token
+        data = _yt_get("playlistItems", key, **params)
+        for it in data.get("items", []):
             yield it["contentDetails"]["videoId"]
-        token = resp.get("nextPageToken")
+        token = data.get("nextPageToken")
         if not token:
             break
 
-def fetch_details(youtube, video_ids):
+def fetch_details(key: str, video_ids: list) -> list:
     out = []
     for i in range(0, len(video_ids), 50):
         chunk = video_ids[i:i + 50]
-        resp = youtube.videos().list(
-            part="snippet,contentDetails,statistics", id=",".join(chunk)
-        ).execute()
-        out.extend(resp.get("items", []))
+        data = _yt_get(
+            "videos", key,
+            part="snippet,contentDetails,statistics",
+            id=",".join(chunk),
+        )
+        out.extend(data.get("items", []))
     return out
 
 
 # ────────────────────────────────────────────────────────────────────
 # 5. 메인
 # ────────────────────────────────────────────────────────────────────
-def build_rows(youtube, since_dt, keep_all):
+def build_rows(key: str, since_dt, keep_all: bool) -> list:
     rows = []
     for cid, cname in CHANNELS.items():
         print(f"[수집] {cname} ({cid}) …")
-        uploads = get_uploads_playlist(youtube, cid)
-        vids = list(iter_video_ids(youtube, uploads))
+        uploads = get_uploads_playlist(key, cid)
+        vids = list(iter_video_ids(key, uploads))
         print(f"   업로드 영상 {len(vids)}개 발견, 상세 조회 중…")
-        for v in fetch_details(youtube, vids):
+        for v in fetch_details(key, vids):
             sn, cd, st = v["snippet"], v["contentDetails"], v.get("statistics", {})
             published = sn["publishedAt"]
             pub_dt = datetime.fromisoformat(published.replace("Z", "+00:00"))
@@ -338,8 +351,7 @@ def main():
     if args.since:
         since_dt = datetime.strptime(args.since, "%Y-%m-%d").replace(tzinfo=timezone.utc)
 
-    youtube = build("youtube", "v3", developerKey=key)
-    rows = build_rows(youtube, since_dt, args.all)
+    rows = build_rows(key, since_dt, args.all)
     if not rows:
         sys.exit("수집된 영상이 없습니다.")
     print(f"\n총 {len(rows)}개 행 수집 "
