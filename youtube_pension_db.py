@@ -30,6 +30,7 @@ youtube_pension_db.py
 import os
 import re
 import sys
+import json
 import argparse
 import sqlite3
 from datetime import datetime, timezone
@@ -322,6 +323,122 @@ def get_theme(text: str) -> str:
 
 
 # ────────────────────────────────────────────────────────────────────
+# Claude API 기반 테마 분류 (문맥 이해)
+# ────────────────────────────────────────────────────────────────────
+THEME_LABELS = [label for label, _ in THEME_PRIORITY] + ["기타"]
+
+_CATEGORY_DESC = """\
+- 중도인출/중도해지: 연금계좌 중도해지·중도인출·조기인출 페널티·해지불이익·기타소득세 16.5%
+- 연금인출: 연금 인출 전략·방법·순서·시기·부분인출 (중도해지와 달리 정상 인출 관련)
+- 연금수령: 연금 수령 개시·종신연금·확정연금·연금화·월 연금·55세 이후 수령
+- 연금운용: 연금계좌 ETF/TDF 운용·포트폴리오 구성·수익률 높이기·자산배분·리밸런싱
+- 연금납입: 납입금액·납입한도·적립방법·추가납입·자동이체·300만원/900만원/1800만원 한도
+- 연금세제: 세액공제·절세·과세이연·연금소득세·연말정산·ISA·분리과세·종합소득세
+- 연금제도: 연금 종류 설명·제도 소개·IRP란·연금저축이란·퇴직연금이란·3층연금·국민연금 개념
+- 기타 (글로벌/해외주식): 해외주식·미국주식·글로벌 ETF·나스닥·S&P500·개별 해외종목
+- 기타 (경제/시장전망): 경제전망·금리변화·인플레이션·시장이슈·환율·마켓브리핑
+- 기타 (부동산): 부동산·아파트·청약·재건축·리츠(REITs)·꼬마빌딩
+- 기타 (주택연금): 주택연금 (집을 담보로 노후 연금 수령)
+- 기타 (노후라이프): 은퇴후생활·노후생활·인생2막·상속·건강보험료·백세시대
+- 기타 (퇴직절차/급여): 퇴직금·퇴직급여·희망퇴직·퇴직절차·소득공백
+- 기타 (ETF/펀드분석): 특정 ETF/펀드 분석·리서치리포트·테마종목·언박싱
+- 기타 (이벤트/홍보): 이벤트·프로모션·계좌개설 혜택·광고·구독감사·30초이하 숏폼홍보
+- 기타 (앱/서비스가이드): 앱 사용법·서비스 가이드·MTS·HOW TO·이용방법
+- 기타: 위 카테고리에 해당하지 않는 경우\
+"""
+
+def _classify_batch_claude(client, items: list) -> dict:
+    """items 배치를 Claude로 분류. {video_id: category} 반환."""
+    lines = []
+    for item in items:
+        snippet = (item["description"] or "").replace("\n", " ")[:150]
+        lines.append(f'[{item["video_id"]}] 제목: {item["title"]} | 설명: {snippet}')
+
+    prompt = f"""아래 유튜브 영상 목록을 읽고, 각 영상의 **제목과 설명 문맥**을 파악해 가장 적합한 카테고리 하나를 선택하세요.
+
+카테고리 기준:
+{_CATEGORY_DESC}
+
+영상 목록:
+{chr(10).join(lines)}
+
+각 영상의 video_id와 카테고리를 classify_videos 도구로 반환하세요."""
+
+    resp = client.messages.create(
+        model="claude-haiku-4-5",
+        max_tokens=4096,
+        tools=[{
+            "name": "classify_videos",
+            "description": "영상 분류 결과 반환",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "video_id": {"type": "string"},
+                                "category": {"type": "string", "enum": THEME_LABELS},
+                            },
+                            "required": ["video_id", "category"],
+                        },
+                    }
+                },
+                "required": ["results"],
+            },
+        }],
+        tool_choice={"type": "tool", "name": "classify_videos"},
+        messages=[{"role": "user", "content": prompt}],
+    )
+
+    for block in resp.content:
+        if block.type == "tool_use":
+            return {r["video_id"]: r["category"] for r in block.input["results"]}
+    return {}
+
+
+def classify_with_claude(rows: list) -> dict:
+    """모든 행을 Claude로 분류. {video_id: theme} 반환. 실패 시 빈 dict."""
+    try:
+        import anthropic
+    except ImportError:
+        print("[경고] anthropic 미설치 → pip install anthropic  (키워드 분류 유지)")
+        return {}
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        print("[정보] ANTHROPIC_API_KEY 미설정 → 키워드 기반 분류 유지")
+        return {}
+
+    client = anthropic.Anthropic(api_key=api_key)
+    result = {}
+    batch_size = 50
+    total = len(rows)
+    total_batches = (total + batch_size - 1) // batch_size
+    print(f"[Claude 분류] {total}개 영상 문맥 분류 시작 (배치 {batch_size}개 × {total_batches}회)")
+
+    for i in range(0, total, batch_size):
+        batch = rows[i:i + batch_size]
+        batch_num = i // batch_size + 1
+        print(f"  배치 {batch_num}/{total_batches}  ({i+1}~{min(i+batch_size, total)})…",
+              end=" ", flush=True)
+        try:
+            batch_result = _classify_batch_claude(client, batch)
+            result.update(batch_result)
+            print(f"완료 ({len(batch_result)}개)")
+        except Exception as e:
+            print(f"오류: {e} → 키워드 분류로 대체")
+            blob_map = {r["video_id"]: " ".join([r["title"], r["description"], r.get("tags", "")])
+                        for r in batch}
+            for vid, blob in blob_map.items():
+                if vid not in result:
+                    result[vid] = get_theme(blob)
+
+    return result
+
+
+# ────────────────────────────────────────────────────────────────────
 # 4. YouTube Data API 수집 (requests 사용)
 # ────────────────────────────────────────────────────────────────────
 def get_uploads_playlist(key: str, channel_id: str) -> str:
@@ -495,6 +612,17 @@ def main():
         sys.exit("수집된 영상이 없습니다.")
     print(f"\n총 {len(rows)}개 행 수집 "
           f"(연금 관련 {sum(r['is_pension'] for r in rows)}개)")
+
+    # Claude API로 문맥 기반 테마 분류 (ANTHROPIC_API_KEY 설정 시 자동 적용)
+    theme_map = classify_with_claude(rows)
+    if theme_map:
+        updated = sum(1 for r in rows if r["video_id"] in theme_map
+                      and theme_map[r["video_id"]] != r["theme_tag"])
+        for r in rows:
+            if r["video_id"] in theme_map:
+                r["theme_tag"] = theme_map[r["video_id"]]
+        print(f"[Claude 분류] 완료 — {len(theme_map)}개 분류, {updated}개 변경됨")
+
     save_sqlite(rows)
     save_tabular(rows)
     print("\n완료. SQLite/CSV/Excel 확인하세요.")
