@@ -65,6 +65,7 @@ CHANNELS = {
     "UCZS9wEZ4itPbBZk_sqccXfw": "미래에셋 스마트머니",
     "UCU6f21g_qaJk6rkX-IF6X2g": "한국투자 뱅키스",
     "UCxG-WFQqKbV49KIs5S9T0wA": "한국인의연금_한국투자증권",
+    "UCQ-3tVPpV_4VdmeuJmLz9dQ": "미래에셋 투자와연금TV",
 }
 
 
