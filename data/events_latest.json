@@ -1,7 +1,8 @@
 {
- "collected_at": "2026-06-12T20:46:08.877308+00:00",
+ "collected_at": "2026-06-12T21:05:20.496034+00:00",
  "firms_failed": [
-  "키움증권"
+  "키움증권",
+  "NH투자증권"
  ],
  "events": [
   {
@@ -329,86 +330,6 @@
    "benefits": null,
    "remarks": "상세 자동추출 실패 — 원문 확인 필요 (이미지 공지 가능성)",
    "content_hash": "ed2395a942bfb374"
-  },
-  {
-   "firm_name": "NH투자증권",
-   "event_name": "26년 IRP 순입금/이전 2차 이벤트",
-   "start_date": "2026-05-01",
-   "end_date": "2026-08-31",
-   "event_url": "https://m.nhsec.com/customer/event/eventList",
-   "raw_text": "26년 IRP 순입금/이전 2차 이벤트 이벤트기간 :2026.05.01 ~ 2026.08.31",
-   "acct_pension": false,
-   "acct_irp": true,
-   "acct_dc": false,
-   "acct_etc": null,
-   "conditions": null,
-   "benefits": null,
-   "remarks": null,
-   "content_hash": "0496dc71e8c33d50"
-  },
-  {
-   "firm_name": "NH투자증권",
-   "event_name": "퇴직연금 자동운용 포트폴리오로 쉽게 투자하자 이벤트",
-   "start_date": "2026-05-01",
-   "end_date": "2026-08-31",
-   "event_url": "https://m.nhsec.com/customer/event/eventList",
-   "raw_text": "퇴직연금 자동운용 포트폴리오로 쉽게 투자하자 이벤트 이벤트기간 :2026.05.01 ~ 2026.08.31",
-   "acct_pension": false,
-   "acct_irp": true,
-   "acct_dc": true,
-   "acct_etc": null,
-   "conditions": null,
-   "benefits": null,
-   "remarks": null,
-   "content_hash": "cb68c7c8cd948eb0"
-  },
-  {
-   "firm_name": "NH투자증권",
-   "event_name": "연금저축 TDF 셋업 이벤트",
-   "start_date": "2026-03-16",
-   "end_date": "2026-07-31",
-   "event_url": "https://m.nhsec.com/customer/event/eventList",
-   "raw_text": "연금저축 TDF 셋업 이벤트 이벤트기간 :2026.03.16 ~ 2026.07.31",
-   "acct_pension": true,
-   "acct_irp": false,
-   "acct_dc": false,
-   "acct_etc": null,
-   "conditions": null,
-   "benefits": null,
-   "remarks": null,
-   "content_hash": "a94d97e7ea1d8120"
-  },
-  {
-   "firm_name": "NH투자증권",
-   "event_name": "NH투자증권 연금계좌3종 개설하기",
-   "start_date": "2026-03-12",
-   "end_date": "2027-02-19",
-   "event_url": "https://m.nhsec.com/customer/event/eventList",
-   "raw_text": "NH투자증권 연금계좌3종 개설하기 이벤트기간 :2026.03.12 ~ 2027.02.19",
-   "acct_pension": true,
-   "acct_irp": true,
-   "acct_dc": false,
-   "acct_etc": null,
-   "conditions": null,
-   "benefits": null,
-   "remarks": null,
-   "content_hash": "c4464ed28758f9e3"
-  },
-  {
-   "firm_name": "NH투자증권",
-   "event_name": "퇴직연금 ELS 가입 이벤트",
-   "start_date": "2026-03-03",
-   "end_date": "2026-06-30",
-   "event_url": "https://m.nhsec.com/customer/event/eventList",
-   "raw_text": "퇴직연금 ELS 가입 이벤트 이벤트기간 :2026.03.03 ~ 2026.06.30",
-   "acct_pension": false,
-   "acct_irp": true,
-   "acct_dc": true,
-   "acct_etc": null,
-   "conditions": null,
-   "benefits": null,
-   "remarks": null,
-   "content_hash": "d70648e3727e97f1"
   }
  ]
 }
