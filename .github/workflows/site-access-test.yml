@@ -1,0 +1,40 @@
+name: site-access-test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Runner IP / region info
+        run: curl -s https://ipinfo.io/json || true
+
+      - name: curl quick check (raw HTTP)
+        run: |
+          UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+          for url in \
+            "https://securities.miraeasset.com/mw/mki/mki7000/r01.do" \
+            "https://securities.koreainvestment.com/main/customer/notice/Event.jsp?gubun=i" \
+            "https://www.samsungpop.com/mbw/customer/noticeEvent.do?cmd=eventList" \
+            "https://www1.kiwoom.com/h/customer/event/VIngEventView" \
+            "https://m.kbsec.com/go.able?linkcd=m06020000" \
+            "https://m.nhqv.com/customer/event/eventList"; do
+            out=$(curl -sL -o /dev/null -m 25 -A "$UA" -w "%{http_code} %{size_download}B %{url_effective}" "$url" || echo "FAIL")
+            echo "$url -> $out"
+          done
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          playwright install --with-deps chromium
+
+      - name: Browser-rendered access test
+        run: python scripts/site_access_test.py
