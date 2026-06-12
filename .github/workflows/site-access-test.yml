@@ -2,6 +2,12 @@ name: site-access-test
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - claude/pension-event-monitoring-8lfq26
+    paths:
+      - '.github/workflows/site-access-test.yml'
+      - 'scripts/site_access_test.py'
 
 jobs:
   measure:
