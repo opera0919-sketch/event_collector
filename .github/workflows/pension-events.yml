@@ -41,6 +41,7 @@ jobs:
         run: python -m pension_monitor.main
 
       - name: Commit data & report
+        if: always()   # 메일 발송 실패 시에도 수집 결과는 보존
         run: |
           git config user.name "pension-monitor-bot"
           git config user.email "noreply@github.com"
