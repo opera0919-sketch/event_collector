@@ -52,3 +52,5 @@ jobs:
             git pull --rebase origin ${{ github.ref_name }} || true
             git push origin HEAD:${{ github.ref_name }}
           fi
+
+# Secrets 등록 후 통합 테스트 트리거
