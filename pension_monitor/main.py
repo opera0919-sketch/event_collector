@@ -49,21 +49,35 @@ async def collect():
 
 
 async def enrich_details(browser, pension_events):
+    from bs4 import BeautifulSoup
+    from .scrapers.static_generic import fetch_html
+
     fetched = 0
     for ev in pension_events:
         if fetched >= MAX_DETAIL_FETCH:
             break
+        url = ev.get("event_url") or ""
+        if not url.startswith("http") or url.rstrip("/").endswith(("eventList", "r01.do")):
+            continue
         detail_text = ""
         try:
             if ev["firm_name"] == "한국투자증권" and ev.get("_detail_id"):
                 detail_text = fetch_detail_text(ev["_detail_id"])
-            elif (ev.get("event_url") or "").startswith("http") \
-                    and ev["event_url"] != ev.get("_list_url"):
-                page = await load_page(browser, ev["event_url"], wait_ms=4000, retries=2)
+            else:
+                # requests 우선 (키움은 헤드리스 차단이라 필수), 부족하면 브라우저
                 try:
-                    detail_text = await page.inner_text("body")
-                finally:
-                    await page.close()
+                    soup = BeautifulSoup(fetch_html(url, retries=2), "html.parser")
+                    for tag in soup(["script", "style"]):
+                        tag.decompose()
+                    detail_text = soup.get_text("\n", strip=True)
+                except Exception:
+                    detail_text = ""
+                if len(detail_text) < 200 and ev["firm_name"] != "키움증권":
+                    page = await load_page(browser, url, wait_ms=4000, retries=2)
+                    try:
+                        detail_text = await page.inner_text("body")
+                    finally:
+                        await page.close()
             fetched += 1
         except Exception as e:
             print(f"[상세실패] {ev['firm_name']} {ev['event_name'][:30]}: {type(e).__name__}")
@@ -74,13 +88,14 @@ async def enrich_details(browser, pension_events):
 def classify_all(events):
     out = []
     for ev in events:
-        blob = " ".join([ev["event_name"], ev.get("raw_text", ""), ev.get("_detail_text", "")[:1000] if ev.get("_detail_text") else ""])
+        # 연금 판별/계좌 판별은 목록 텍스트만 사용 — 상세 페이지의 네비/배너 문구 오염 방지
+        blob = " ".join([ev["event_name"], ev.get("raw_text", "")])
         if ev.get("_category") == "연금" or is_pension(blob):
             ev.update(detect_accounts(blob))
             details = extract_details(ev.get("_detail_text", ""))
             ev["conditions"] = details["conditions"]
-            ev["benefits"] = details["benefits"]
-            ev["remarks"] = details["remarks"]
+            ev["benefits"] = details["benefits"] or ev.get("_benefits_hint")
+            ev["remarks"] = None if ev["benefits"] else details["remarks"]
             if not ev.get("start_date") and not ev.get("end_date") and ev.get("_detail_text"):
                 from .classify import parse_dates
                 s, e = parse_dates(ev["_detail_text"][:2000])

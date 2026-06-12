@@ -1,52 +1,73 @@
 # -*- coding: utf-8 -*-
 """미래에셋증권 진행중 이벤트 목록.
 
-서버렌더링(.do) → requests 우선. 브라우저 로드는 간헐적으로 매우 느려 폴백으로만 사용.
+실측 구조: 렌더링 후 li 안에 상태라벨(NEW/진행중/종료임박) + 기간(span) + 이벤트명은
+배너 이미지(alt)로 표시 → li 단위로 기간과 img alt 를 추출.
+정적 HTML 에는 기간이 없음(JS 주입) → Playwright 필수, 간헐 지연은 재시도로 대응.
 """
 
-from .base import load_page, debug_dump, JS_GENERIC_ITEMS
-from .static_generic import fetch_html, parse_generic, debug_static, PERIOD_RE, parse_period
+import re
+
+from .base import load_page, debug_dump
+from .static_generic import PERIOD_RE, parse_period
 
 LIST_URL = "https://securities.miraeasset.com/mw/mki/mki7000/r01.do"
 
+JS_LI_ITEMS = r"""
+() => {
+  const dateRe = /\d{4}[.\-\/]\s?\d{1,2}[.\-\/]\s?\d{1,2}\s*~\s*\d{4}[.\-\/]\s?\d{1,2}[.\-\/]\s?\d{1,2}/;
+  const out = [];
+  for (const li of document.querySelectorAll('li')) {
+    const t = (li.innerText || '').trim().replace(/\s+/g, ' ');
+    if (!dateRe.test(t) || li.querySelector('li') || t.length > 300) continue;
+    const img = li.querySelector('img');
+    const a = li.closest('a[href]') || li.querySelector('a[href]');
+    out.push({
+      text: t,
+      alt: img ? (img.getAttribute('alt') || '') : '',
+      href: a ? a.href : null,
+      html: out.length < 2 ? li.outerHTML.slice(0, 500) : null,
+    });
+    if (out.length >= 40) break;
+  }
+  return out;
+}
+"""
+
+_LABELS = re.compile(r"^(NEW|진행중|종료임박|마감임박|이벤트)\s*")
+
 
 async def scrape(browser):
-    html = None
+    page = await load_page(browser, LIST_URL, wait_ms=9000, retries=4, timeout_ms=60000)
     try:
-        html = fetch_html(LIST_URL)
-        events = parse_generic(html, "미래에셋증권", LIST_URL)
-        if events:
-            return events
-    except Exception as e:
-        print(f"[미래에셋] 정적 수집 실패: {type(e).__name__}: {e}")
-
-    # 폴백: 브라우저 렌더링
-    try:
-        page = await load_page(browser, LIST_URL, wait_ms=9000, retries=3, timeout_ms=60000)
-    except Exception:
-        if html:
-            debug_static(html, "미래에셋증권")
-        raise
-    try:
+        items = await page.evaluate(JS_LI_ITEMS)
         events, seen = [], set()
-        for it in await page.evaluate(JS_GENERIC_ITEMS):
+        for it in items:
             m = PERIOD_RE.search(it["text"])
             if not m:
                 continue
-            name = it["text"][: m.start()].strip(" :~-·.")
+            name = (it.get("alt") or "").strip()
+            name = re.sub(r"(이벤트\s?배너|배너|이미지)$", "", name).strip()
+            if not name:
+                # alt 없으면 텍스트에서 라벨/기간 제거 후 잔여 텍스트 사용
+                name = PERIOD_RE.sub(" ", it["text"])
+                name = _LABELS.sub("", name).strip(" :~-·.")
             if not name or len(name) < 4 or name in seen:
+                if it.get("html"):
+                    print(f"[debug:미래에셋] li 구조: {it['html']}")
                 continue
             seen.add(name)
             start, end = parse_period(m)
             events.append({
-                "firm_name": "미래에셋증권", "event_name": name[:120],
-                "start_date": start, "end_date": end,
-                "event_url": it.get("href") or LIST_URL, "raw_text": it["text"],
+                "firm_name": "미래에셋증권",
+                "event_name": name[:120],
+                "start_date": start,
+                "end_date": end,
+                "event_url": it.get("href") or LIST_URL,
+                "raw_text": (name + " " + it["text"])[:300],
             })
         if not events:
             await debug_dump(page, "미래에셋증권")
-            if html:
-                debug_static(html, "미래에셋증권")
         return events
     finally:
         await page.close()

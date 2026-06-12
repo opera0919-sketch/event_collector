@@ -62,6 +62,9 @@ async def scrape(browser=None):
             if not m:
                 continue
             name = text.split("진행중")[0].strip() or text[:60]
+            # 목록의 부제(진행중 ~ 기간 사이)가 혜택 요약인 경우가 많음
+            sub = text[text.find("진행중") + 3: m.start()].strip(" :") if "진행중" in text else ""
+            sub = sub.replace("기간", "").strip(" :")
             vm = _VIEW_RE.search(a.get("href", "") or "")
             num = vm.group(1) if vm else None
             events.append({
@@ -72,6 +75,7 @@ async def scrape(browser=None):
                 "event_url": DETAIL_URL.format(num=num) if num else LIST_URL.format(page=1),
                 "raw_text": text,
                 "_detail_id": num,
+                "_benefits_hint": sub[:200] if sub else None,
             })
         if len(boxes) < 10:
             break

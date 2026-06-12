@@ -39,7 +39,8 @@ def parse_generic(html, firm, list_url):
     for tag in soup(["script", "style"]):
         tag.decompose()
     events, seen = [], set()
-    for el in soup.find_all(["li", "tr", "dl", "div", "p", "a"]):
+    scan_tags = ["li", "tr", "dl", "div", "p", "a", "span", "em", "strong", "dt", "dd"]
+    for el in soup.find_all(scan_tags):
         text = " ".join(el.get_text(" ", strip=True).split())
         if not text or len(text) > 400:
             continue
@@ -48,7 +49,7 @@ def parse_generic(html, firm, list_url):
             continue
         # 동일 기간 패턴을 가진 자식이 있으면 부모는 스킵 (가장 안쪽 우선)
         inner = False
-        for c in el.find_all(["li", "tr", "dl", "div", "p", "a"]):
+        for c in el.find_all(scan_tags):
             ct = " ".join(c.get_text(" ", strip=True).split())
             if ct and PERIOD_RE.search(ct) and len(ct) >= len(text) * 0.8:
                 inner = True
