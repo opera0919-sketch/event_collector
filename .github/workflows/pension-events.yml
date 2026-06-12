@@ -53,4 +53,4 @@ jobs:
             git push origin HEAD:${{ github.ref_name }}
           fi
 
-# Secrets 등록 후 통합 테스트 트리거
+# Secrets 등록 후 통합 테스트 트리거 2
