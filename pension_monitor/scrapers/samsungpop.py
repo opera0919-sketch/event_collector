@@ -52,24 +52,35 @@ async def scrape(browser):
             if not m:
                 continue
             text = it["text"]
-            # 제목 = 기간/카테고리 라벨 제거
+            # 제목 = 기간/카테고리/버튼 라벨 제거
             name = text.replace(it["period"], " ")
             name = re.sub(r"^\[?신규\]?", "", name).strip()
             category = next((c for c in _CATEGORIES if name.endswith(c)), None)
             if category:
                 name = name[: -len(category)].strip()
-            name = re.sub(r"(오늘마감|D-\d+)$", "", name).strip()
+            name = re.sub(r"(신청하기|자세히보기|바로가기|오늘마감|D-\d+)\s*$", "", name).strip()
+            name = re.sub(r"\s{2,}", " ", name)
             if not name or name in seen:
                 continue
             seen.add(name)
             start = f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
             end = f"{m.group(4)}-{int(m.group(5)):02d}-{int(m.group(6)):02d}"
+            # 상세 URL: goIngView('3808', ...) → mbw eventView
+            href = it.get("href") or ""
+            vm = re.search(r"goIngView\('(\d+)'", href + " " + (it.get("onclick") or ""))
+            if vm:
+                url = ("https://www.samsungpop.com/mbw/customer/noticeEvent.do"
+                       f"?cmd=eventView&MenuSeqNo={vm.group(1)}")
+            elif href.startswith("http"):
+                url = href
+            else:
+                url = LIST_URL
             events.append({
                 "firm_name": "삼성증권",
                 "event_name": name[:120],
                 "start_date": start,
                 "end_date": end,
-                "event_url": it.get("href") or LIST_URL,
+                "event_url": url,
                 "raw_text": text + (f" [카테고리:{category}]" if category else ""),
                 "_category": category,
             })

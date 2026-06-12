@@ -59,7 +59,7 @@ def build_report(diff: dict, firms_failed: list) -> str:
         benefits = (ev.get("benefits") or ev.get("remarks") or "")[:60].replace("|", "/")
         name = ev["event_name"][:40].replace("|", "/")
         url = ev.get("event_url") or ""
-        name_cell = f"[{name}]({url})" if url else name
+        name_cell = f"[{name}]({url})" if url.startswith("http") else name
         lines.append(
             f"| {ev['firm_name']} | {name_cell} | {_fmt_period(ev)} "
             f"| {_b(ev.get('acct_pension'))} | {_b(ev.get('acct_irp'))} "
@@ -75,7 +75,7 @@ def build_report(diff: dict, firms_failed: list) -> str:
     ps_n = sum(1 for e in active if e.get("acct_pension"))
     most = max(by_firm.items(), key=lambda kv: len(kv[1]))[0] if by_firm else None
     none_firms = [f for f in ("미래에셋증권", "한국투자증권", "삼성증권", "키움증권", "KB증권", "NH투자증권")
-                  if f not in by_firm]
+                  if f not in by_firm and f not in firms_failed]
     if most:
         lines.append(f"- 진행중 이벤트 최다 증권사: {most} ({len(by_firm[most])}건)")
     lines.append(f"- 대상계좌 분포: 연금저축 {ps_n}건 / IRP {irp_n}건")
