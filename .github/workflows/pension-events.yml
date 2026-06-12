@@ -54,4 +54,4 @@ jobs:
             git push origin HEAD:${{ github.ref_name }}
           fi
 
-# Secrets 등록 후 통합 테스트 트리거 2
+# Secrets 등록 후 통합 테스트 트리거 3 (앱 비밀번호 교체 확인)
