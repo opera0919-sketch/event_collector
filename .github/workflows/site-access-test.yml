@@ -33,6 +33,19 @@ jobs:
             echo "$url -> $out"
           done
 
+      - name: koreainvestment variants (foreign-IP block scope check)
+        run: |
+          UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+          for url in \
+            "https://securities.koreainvestment.com/main/customer/notice/Event.jsp?gubun=i" \
+            "https://m.koreainvestment.com/main/customer/notice/Event.jsp?gubun=i" \
+            "https://www.truefriend.com" \
+            "https://www.koreainvestment.com" \
+            "https://securities.koreainvestment.com"; do
+            out=$(curl -sL -o /dev/null -m 20 -A "$UA" -w "%{http_code} %{size_download}B %{url_effective}" "$url" || echo "FAIL")
+            echo "$url -> $out"
+          done
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
