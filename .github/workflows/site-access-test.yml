@@ -8,6 +8,7 @@ on:
     paths:
       - '.github/workflows/site-access-test.yml'
       - 'scripts/site_access_test.py'
+      - 'scripts/dump_structure.py'
 
 jobs:
   measure:
@@ -52,8 +53,11 @@ jobs:
 
       - name: Install Playwright
         run: |
-          pip install playwright
+          pip install playwright requests beautifulsoup4
           playwright install --with-deps chromium
 
       - name: Browser-rendered access test
         run: python scripts/site_access_test.py
+
+      - name: Dump event list DOM structure
+        run: python scripts/dump_structure.py
