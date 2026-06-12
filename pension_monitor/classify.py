@@ -84,9 +84,10 @@ def extract_details(detail_text: str) -> dict:
         compact = line.replace(" ", "")
         if any(k in compact for k in ("참여대상", "이벤트대상", "참여조건", "응모대상", "대상고객", "참여방법")):
             cond.append(" / ".join(lines[i:i + 2])[:200])
-        # 혜택: 키워드 + 금액/수치 동반 시에만 (배너·메뉴 오탐 방지)
+        # 혜택: 키워드 + 금액/수치 동반 시에만. 다른 이벤트 제목(…이벤트)으로 끝나는 줄 제외
         if any(k in compact for k in ("혜택", "지급", "경품", "리워드", "상품권", "수수료우대", "캐시백")) \
-                and re.search(r"[\d만천]+\s?원|\d+%|무료|평생", compact):
+                and re.search(r"[\d만천]+\s?원|\d+%|무료|평생", compact) \
+                and not compact.endswith("이벤트"):
             bene.append(line[:200])
     if cond:
         out["conditions"] = " | ".join(dict.fromkeys(cond))[:500]

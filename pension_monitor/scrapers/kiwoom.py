@@ -75,8 +75,9 @@ async def scrape(browser=None):
                 try:
                     dhtml = fetch_html(ev["event_url"], retries=2)
                     dm = PERIOD_RE.search(_clean(dhtml)[:5000])
-                    if dm:
-                        ev["start_date"], ev["end_date"] = parse_period(dm)
+                    p = parse_period(dm) if dm else None
+                    if p:
+                        ev["start_date"], ev["end_date"] = p
                 except Exception:
                     pass
             return events

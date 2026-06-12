@@ -13,6 +13,8 @@ from ..config import UA
 PERIOD_RE = re.compile(
     r"(\d{4})[.\-/]\s?(\d{1,2})[.\-/]\s?(\d{1,2})\s*~\s*(\d{4})[.\-/]\s?(\d{1,2})[.\-/]\s?(\d{1,2})")
 _NOISE = ("당첨자", "유효기간", "인증범위", "지난 이벤트", "참여한 이벤트", "Copyright")
+_CATEGORY_PREFIX = re.compile(
+    r"^(?:(?:전체|국내주식|해외주식|금융상품|연금/ISA|연금|은행연계/비대면|ETF|기타|파생|NEW|신규)\s+)+")
 
 
 def fetch_html(url, retries=4):
@@ -30,8 +32,12 @@ def fetch_html(url, retries=4):
 
 
 def parse_period(m):
-    return (f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}",
-            f"{m.group(4)}-{int(m.group(5)):02d}-{int(m.group(6)):02d}")
+    """유효한 날짜 범위인지 검증 후 (시작, 종료) 반환. 템플릿 더미(00월 등)는 None."""
+    y1, m1, d1, y2, m2, d2 = (int(m.group(i)) for i in range(1, 7))
+    for mm, dd in ((m1, d1), (m2, d2)):
+        if not (1 <= mm <= 12 and 1 <= dd <= 31):
+            return None
+    return (f"{y1}-{m1:02d}-{d1:02d}", f"{y2}-{m2:02d}-{d2:02d}")
 
 
 def parse_generic(html, firm, list_url):
@@ -56,17 +62,24 @@ def parse_generic(html, firm, list_url):
                 break
         if inner:
             continue
+        period = parse_period(m)
+        if period is None:
+            continue
         name = text[: m.start()].strip(" :~-·.[]")
         name = re.sub(r"(이벤트\s?기간|기간|D-\d+|오늘마감)$", "", name).strip(" :")
-        if not name or len(name) < 4 or name in seen:
+        # 카테고리 라벨 접두사 제거 (KB 등 목록이 "연금/ISA {제목}" 형태)
+        category = "연금" if name.startswith(("연금/ISA", "연금 ")) else None
+        name = _CATEGORY_PREFIX.sub("", name).strip(" :·")
+        if not name or len(name) < 4 or name in seen or "이벤트 제목" in name:
             continue
         seen.add(name)
         a = el if el.name == "a" else (el.find("a", href=True) or el.find_parent("a", href=True))
         href = a.get("href") if a else None
         if href and not href.startswith("http"):
             href = None
-        start, end = parse_period(m)
+        start, end = period
         events.append({
+            "_category": category,
             "firm_name": firm,
             "event_name": name[:120],
             "start_date": start,

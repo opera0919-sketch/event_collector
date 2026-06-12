@@ -93,7 +93,7 @@ def classify_all(events):
         if ev.get("_category") == "연금" or is_pension(blob):
             ev.update(detect_accounts(blob))
             details = extract_details(ev.get("_detail_text", ""))
-            ev["conditions"] = details["conditions"]
+            ev["conditions"] = details["conditions"] or ev.get("_conditions_hint")
             ev["benefits"] = details["benefits"] or ev.get("_benefits_hint")
             ev["remarks"] = None if ev["benefits"] else details["remarks"]
             if not ev.get("start_date") and not ev.get("end_date") and ev.get("_detail_text"):

@@ -44,27 +44,36 @@ async def scrape(browser):
         events, seen = [], set()
         for it in items:
             m = PERIOD_RE.search(it["text"])
-            if not m:
+            period = parse_period(m) if m else None
+            if not period:
                 continue
-            name = (it.get("alt") or "").strip()
-            name = re.sub(r"(이벤트\s?배너|배너|이미지)$", "", name).strip()
+            alt = (it.get("alt") or "").strip()
+            # alt 가 "이벤트명: X\n기간: ...\n대상: Y" 구조인 경우 파싱
+            name, cond_hint = "", None
+            if alt:
+                nm = re.search(r"이벤트명\s*[:：]\s*([^\n]+)", alt)
+                cm = re.search(r"대상\s*[:：]\s*([^\n]+)", alt)
+                name = (nm.group(1) if nm else alt.splitlines()[0]).strip()
+                cond_hint = cm.group(1).strip() if cm else None
+                name = re.sub(r"(이벤트\s?배너|배너|이미지)$", "", name).strip()
             if not name:
                 # alt 없으면 텍스트에서 라벨/기간 제거 후 잔여 텍스트 사용
                 name = PERIOD_RE.sub(" ", it["text"])
                 name = _LABELS.sub("", name).strip(" :~-·.")
+            name = " ".join(name.split())
             if not name or len(name) < 4 or name in seen:
                 if it.get("html"):
                     print(f"[debug:미래에셋] li 구조: {it['html']}")
                 continue
             seen.add(name)
-            start, end = parse_period(m)
             events.append({
                 "firm_name": "미래에셋증권",
                 "event_name": name[:120],
-                "start_date": start,
-                "end_date": end,
+                "start_date": period[0],
+                "end_date": period[1],
                 "event_url": it.get("href") or LIST_URL,
-                "raw_text": (name + " " + it["text"])[:300],
+                "raw_text": " ".join((name + " " + alt).split())[:300],
+                "_conditions_hint": cond_hint,
             })
         if not events:
             await debug_dump(page, "미래에셋증권")

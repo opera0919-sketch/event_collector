@@ -13,7 +13,9 @@ from bs4 import BeautifulSoup
 
 from ..config import UA
 
-LIST_URL = ("https://securities.koreainvestment.com/main/customer/notice/Event.jsp"
+# 간헐적 연결 거부(실측) → 도메인 폴백
+_DOMAINS = ["securities.koreainvestment.com", "m.koreainvestment.com"]
+LIST_URL = ("https://{domain}/main/customer/notice/Event.jsp"
             "?gubun=i&currentPage={page}&userRowsPerPage=10")
 DETAIL_URL = ("https://securities.koreainvestment.com/main/customer/notice/Event.jsp"
               "?gubun=i&cmd=TF04gb010002&num={num}")
@@ -22,7 +24,7 @@ _PERIOD_RE = re.compile(r"기간\s*:\s*(\d{4}\.\d{1,2}\.\d{1,2})\s*~\s*(\d{4}\.\
 _VIEW_RE = re.compile(r"doView\('(\d+)'\)")
 
 
-def _get(url, retries=5):
+def _get(url, retries=3):
     last = None
     for attempt in range(retries):
         try:
@@ -33,6 +35,16 @@ def _get(url, retries=5):
         except Exception as e:
             last = e
             time.sleep(2 ** attempt)
+    raise last
+
+
+def _get_list(page_no):
+    last = None
+    for domain in _DOMAINS:
+        try:
+            return _get(LIST_URL.format(domain=domain, page=page_no))
+        except Exception as e:
+            last = e
     raise last
 
 
@@ -52,7 +64,7 @@ def fetch_detail_text(num: str) -> str:
 async def scrape(browser=None):
     events = []
     for page_no in range(1, 5):
-        soup = BeautifulSoup(_get(LIST_URL.format(page=page_no)), "html.parser")
+        soup = BeautifulSoup(_get_list(page_no), "html.parser")
         boxes = soup.select("a.event_thum_box")
         if not boxes:
             break
@@ -72,7 +84,8 @@ async def scrape(browser=None):
                 "event_name": name[:120],
                 "start_date": _to_iso(m.group(1)),
                 "end_date": _to_iso(m.group(2)),
-                "event_url": DETAIL_URL.format(num=num) if num else LIST_URL.format(page=1),
+                "event_url": (DETAIL_URL.format(num=num) if num
+                              else LIST_URL.format(domain=_DOMAINS[0], page=1)),
                 "raw_text": text,
                 "_detail_id": num,
                 "_benefits_hint": sub[:200] if sub else None,
