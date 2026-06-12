@@ -30,10 +30,15 @@ async def collect():
     events, failed = [], []
     async with async_playwright() as pw:
         browser = await pw.chromium.launch()
+
+        async def run_one(firm, fn, needs_browser):
+            got = await fn(browser) if needs_browser else await fn()
+            print(f"[수집] {firm}: {len(got)}건")
+            return got
+
         for firm, fn, needs_browser in SCRAPERS:
             try:
-                got = await fn(browser) if needs_browser else await fn()
-                print(f"[수집] {firm}: {len(got)}건")
+                got = await run_one(firm, fn, needs_browser)
                 if not got:
                     failed.append(firm)
                 events.extend(got)
@@ -41,6 +46,24 @@ async def collect():
                 print(f"[수집실패] {firm}: {type(e).__name__}: {e}")
                 traceback.print_exc()
                 failed.append(firm)
+
+        # 간헐 지연/거부 대응: 실패 증권사 1회 재시도
+        if failed:
+            print(f"[재시도] {failed}")
+            still = []
+            for firm, fn, needs_browser in SCRAPERS:
+                if firm not in failed:
+                    continue
+                try:
+                    got = await run_one(firm, fn, needs_browser)
+                    if got:
+                        events.extend(got)
+                    else:
+                        still.append(firm)
+                except Exception as e:
+                    print(f"[재시도실패] {firm}: {type(e).__name__}")
+                    still.append(firm)
+            failed = still
         # 연금 이벤트만 상세 보강
         pension = [e for e in events if is_pension(e["event_name"] + " " + e.get("raw_text", ""))]
         await enrich_details(browser, pension)

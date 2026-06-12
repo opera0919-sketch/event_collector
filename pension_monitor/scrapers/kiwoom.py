@@ -84,4 +84,33 @@ async def scrape(browser=None):
         # 디버그: evt 관련 앵커 표본
         hints = re.findall(r"href=[\"']([^\"']*(?:evt|Event)[^\"']{0,80})[\"']", html)[:15]
         print(f"[debug-static:키움증권] {url} evt 앵커 표본: {hints}")
+
+    # 최후: 모바일 페이지 브라우저 렌더링 (메인 도메인은 헤드리스 차단 실측)
+    if browser is not None:
+        from .base import load_page, debug_dump, JS_GENERIC_ITEMS
+        try:
+            page = await load_page(browser, LIST_URLS[2], wait_ms=8000, retries=2)
+            try:
+                items = await page.evaluate(JS_GENERIC_ITEMS)
+                for it in items:
+                    m = PERIOD_RE.search(it["text"])
+                    p = parse_period(m) if m else None
+                    if not p:
+                        continue
+                    name = it["text"][: m.start()].strip(" :~-·.")
+                    if not name or len(name) < 4 or name in seen:
+                        continue
+                    seen.add(name)
+                    events.append({
+                        "firm_name": "키움증권", "event_name": name[:120],
+                        "start_date": p[0], "end_date": p[1],
+                        "event_url": it.get("href") or LIST_URLS[2],
+                        "raw_text": it["text"],
+                    })
+                if not events:
+                    await debug_dump(page, "키움증권(모바일)")
+            finally:
+                await page.close()
+        except Exception as e:
+            print(f"[키움] 모바일 렌더 실패: {type(e).__name__}")
     return events
