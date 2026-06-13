@@ -22,7 +22,12 @@ from .scrapers import SCRAPERS
 from .scrapers.base import load_page
 from .scrapers.koreainvestment import fetch_detail_text
 
-MAX_DETAIL_FETCH = 20  # 상세 페이지 조회 상한 (사이트 부하 배려)
+MAX_DETAIL_FETCH = 12       # 상세 페이지 조회 상한 (사이트 부하 + 실행시간)
+DETAIL_BUDGET_SEC = 120     # 상세 조회 전체 시간 예산 (초과 시 중단 → 런 행 방지)
+
+# 매 실행 구조적으로 실패하는(헤드리스 차단 등) 증권사 — 재시도 패스에서 제외해
+# 불필요한 풀 타임아웃 대기를 없앤다. 1차 시도만 하고 실패로 둔다.
+KNOWN_HARD = {"키움증권"}
 
 # 상세 로그(이벤트 전건·리포트 전문)는 로그/토큰 비용이 커서 기본 off.
 # 디버깅 시 DEBUG=1 로 활성화.
@@ -63,12 +68,13 @@ async def collect():
                 traceback.print_exc()
                 failed.append(firm)
 
-        # 간헐 지연/거부 대응: 실패 증권사 1회 재시도
-        if failed:
-            print(f"[재시도] {failed}")
-            still = []
+        # 간헐 지연/거부 대응: 실패 증권사 1회 재시도 (구조적 실패 증권사는 제외)
+        retryable = [f for f in failed if f not in KNOWN_HARD]
+        if retryable:
+            print(f"[재시도] {retryable}")
+            still = [f for f in failed if f in KNOWN_HARD]
             for firm, fn, needs_browser in SCRAPERS:
-                if firm not in failed:
+                if firm not in retryable:
                     continue
                 try:
                     got = await run_one(firm, fn, needs_browser)
@@ -88,12 +94,15 @@ async def collect():
 
 
 async def enrich_details(browser, pension_events):
+    import time
     from bs4 import BeautifulSoup
     from .scrapers.static_generic import fetch_html
 
+    started = time.monotonic()
     fetched = 0
     for ev in pension_events:
-        if fetched >= MAX_DETAIL_FETCH:
+        if fetched >= MAX_DETAIL_FETCH or time.monotonic() - started > DETAIL_BUDGET_SEC:
+            print(f"[상세] 예산 도달 — {fetched}건 조회 후 중단")
             break
         url = ev.get("event_url") or ""
         if not url.startswith("http") or url.rstrip("/").endswith(("eventList", "r01.do")):
@@ -105,7 +114,7 @@ async def enrich_details(browser, pension_events):
             else:
                 # requests 우선 (키움은 헤드리스 차단이라 필수), 부족하면 브라우저
                 try:
-                    soup = BeautifulSoup(fetch_html(url, retries=2), "html.parser")
+                    soup = BeautifulSoup(fetch_html(url, retries=1), "html.parser")
                     for tag in soup(["script", "style"]):
                         tag.decompose()
                     detail_text = soup.get_text("\n", strip=True)
