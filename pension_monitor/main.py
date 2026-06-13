@@ -7,6 +7,7 @@
 """
 
 import argparse
+import os
 import asyncio
 import datetime as dt
 import json
@@ -22,6 +23,21 @@ from .scrapers.base import load_page
 from .scrapers.koreainvestment import fetch_detail_text
 
 MAX_DETAIL_FETCH = 20  # 상세 페이지 조회 상한 (사이트 부하 배려)
+
+# 상세 로그(이벤트 전건·리포트 전문)는 로그/토큰 비용이 커서 기본 off.
+# 디버깅 시 DEBUG=1 로 활성화.
+DEBUG = os.environ.get("DEBUG", "").lower() in ("1", "true", "yes")
+
+
+def write_step_summary(line: str):
+    """GitHub Actions Step Summary 에 한 줄 기록 (실패 분석을 로그 전체 없이)."""
+    path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if path:
+        try:
+            with open(path, "a", encoding="utf-8") as f:
+                f.write(line + "\n")
+        except OSError:
+            pass
 
 
 async def collect():
@@ -135,22 +151,28 @@ def main():
 
     events, failed = asyncio.run(collect())
     pension = classify_all(events)
-    print(f"\n전체 {len(events)}건 중 연금 관련 {len(pension)}건 (수집 실패: {failed or '없음'})")
+    by_firm = {}
     for ev in pension:
-        print(f"  - [{ev['firm_name']}] {ev['event_name']} ({ev.get('start_date')}~{ev.get('end_date')}) "
-              f"연금저축={ev.get('acct_pension')} IRP={ev.get('acct_irp')} DC={ev.get('acct_dc')} 기타={ev.get('acct_etc')}")
+        by_firm[ev["firm_name"]] = by_firm.get(ev["firm_name"], 0) + 1
+    print(f"전체 {len(events)}건 중 연금 관련 {len(pension)}건 "
+          f"(증권사별 {by_firm}, 수집 실패: {failed or '없음'})")
+    if DEBUG:
+        for ev in pension:
+            print(f"  - [{ev['firm_name']}] {ev['event_name']} ({ev.get('start_date')}~{ev.get('end_date')}) "
+                  f"연금저축={ev.get('acct_pension')} IRP={ev.get('acct_irp')} DC={ev.get('acct_dc')} 기타={ev.get('acct_etc')}")
 
     pathlib.Path("data").mkdir(exist_ok=True)
     with open("data/events_latest.json", "w", encoding="utf-8") as f:
         json.dump({"collected_at": dt.datetime.now(dt.timezone.utc).isoformat(),
                    "firms_failed": failed, "events": pension}, f, ensure_ascii=False, indent=1)
-    print("[저장] data/events_latest.json")
 
     if args.collect_only:
+        _write_summary(len(pension), by_firm, failed, diff=None)
         return
 
     if len(failed) >= 6:
         print("[중단] 전 증권사 수집 실패 — DB 동기화 생략")
+        _write_summary(0, by_firm, failed, diff=None, note="전 증권사 수집 실패")
         sys.exit(1)
 
     diff = db.sync(pension, failed, TRIGGER_TYPE)
@@ -159,15 +181,40 @@ def main():
 
     today = dt.date.today().isoformat()
     pathlib.Path("reports").mkdir(exist_ok=True)
-    report_path = f"reports/{today}.md"
-    with open(report_path, "w", encoding="utf-8") as f:
+    # 날짜별 아카이브 + 항상 같은 경로(latest.md)에 사본 → 온디맨드 확인 시 작은 파일 하나만 읽으면 됨
+    with open(f"reports/{today}.md", "w", encoding="utf-8") as f:
         f.write(report_md)
-    print(f"[저장] {report_path}")
-    print("\n" + "=" * 60 + "\n" + report_md + "\n" + "=" * 60)
+    with open("reports/latest.md", "w", encoding="utf-8") as f:
+        f.write(report_md)
+    print(f"[저장] reports/{today}.md (+ latest.md)")
+
+    _write_summary(len(diff["active"]), by_firm, failed, diff=diff)
 
     subject = (f"[연금이벤트 위클리] {today} — 진행중 {len(diff['active'])}건 "
                f"(신규 {len(diff['new'])}, 종료 {len(diff['closed'])})")
-    mailer.send(subject, report_md)
+    sent = mailer.send(subject, report_md)
+    write_step_summary(
+        f"진행중 {len(diff['active'])} · 신규 {len(diff['new'])} · 종료 {len(diff['closed'])} "
+        f"· 변경 {len(diff['changed'])} · 수집실패 {failed or '없음'} · 메일 {'발송' if sent else '스킵'}")
+
+
+def _write_summary(active, by_firm, failed, diff, note=""):
+    """관측용 초소형 요약(JSON). 세션에서 로그 대신 이 파일만 읽으면 됨."""
+    summary = {
+        "run_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "trigger": TRIGGER_TYPE,
+        "active": active,
+        "by_firm": by_firm,
+        "firms_failed": failed,
+        "new": len(diff["new"]) if diff else None,
+        "closed": len(diff["closed"]) if diff else None,
+        "changed": len(diff["changed"]) if diff else None,
+        "note": note,
+    }
+    pathlib.Path("data").mkdir(exist_ok=True)
+    with open("data/last_run_summary.json", "w", encoding="utf-8") as f:
+        json.dump(summary, f, ensure_ascii=False, indent=1)
+    print(f"[요약] {summary}")
 
 
 if __name__ == "__main__":
