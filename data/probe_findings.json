@@ -1,0 +1,329 @@
+{
+ "kb": {
+  "status": 200,
+  "len": 23199,
+  "anchor_samples": [
+   "/go.able?linkcd=m06090002",
+   "/go.able?linkcd=s060902010000",
+   "/go.able?linkcd=s060902020000",
+   "/go.able?linkcd=s060902030000&seq=10009913&idt=20260529&clsfcd=4&gubun=1",
+   "/go.able?linkcd=s060902030000&seq=10009884&idt=20260522&clsfcd=1&gubun=1",
+   "/go.able?linkcd=s060902030000&seq=10009846&idt=20260514&clsfcd=1&gubun=1",
+   "/go.able?linkcd=s060902030000&seq=10009816&idt=20260507&clsfcd=1&gubun=1",
+   "/go.able?linkcd=s060902030000&seq=10009807&idt=20260506&clsfcd=1&gubun=1",
+   "/go.able?linkcd=s060902030000&seq=10009770&idt=20260424&clsfcd=1&gubun=1",
+   "/go.able?linkcd=s060902030000&seq=10009737&idt=20260416&clsfcd=1&gubun=1",
+   "/go.able?linkcd=s060902030000&seq=10009679&idt=20260331&clsfcd=4&gubun=1",
+   "/go.able?linkcd=s060902030000&seq=10009676&idt=20260331&clsfcd=4&gubun=1",
+   "/go.able?linkcd=s060902030000&seq=10009671&idt=20260330&clsfcd=4&gubun=1",
+   "/go.able?linkcd=s060902030000&seq=10009668&idt=20260330&clsfcd=4&gubun=1",
+   "/go.able?linkcd=s060902030000&seq=10009450&idt=20260130&clsfcd=1&gubun=1",
+   "/go.able?linkcd=s060902030000&seq=10009423&idt=20260121&clsfcd=4&gubun=1",
+   "/go.able?linkcd=s060902030000&seq=10009370&idt=20251231&clsfcd=4&gubun=1",
+   "/go.able?linkcd=s060902030000&seq=10007688&idt=20241025&clsfcd=4&gubun=1",
+   "/go.able?linkcd=s060902030000&seq=10006781&idt=20240405&clsfcd=1&gubun=1",
+   "/go.able?linkcd=s060902030000&seq=10003885&idt=20220223&clsfcd=6&gubun=1"
+  ],
+  "onclick_fns": [
+   "doSearch();"
+  ],
+  "date_row_html": []
+ },
+ "kiwoom": {
+  "desktop_final": "https://www1.kiwoom.com/h/customer/event/VIngEventView",
+  "desktop": [
+   {
+    "url": "https://www1.kiwoom.com/h/customer/event/VIngEventView",
+    "status": 200,
+    "ct": "text/html; charset=UTF-8",
+    "blen": 400,
+    "hit": true,
+    "snip": "\n\n<!DOCTYPE html>\n<html lang=\"ko\" class=\"\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable="
+   },
+   {
+    "url": "https://www1.kiwoom.com/e/common/event/VIngEventView",
+    "status": 400,
+    "ct": "text/html;charset=utf-8",
+    "blen": 400,
+    "hit": false,
+    "snip": "<!DOCTYPE html><html><head>\t<meta charset=\"UTF-8\"></head><body>\t<script>var bWKk9 = {\"RciBx\":\"hvpjhvGjhvnVGFhdFUtHafqTLwsIhvnVhvtghvnVhvpDC5Y3tXP3tXPOBrNIBjXIq5i3tXP3tXtWBQXWAUtIZVXWAWgOkVXWAU32aVXWAW"
+   },
+   {
+    "url": "https://www1.kiwoom.com/h/common/search/SPopwordSearchAjax",
+    "status": 200,
+    "ct": "application/json;charset=UTF-8",
+    "blen": 400,
+    "hit": false,
+    "snip": "\"{\\\"Data\\\":{\\\"Query\\\":[{\\\"count\\\":0,\\\"id\\\":1,\\\"updown\\\":\\\"N\\\",\\\"content\\\":\\\"모의투자\\\"},{\\\"count\\\":0,\\\"id\\\":2,\\\"updown\\\":\\\"N\\\",\\\"content\\\":\\\"거래내역\\\"},{\\\"count\\\":0,\\\"id\\\":3,\\\"updown\\\":\\\"N\\\",\\\"content\\\":\\\"AP"
+   },
+   {
+    "url": "https://www1.kiwoom.com/h/customer/event/VIngEventView?evfw=sIKKAsGcLxzamuR9",
+    "status": 200,
+    "ct": "application/javascript;charset=UTF-8",
+    "blen": 0,
+    "hit": false,
+    "snip": ""
+   },
+   {
+    "url": "https://www1.kiwoom.com/e/common/event/VIngEventView?evfw=sIKKAsGcLxzamuR9",
+    "status": 200,
+    "ct": "application/javascript;charset=UTF-8",
+    "blen": 0,
+    "hit": false,
+    "snip": ""
+   }
+  ],
+  "desktop_frames": [
+   "https://www1.kiwoom.com/h/customer/event/VIngEventView",
+   "https://www1.kiwoom.com/e/common/error"
+  ],
+  "mobile_final": "https://www.kiwoom.com/e/common/error",
+  "mobile": [
+   {
+    "url": "https://www.kiwoom.com/e/m/common/event/VIngEventView",
+    "status": 200,
+    "ct": "text/html; charset=UTF-8",
+    "blen": 400,
+    "hit": true,
+    "snip": "\n\n\n\n\n\n\n\n<!DOCTYPE html> \n<html lang=\"ko\" class=\"\"> \n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"format-detection\" content=\"telephone=no\">\n    <meta name=\"viewport\" content=\"width=device-width,in"
+   },
+   {
+    "url": "https://www.kiwoom.com/e/kms/assets/css/event.css?20250904",
+    "status": 200,
+    "ct": "text/css",
+    "blen": 400,
+    "hit": true,
+    "snip": "@charset \"UTF-8\";\nhtml,body{height:100%;touch-action: pan-y;}\n* {\n\tmargin: 0;\n\tpadding: 0;\n\tborder: 0;\n\tvertical-align: baseline;\t\n}\n.hidden\t{width:0;height:0;font-size:0;line-height:0;text-indent:-99"
+   },
+   {
+    "url": "https://www.kiwoom.com/e/common/event/SIngEventListAjax",
+    "status": 400,
+    "ct": "application/json;charset=utf-8",
+    "blen": 94,
+    "hit": false,
+    "snip": "{\r\n \"eversafeThreat\":true,\r\n \"message\":\"CD-14000\",\r\n\"action\":\"/e/common/error\",\r\n\"type\":\"1\"\r\n}"
+   },
+   {
+    "url": "https://www.kiwoom.com/e/kws/assets/js/event/eventCommon.js?contextPath=/e&version=20250724",
+    "status": 200,
+    "ct": "application/x-javascript",
+    "blen": 0,
+    "hit": false,
+    "snip": ""
+   },
+   {
+    "url": "https://www.kiwoom.com/e/m/common/event/VIngEventView?evfw=sIKKAsGcLxzamuR9",
+    "status": 200,
+    "ct": "application/javascript;charset=UTF-8",
+    "blen": 0,
+    "hit": false,
+    "snip": ""
+   },
+   {
+    "url": "https://www.kiwoom.com/e/kms/assets/images/icon/icon_evt_footer_logo.png",
+    "status": 200,
+    "ct": "image/png",
+    "blen": 0,
+    "hit": false,
+    "snip": ""
+   },
+   {
+    "url": "https://www.kiwoom.com/e/kms/assets/images/event/evt_common/evt-icon-arrow-left.png",
+    "status": 200,
+    "ct": "image/png",
+    "blen": 0,
+    "hit": false,
+    "snip": ""
+   }
+  ],
+  "mobile_frames": [
+   "https://www.kiwoom.com/e/common/error"
+  ]
+ },
+ "nh": {
+  "items": [
+   {
+    "text": "N2, 국내주식 리스타트(Restart) 이벤트 이벤트기간 :2026.05.27 ~ 2026.06.30",
+    "tag": "A",
+    "html": "<a href=\"#\" class=\"click_area\"><div class=\"info_subject\"><p class=\"event_img\"><img src=\"/fileUpload/nhmobile/event/20260526_171505.png\" alt=\"N2, 국내주식 리스타트(Restart) 이벤트\"></p><div class=\"txtRight\"><ul class=\"tag_list\"></ul><p class=\"tit\">N2, 국내주식 리스타트(Restart) 이벤트</p><ul class=\"event_txt\"><li><span>이벤",
+    "attrs": {
+     "href": "#",
+     "class": "click_area"
+    }
+   },
+   {
+    "text": "이벤트기간 :2026.05.27 ~ 2026.06.30",
+    "tag": "A",
+    "html": "<a href=\"#\" class=\"click_area\"><div class=\"info_subject\"><p class=\"event_img\"><img src=\"/fileUpload/nhmobile/event/20260526_171505.png\" alt=\"N2, 국내주식 리스타트(Restart) 이벤트\"></p><div class=\"txtRight\"><ul class=\"tag_list\"></ul><p class=\"tit\">N2, 국내주식 리스타트(Restart) 이벤트</p><ul class=\"event_txt\"><li><span>이벤",
+    "attrs": {
+     "href": "#",
+     "class": "click_area"
+    }
+   },
+   {
+    "text": "대여풀 등록하고 주식 이자 받자! 이벤트기간 :2026.04.30 ~ 2026.07.31",
+    "tag": "A",
+    "html": "<a href=\"#\" class=\"click_area\"><div class=\"info_subject\"><p class=\"event_img\"><img src=\"/fileUpload/nhmobile/event/20260430_091720.png\" alt=\"대여풀 등록하고 주식 이자 받자!\"></p><div class=\"txtRight\"><ul class=\"tag_list\"></ul><p class=\"tit\">대여풀 등록하고 주식 이자 받자!</p><ul class=\"event_txt\"><li><span>이벤트기간 : </span>202",
+    "attrs": {
+     "href": "#",
+     "class": "click_area"
+    }
+   },
+   {
+    "text": "이벤트기간 :2026.04.30 ~ 2026.07.31",
+    "tag": "A",
+    "html": "<a href=\"#\" class=\"click_area\"><div class=\"info_subject\"><p class=\"event_img\"><img src=\"/fileUpload/nhmobile/event/20260430_091720.png\" alt=\"대여풀 등록하고 주식 이자 받자!\"></p><div class=\"txtRight\"><ul class=\"tag_list\"></ul><p class=\"tit\">대여풀 등록하고 주식 이자 받자!</p><ul class=\"event_txt\"><li><span>이벤트기간 : </span>202",
+    "attrs": {
+     "href": "#",
+     "class": "click_area"
+    }
+   },
+   {
+    "text": "26년 IRP 순입금/이전 2차 이벤트 이벤트기간 :2026.05.01 ~ 2026.08.31",
+    "tag": "A",
+    "html": "<a href=\"#\" class=\"click_area\"><div class=\"info_subject\"><p class=\"event_img\"><img src=\"/fileUpload/nhmobile/event/20260429_144101.png\" alt=\"26년 IRP 순입금/이전 2차 이벤트\"></p><div class=\"txtRight\"><ul class=\"tag_list\"></ul><p class=\"tit\">26년 IRP 순입금/이전 2차 이벤트</p><ul class=\"event_txt\"><li><span>이벤트기간 : </sp",
+    "attrs": {
+     "href": "#",
+     "class": "click_area"
+    }
+   },
+   {
+    "text": "이벤트기간 :2026.05.01 ~ 2026.08.31",
+    "tag": "A",
+    "html": "<a href=\"#\" class=\"click_area\"><div class=\"info_subject\"><p class=\"event_img\"><img src=\"/fileUpload/nhmobile/event/20260429_144101.png\" alt=\"26년 IRP 순입금/이전 2차 이벤트\"></p><div class=\"txtRight\"><ul class=\"tag_list\"></ul><p class=\"tit\">26년 IRP 순입금/이전 2차 이벤트</p><ul class=\"event_txt\"><li><span>이벤트기간 : </sp",
+    "attrs": {
+     "href": "#",
+     "class": "click_area"
+    }
+   }
+  ]
+ },
+ "images": {
+  "삼성_3722": [
+   {
+    "src": "https://www.samsungpop.com/mbw/images/layout/nav_event_visual.jpg",
+    "alt": "추천종목",
+    "w": 1090,
+    "h": 440
+   },
+   {
+    "src": "https://www.samsungpop.com/common.do?cmd=down&saveKey=event.file&fileName=3841_1632_mlist.png&inlineYn=N",
+    "alt": "삼성선물 국내선물옵션 첫만남 이벤트(삼성선물 주관)(기간 : 26.3.16~6.30)",
+    "w": 887,
+    "h": 354
+   },
+   {
+    "src": "https://www.samsungpop.com/common.do?cmd=down&saveKey=event.file&fileName=3831_1623_mlist.png&inlineYn=N",
+    "alt": "선물옵션 야간거래 하고 야심찬 리워드 받자! (기간 : 26.6.1 ~ 7.31) 신청 필수",
+    "w": 1280,
+    "h": 520
+   },
+   {
+    "src": "https://www.samsungpop.com/common.do?cmd=down&saveKey=event.file&fileName=3829_1621_mlist.png&inlineYn=N",
+    "alt": "업종 대표주로 여는 첫 투자, 신규고객 웰컴이벤트(기간 : 6.1~6.30)",
+    "w": 1280,
+    "h": 520
+   },
+   {
+    "src": "https://www.samsungpop.com/common.do?cmd=down&saveKey=upload.file&fileName=251230_1551_event.jpg",
+    "alt": "삼성증권 연금저축계좌 ETF/리츠 온라인 거래수수료혜택",
+    "w": 720,
+    "h": 2640
+   }
+  ],
+  "삼성_3722_textlen": 1242,
+  "미래에셋_목록": [
+   {
+    "src": "https://securities.miraeasset.com/public/mw/menu/chatbot_menu_smaller.png",
+    "alt": "챗봇(Chatbot)",
+    "w": 416,
+    "h": 176
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202606006/2-1_MTS_list_640x280_Light.jpg",
+    "alt": "null",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202606005/2-1_MTS_list_640x280_Light.jpg",
+    "alt": "오랜만에 국장으로! 다시 시작하는 국내주식",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202606004/2-1_MTS_list_640x280_Light.jpg",
+    "alt": "국내 장외채권 순매수 이벤트(26.6~8월)",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202605014/2-1_MTS_list_640x280_Light.jpg",
+    "alt": "null",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202605012/2-1_MTS_list_640x280_Light.jpg",
+    "alt": "null",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202605011/2-1_MTS_list_640x280_Light.jpg",
+    "alt": "중개형ISA 이벤트 (26년 6월~7월)",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202603008/1774951006248.jpg",
+    "alt": "null",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202603006/1774484852572.jpg",
+    "alt": "null",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202603007/1774947324232.jpg",
+    "alt": "null",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202603005/2-1_MTS_list_640x280_Light.jpg",
+    "alt": "이벤트명: 우리 아이 부자 만들기, 미래로 떠나는 90일 투자 여행 \n기간: 2026. 03.30 ~ 07.31 (실적 집계기간 10월 31일까",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202512004/2-1_MTS_list_640x280_Light.jpg",
+    "alt": "면제부터 우대까지\n\n다이렉트로 수수료 다이어트\n\n2026.02.02~06.30\n\n신청후 90일간 0% \n\n\n\n대상 : 미래에셋증권 최초신규 고객",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202512005/2-1_MTS_list_640x280_Light.jpg",
+    "alt": "웰컴 혜택\n반가운 첫만남\n설레는 첫투자 \n2026.02.02~06.30\n대상 : 미래에셋증권 최초 신규고객\n내용 : 다이렉트 주식계좌 개설 후 ",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202512019/1767164025649.jpg",
+    "alt": "null",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202601005/2-1_MTS_list_640x280_Light_2.jpg",
+    "alt": "다이렉트 중개형ISA 온라인 매매수수료 평생우대혜택 안내",
+    "w": 640,
+    "h": 280
+   }
+  ],
+  "미래에셋_목록_textlen": 650
+ }
+}
