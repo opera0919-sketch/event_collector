@@ -1,5 +1,5 @@
 {
- "collected_at": "2026-06-16T20:53:27.583663+00:00",
+ "collected_at": "2026-06-16T21:08:58.815714+00:00",
  "firms_failed": [
   "키움증권"
  ],
@@ -14,11 +14,11 @@
    "acct_pension": true,
    "acct_irp": true,
    "acct_dc": true,
-   "acct_etc": null,
+   "acct_etc": "주식 계좌",
    "conditions": "미성년 자녀 고객 (만19세미만)",
-   "benefits": null,
-   "remarks": "상세 자동추출 실패 — 원문 확인 필요 (이미지 공지 가능성)",
-   "content_hash": "b4b51fe656525302"
+   "benefits": "우리 아이의 투자를 통해 부자가 될 수 있도록 90일간 주식을 모으는 챌린지입니다.",
+   "remarks": null,
+   "content_hash": "4ffd72bb8ad27928"
   },
   {
    "firm_name": "미래에셋증권",
@@ -32,9 +32,9 @@
    "acct_dc": false,
    "acct_etc": null,
    "conditions": null,
-   "benefits": null,
-   "remarks": "상세 자동추출 실패 — 원문 확인 필요 (이미지 공지 가능성)",
-   "content_hash": "01d2b4ed4090be4d"
+   "benefits": "다이렉트 연금저축계좌 온라인 매매수수료 우대 혜택을 제공합니다.",
+   "remarks": null,
+   "content_hash": "dc07d886bd51ac83"
   },
   {
    "firm_name": "한국투자증권",
@@ -197,10 +197,10 @@
    "acct_irp": false,
    "acct_dc": false,
    "acct_etc": null,
-   "conditions": null,
-   "benefits": null,
-   "remarks": "상세 자동추출 실패 — 원문 확인 필요 (이미지 공지 가능성)",
-   "content_hash": "cf98ea283fff4aff"
+   "conditions": "기존/신규고객 누구나 별도 신청 없이 적용되며, 2026년 12월 31일까지 진행됩니다.",
+   "benefits": "연금저축계좌 내 ETF/리츠 온라인 거래 수수료 우대. ETF 0.0042087%, 리츠 0.0036396%의 수수료가 적용됩니다.",
+   "remarks": null,
+   "content_hash": "b08d87ccab32c0ef"
   },
   {
    "firm_name": "KB증권",
@@ -309,10 +309,10 @@
    "acct_irp": true,
    "acct_dc": false,
    "acct_etc": null,
-   "conditions": null,
-   "benefits": null,
+   "conditions": "IRP 계좌 순입금 또는 이전",
+   "benefits": "배달의민족 상품권 3만원",
    "remarks": null,
-   "content_hash": "0496dc71e8c33d50"
+   "content_hash": "b3a511e33918b925"
   },
   {
    "firm_name": "NH투자증권",
@@ -355,12 +355,12 @@
    "raw_text": "NH투자증권 연금계좌3종 개설하기 이벤트기간 :2026.03.12 ~ 2027.02.19",
    "acct_pension": true,
    "acct_irp": true,
-   "acct_dc": false,
+   "acct_dc": true,
    "acct_etc": null,
-   "conditions": null,
-   "benefits": null,
+   "conditions": "연금계좌 3종 개설",
+   "benefits": "구체적인 혜택(금액, 상품권, 수수료 우대 등)은 이미지에 명시되어 있지 않습니다.",
    "remarks": null,
-   "content_hash": "c4464ed28758f9e3"
+   "content_hash": "3c9568fd765b94ff"
   },
   {
    "firm_name": "NH투자증권",
