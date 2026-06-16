@@ -86,8 +86,19 @@ async def collect():
                     print(f"[재시도실패] {firm}: {type(e).__name__}")
                     still.append(firm)
             failed = still
+
+        # 직접 수집이 WAF(EverSafe)로 막힌 증권사 → web_search 폴백(공식 도메인 한정)
+        from . import websearch
+        if "키움증권" in failed and websearch.enabled():
+            kw = websearch.fetch_kiwoom_pension()
+            if kw:
+                events.extend(kw)
+                failed = [f for f in failed if f != "키움증권"]
+
         # 연금 이벤트만 상세 보강
-        pension = [e for e in events if is_pension(e["event_name"] + " " + e.get("raw_text", ""))]
+        pension = [e for e in events
+                   if e.get("_via_search")
+                   or is_pension(e["event_name"] + " " + e.get("raw_text", ""))]
         await enrich_details(browser, pension)
         await browser.close()
     return events, failed
@@ -134,11 +145,15 @@ async def enrich_details(browser, pension_events):
 
 
 def classify_all(events):
+    """연금 이벤트 선별 + 계좌/혜택 1차 추출. content_hash/스트립은 finalize 에서.
+    (이미지 OCR 보강이 hash 계산 전에 끼어들어야 해서 분리)."""
     out = []
     for ev in events:
         # 연금 판별/계좌 판별은 목록 텍스트만 사용 — 상세 페이지의 네비/배너 문구 오염 방지
         blob = " ".join([ev["event_name"], ev.get("raw_text", "")])
-        if ev.get("_category") == "연금" or is_pension(blob):
+        if not (ev.get("_category") == "연금" or ev.get("_via_search") or is_pension(blob)):
+            continue
+        if not ev.get("_via_search"):              # web_search 결과는 계좌/혜택 이미 채워짐
             ev.update(detect_accounts(blob))
             details = extract_details(ev.get("_detail_text", ""))
             ev["conditions"] = details["conditions"] or ev.get("_conditions_hint")
@@ -148,9 +163,93 @@ def classify_all(events):
                 from .classify import parse_dates
                 s, e = parse_dates(ev["_detail_text"][:2000])
                 ev["start_date"], ev["end_date"] = ev.get("start_date") or s, ev.get("end_date") or e
-            ev["content_hash"] = content_hash(ev)
-            out.append({k: v for k, v in ev.items() if not k.startswith("_") or k == "_detail_id"})
+        out.append(ev)
     return out
+
+
+def finalize(events):
+    """content_hash 계산 + 내부(_) 키 제거 → 저장/동기화용 레코드."""
+    final = []
+    for ev in events:
+        ev["content_hash"] = content_hash(ev)
+        final.append({k: v for k, v in ev.items() if not k.startswith("_") or k == "_detail_id"})
+    return final
+
+
+OCR_BUDGET = 12          # 1회 실행 OCR 호출 상한 (비용 통제)
+OCR_TIME_BUDGET = 150    # OCR 전체 시간 예산(초)
+
+
+def _resolve_banner(ev):
+    """OCR 대상 배너 이미지 URL 확보. 스크레이퍼가 준 _image_url 우선,
+    없으면 상세 페이지를 받아 가장 그럴듯한 배너 이미지를 고른다."""
+    if ev.get("_image_url"):
+        return ev["_image_url"]
+    url = ev.get("event_url") or ""
+    if (not url.startswith("http")
+            or url.rstrip("/").endswith(("eventList", "r01.do", "CUST_09_0003.jsp"))):
+        return None
+    try:
+        from urllib.parse import urlparse
+        from bs4 import BeautifulSoup
+        from .scrapers.static_generic import fetch_html
+        soup = BeautifulSoup(fetch_html(url, retries=1), "html.parser")
+        import re as _re
+        for img in soup.find_all("img"):
+            src = img.get("src") or ""
+            if not src or _re.search(r"(logo|icon|btn|bullet|sprite|blank|dot|arrow|nav_)", src, _re.I):
+                continue
+            if _re.search(r"(cmd=down|/event/|fileUpload|mlist|/public/mw/event|upload\.file)", src, _re.I):
+                if src.startswith("/"):
+                    p = urlparse(url)
+                    src = f"{p.scheme}://{p.netloc}{src}"
+                return src if src.startswith("http") else None
+    except Exception as e:
+        print(f"[배너] 해상 실패 {ev['event_name'][:24]}: {type(e).__name__}")
+    return None
+
+
+def enrich_benefits(pension):
+    """혜택이 빈 이벤트를 이미지 OCR(또는 DB 캐시)로 보강.
+    - DB에 이미 혜택이 있으면 재사용(재-OCR 안 함) → 안정 이벤트는 1회만 OCR.
+    - ANTHROPIC_API_KEY 없으면 OCR 스킵(파이프라인 정상)."""
+    import time
+    from . import vision
+
+    existing = db.fetch_all_events() if db.enabled() else []
+    by_key = {(e["firm_name"], e["event_name"], e.get("start_date")): e for e in existing}
+    started = time.monotonic()
+    n_ocr = 0
+    for ev in pension:
+        if ev.get("benefits"):
+            continue
+        old = by_key.get((ev["firm_name"], ev["event_name"], ev.get("start_date")))
+        if old and old.get("benefits"):            # 캐시 적중
+            ev["benefits"] = old["benefits"]
+            ev["conditions"] = ev.get("conditions") or old.get("conditions")
+            ev["remarks"] = None
+            continue
+        if not vision.enabled() or n_ocr >= OCR_BUDGET or time.monotonic() - started > OCR_TIME_BUDGET:
+            continue
+        img = _resolve_banner(ev)
+        if not img:
+            continue
+        n_ocr += 1
+        res = vision.extract(img, referer=ev.get("event_url") or "", hint=ev["event_name"])
+        if not res:
+            continue
+        if res.get("benefits"):
+            ev["benefits"] = res["benefits"]
+            ev["remarks"] = None
+        if res.get("conditions"):
+            ev["conditions"] = ev.get("conditions") or res["conditions"]
+        for k in ("acct_pension", "acct_irp", "acct_dc"):
+            if res.get(k):
+                ev[k] = True
+        if res.get("acct_etc") and not ev.get("acct_etc"):
+            ev["acct_etc"] = res["acct_etc"]
+    if n_ocr:
+        print(f"[OCR] {n_ocr}건 이미지 인식 수행")
 
 
 def main():
@@ -160,6 +259,8 @@ def main():
 
     events, failed = asyncio.run(collect())
     pension = classify_all(events)
+    enrich_benefits(pension)          # 이미지 OCR / DB 캐시로 혜택 보강 (hash 계산 전)
+    pension = finalize(pension)       # content_hash + 내부키 제거
     by_firm = {}
     for ev in pension:
         by_firm[ev["firm_name"]] = by_firm.get(ev["firm_name"], 0) + 1

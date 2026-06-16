@@ -28,13 +28,45 @@ JS_ET_ANCHORS = r"""
 """
 
 
+def _parse_pc_anchors(html):
+    """PC 진행중 이벤트 JSP 의 개별 상세 앵커에서 이름/기간/상세URL 추출.
+    실측: <a href="/go.able?linkcd=s060902030000&seq=X&idt=Y&clsfcd=N&gubun=1">제목 기간</a>
+    """
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(html, "html.parser")
+    events, seen = [], set()
+    for a in soup.find_all("a", href=True):
+        href = a["href"]
+        if "linkcd=s060902030000" not in href or "seq=" not in href:
+            continue
+        text = " ".join(a.get_text(" ", strip=True).split())
+        m = _PERIOD_RE.search(text)
+        name = (text[: m.start()] if m else text).strip(" :~-·.")
+        name = re.sub(r"(자세히|자세히보기|바로가기)$", "", name).strip()
+        if not name or len(name) < 4 or name in seen:
+            continue
+        seen.add(name)
+        url = "https://www.kbsec.com" + href if href.startswith("/") else href
+        ev = {"firm_name": "KB증권", "event_name": name[:120],
+              "start_date": None, "end_date": None,
+              "event_url": url, "raw_text": text}
+        if m:
+            ev["start_date"] = f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
+            ev["end_date"] = f"{m.group(4)}-{int(m.group(5)):02d}-{int(m.group(6)):02d}"
+        events.append(ev)
+    return events
+
+
 async def scrape(browser):
-    # 1차: PC 진행중 이벤트 JSP (서버렌더링 기대) — requests
+    # 1차: PC 진행중 이벤트 JSP (서버렌더링) — requests + 상세 앵커 파싱
     from .static_generic import fetch_html, parse_generic, debug_static
     try:
         html = fetch_html(DESKTOP_LIST_URL, retries=3)
+        events = _parse_pc_anchors(html)
+        if len(events) >= 3:                       # 상세URL 포함 (OCR 가능)
+            return events
         events = parse_generic(html, "KB증권", DESKTOP_LIST_URL)
-        if events:
+        if events:                                 # 폴백: 이름/기간만, 목록URL
             return events
         debug_static(html, "KB증권(PC)")
     except Exception as e:
