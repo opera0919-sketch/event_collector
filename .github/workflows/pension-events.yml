@@ -38,7 +38,7 @@ jobs:
           MAIL_SENDER: ${{ secrets.MAIL_SENDER }}
           MAIL_APP_PASSWORD: ${{ secrets.MAIL_APP_PASSWORD }}
           MAIL_RECIPIENTS: ${{ secrets.MAIL_RECIPIENTS }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python -m pension_monitor.main
 
       - name: Commit data & report

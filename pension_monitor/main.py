@@ -176,8 +176,9 @@ def finalize(events):
     return final
 
 
-OCR_BUDGET = 12          # 1회 실행 OCR 호출 상한 (비용 통제)
-OCR_TIME_BUDGET = 150    # OCR 전체 시간 예산(초)
+OCR_BUDGET = 10          # 1회 실행 OCR 호출 상한 (비용 + 무료티어 RPD 통제)
+OCR_TIME_BUDGET = 200    # OCR 전체 시간 예산(초)
+OCR_PACE_SEC = 6.5       # Gemini 무료티어 10 RPM 준수용 호출 간 간격
 
 
 def _resolve_banner(ev):
@@ -212,7 +213,7 @@ def _resolve_banner(ev):
 def enrich_benefits(pension):
     """혜택이 빈 이벤트를 이미지 OCR(또는 DB 캐시)로 보강.
     - DB에 이미 혜택이 있으면 재사용(재-OCR 안 함) → 안정 이벤트는 1회만 OCR.
-    - ANTHROPIC_API_KEY 없으면 OCR 스킵(파이프라인 정상)."""
+    - GEMINI_API_KEY 없으면 OCR 스킵(파이프라인 정상)."""
     import time
     from . import vision
 
@@ -234,6 +235,8 @@ def enrich_benefits(pension):
         img = _resolve_banner(ev)
         if not img:
             continue
+        if n_ocr:
+            time.sleep(OCR_PACE_SEC)          # 무료티어 RPM 준수
         n_ocr += 1
         res = vision.extract(img, referer=ev.get("event_url") or "", hint=ev["event_name"])
         if not res:
