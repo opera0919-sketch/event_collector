@@ -1,5 +1,5 @@
 {
- "collected_at": "2026-06-16T21:08:58.815714+00:00",
+ "collected_at": "2026-06-17T02:40:16.384689+00:00",
  "firms_failed": [
   "키움증권"
  ],
@@ -14,11 +14,11 @@
    "acct_pension": true,
    "acct_irp": true,
    "acct_dc": true,
-   "acct_etc": "주식 계좌",
+   "acct_etc": null,
    "conditions": "미성년 자녀 고객 (만19세미만)",
    "benefits": "우리 아이의 투자를 통해 부자가 될 수 있도록 90일간 주식을 모으는 챌린지입니다.",
    "remarks": null,
-   "content_hash": "4ffd72bb8ad27928"
+   "content_hash": "7e4a16cd12e52597"
   },
   {
    "firm_name": "미래에셋증권",
@@ -355,7 +355,7 @@
    "raw_text": "NH투자증권 연금계좌3종 개설하기 이벤트기간 :2026.03.12 ~ 2027.02.19",
    "acct_pension": true,
    "acct_irp": true,
-   "acct_dc": true,
+   "acct_dc": false,
    "acct_etc": null,
    "conditions": "연금계좌 3종 개설",
    "benefits": "구체적인 혜택(금액, 상품권, 수수료 우대 등)은 이미지에 명시되어 있지 않습니다.",
