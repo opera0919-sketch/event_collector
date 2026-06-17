@@ -39,6 +39,8 @@ def _get(path, params=None):
 def _post(path, payload, prefer="return=representation"):
     r = requests.post(f"{SUPABASE_URL}/rest/v1/{path}", headers=_headers(prefer),
                       json=payload, timeout=30)
+    if not r.ok:
+        print(f"[db] POST {path} {r.status_code}: {r.text[:300]}")
     r.raise_for_status()
     return r.json() if r.text else None
 
@@ -46,8 +48,19 @@ def _post(path, payload, prefer="return=representation"):
 def _patch(path, params, payload):
     r = requests.patch(f"{SUPABASE_URL}/rest/v1/{path}", headers=_headers("return=representation"),
                        params=params, json=payload, timeout=30)
+    if not r.ok:
+        print(f"[db] PATCH {path} {r.status_code}: {r.text[:300]}")
     r.raise_for_status()
     return r.json() if r.text else None
+
+
+def _safe(fn, *a, **k):
+    """DB 쓰기 1건을 안전 실행 — 실패해도 파이프라인(리포트/메일)은 계속."""
+    try:
+        return fn(*a, **k)
+    except Exception as e:
+        print(f"[db] 쓰기 실패(무시): {type(e).__name__}: {str(e)[:160]}")
+        return None
 
 
 def fetch_all_events():
@@ -67,6 +80,7 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
     scraped_keys = set()
     failed_set = set(firms_failed)
 
+    # ── 1단계: 변동 판정(순수 계산) + DB 쓰기는 건별 안전 실행 ──────
     new_events, changed = [], []
     for ev in scraped:
         key = (ev["firm_name"], ev["event_name"], ev.get("start_date"))
@@ -81,7 +95,7 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
                     "acct_pension", "acct_irp", "acct_dc", "acct_etc",
                     "conditions", "benefits", "remarks", "event_url", "content_hash")}
                 row["last_seen_at"] = now
-                created = _post("pension_events", row)
+                created = _safe(_post, "pension_events", row)
                 ev["id"] = created[0]["id"] if created else None
         else:
             ev["id"] = old["id"]
@@ -95,7 +109,7 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
             if old["status"] == "진행중" and ev["status"] == "종료":
                 updates["closed_at"] = now
             if enabled():
-                _patch("pension_events", {"id": f"eq.{old['id']}"}, updates)
+                _safe(_patch, "pension_events", {"id": f"eq.{old['id']}"}, updates)
 
     # 목록 미노출 처리 (수집 실패한 증권사는 건드리지 않음 → 오판 방지)
     closed = []
@@ -108,17 +122,18 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
         if missed >= MISSED_LIMIT or (old.get("end_date") and old["end_date"] < today):
             closed.append(old)
             if enabled():
-                _patch("pension_events", {"id": f"eq.{old['id']}"},
-                       {"status": "종료", "closed_at": now, "missed_count": missed})
+                _safe(_patch, "pension_events", {"id": f"eq.{old['id']}"},
+                      {"status": "종료", "closed_at": now, "missed_count": missed})
         elif enabled():
-            _patch("pension_events", {"id": f"eq.{old['id']}"}, {"missed_count": missed})
+            _safe(_patch, "pension_events", {"id": f"eq.{old['id']}"}, {"missed_count": missed})
 
     active = [e for e in scraped if e["status"] == "진행중"]
     result = {"new": new_events, "closed": closed, "changed": changed,
               "active": active, "run_id": None}
 
+    # ── 2단계: 실행 로그/변동이력 기록 (실패해도 리포트·메일에는 영향 없음) ──
     if enabled():
-        run = _post("monitoring_runs", {
+        run = _safe(_post, "monitoring_runs", {
             "trigger_type": trigger_type,
             "firms_ok": 6 - len(firms_failed),
             "firms_failed": len(firms_failed),
@@ -131,14 +146,18 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
         result["run_id"] = run_id
         logs = []
         for ev in new_events:
-            logs.append({"run_id": run_id, "event_id": ev.get("id"), "change_type": "신규"})
+            if ev.get("id"):
+                logs.append({"run_id": run_id, "event_id": ev["id"], "change_type": "신규"})
         for old in closed:
-            logs.append({"run_id": run_id, "event_id": old["id"], "change_type": "종료"})
+            if old.get("id"):
+                logs.append({"run_id": run_id, "event_id": old["id"], "change_type": "종료"})
         for ev, f, o, n in changed:
-            logs.append({"run_id": run_id, "event_id": ev.get("id"), "change_type": "변경",
-                         "field_name": f, "old_value": str(o or ""), "new_value": str(n or "")})
+            if ev.get("id"):
+                logs.append({"run_id": run_id, "event_id": ev["id"], "change_type": "변경",
+                             "field_name": f[:60], "old_value": str(o or "")[:2000],
+                             "new_value": str(n or "")[:2000]})
         if logs:
-            _post("event_changes", logs, prefer="return=minimal")
+            _safe(_post, "event_changes", logs, prefer="return=minimal")
     return result
 
 

@@ -18,28 +18,27 @@ _PERIOD_RE = re.compile(r"이벤트기간\s*:?\s*(\d{4}\.\d{1,2}\.\d{1,2})\s*~\s
 
 JS_ITEMS = r"""
 () => {
+  // 실측 구조: <a class="click_area"> 카드 안에
+  //   <p class="event_img"><img src="/fileUpload/nhmobile/event/*.png" alt="이벤트명"></p>
+  //   <div class="txtRight"> ... 이벤트기간 :YYYY.MM.DD ~ YYYY.MM.DD
+  // → 이름은 img alt(깨끗함), 혜택은 배너 이미지(OCR 대상)
   const out = [];
-  // 실측: 이벤트명+기간이 div.txtRight 에 함께 있음
-  let nodes = Array.from(document.querySelectorAll('div.txtRight'));
-  if (!nodes.length) {
-    nodes = Array.from(document.querySelectorAll('li'))
+  const seen = new Set();
+  let cards = Array.from(document.querySelectorAll('a.click_area'));
+  if (!cards.length) {
+    cards = Array.from(document.querySelectorAll('li'))
       .filter(li => (li.innerText || '').includes('이벤트기간') && !li.querySelector('li'));
   }
-  for (const el of nodes) {
+  for (const el of cards) {
     const t = (el.innerText || '').trim().replace(/\s+/g, ' ');
     if (!t.includes('이벤트기간')) continue;
-    const a = el.closest('a[href]') || el.querySelector('a[href]');
-    const li = el.closest('li');
-    let mno = null;
-    for (const node of [a, el, li]) {
-      if (!node || !node.getAttributeNames) continue;
-      for (const attr of node.getAttributeNames()) {
-        const m = (node.getAttribute(attr) || '').match(/mNo[='"]?(\d{2,})/);
-        if (m) { mno = m[1]; break; }
-      }
-      if (mno) break;
-    }
-    out.push({ text: t, mno });
+    if (seen.has(t)) continue; seen.add(t);
+    const img = el.querySelector('img');
+    out.push({
+      text: t,
+      alt: img ? (img.getAttribute('alt') || '') : '',
+      src: img ? (img.getAttribute('src') || '') : '',
+    });
     if (out.length >= 60) break;
   }
   return out;
@@ -70,19 +69,23 @@ async def scrape(browser):
             m = _PERIOD_RE.search(text)
             if not m:
                 continue
-            name = text.split("이벤트기간")[0].strip(" :")
+            # 이름: img alt 우선(깨끗), 없으면 텍스트 앞부분
+            name = (it.get("alt") or "").strip() or text.split("이벤트기간")[0].strip(" :")
             if not name or len(name) < 3 or name in seen:
                 continue
             seen.add(name)
-            url = (f"https://m.nhsec.com/customer/event/eventView?mNo={it['mno']}"
-                   if it.get("mno") else LIST_URLS[0])
+            # 배너 이미지(OCR 대상) — 혜택/조건이 이미지에 있음
+            src = it.get("src") or ""
+            image_url = ("https://m.nhsec.com" + src if src.startswith("/")
+                         else (src if src.startswith("http") else None))
             events.append({
                 "firm_name": "NH투자증권",
                 "event_name": name[:120],
                 "start_date": _to_iso(m.group(1)),
                 "end_date": _to_iso(m.group(2)),
-                "event_url": url,
+                "event_url": LIST_URLS[0],
                 "raw_text": text,
+                "_image_url": image_url,
             })
         if not events:
             await debug_dump(page, "NH투자증권")

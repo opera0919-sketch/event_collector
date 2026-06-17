@@ -25,6 +25,7 @@ JS_LI_ITEMS = r"""
     out.push({
       text: t,
       alt: img ? (img.getAttribute('alt') || '') : '',
+      src: img ? (img.currentSrc || img.src || img.getAttribute('src') || '') : '',
       href: a ? a.href : null,
       html: out.length < 2 ? li.outerHTML.slice(0, 500) : null,
     });
@@ -66,6 +67,9 @@ async def scrape(browser):
                     print(f"[debug:미래에셋] li 구조: {it['html']}")
                 continue
             seen.add(name)
+            src = it.get("src") or ""
+            image_url = src if src.startswith("http") else (
+                "https://securities.miraeasset.com" + src if src.startswith("/") else None)
             events.append({
                 "firm_name": "미래에셋증권",
                 "event_name": name[:120],
@@ -74,6 +78,7 @@ async def scrape(browser):
                 "event_url": it.get("href") or LIST_URL,
                 "raw_text": " ".join((name + " " + alt).split())[:300],
                 "_conditions_hint": cond_hint,
+                "_image_url": image_url,
             })
         if not events:
             await debug_dump(page, "미래에셋증권")
