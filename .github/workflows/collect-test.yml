@@ -27,9 +27,10 @@ jobs:
         run: |
           pip install playwright requests beautifulsoup4
           playwright install --with-deps chromium
-      - name: Collect only (no DB/mail)
+      - name: Collect only (no DB/mail; OCR on detail-page images)
         env:
           DEBUG: '1'
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python -m pension_monitor.main --collect-only
       - name: Commit collected data
         if: always()
