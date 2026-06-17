@@ -142,7 +142,8 @@ async def enrich_details(browser, pension_events):
         if fetched >= MAX_DETAIL_FETCH or time.monotonic() - started > DETAIL_BUDGET_SEC:
             print(f"[상세] 예산 도달 — {fetched}건 조회 후 중단")
             break
-        url = ev.get("event_url") or ""
+        # _content_url: 본문이 별도 엔드포인트에 있는 경우(NH getContent 등) 그쪽을 받는다.
+        url = ev.get("_content_url") or ev.get("event_url") or ""
         list_like = url.rstrip("/").endswith(("eventList", "r01.do", "CUST_09_0003.jsp"))
         if not url.startswith("http") or list_like:
             continue
@@ -232,7 +233,7 @@ def _resolve_banner(ev):
     없으면 상세 페이지를 받아 가장 그럴듯한 배너 이미지를 고른다."""
     if ev.get("_image_url"):
         return ev["_image_url"]
-    url = ev.get("event_url") or ""
+    url = ev.get("_content_url") or ev.get("event_url") or ""
     if (not url.startswith("http")
             or url.rstrip("/").endswith(("eventList", "r01.do", "CUST_09_0003.jsp"))):
         return None
