@@ -94,6 +94,38 @@ def probe_nh_json():
     return out
 
 
+# ── NH 각 이벤트 mContent 의 이미지/파일 구조 (requests) ───────────
+def probe_nh_images():
+    """OCR 대상 선정용: 각 이벤트의 mContent <img> 목록 + mFile1~3 를 본다."""
+    out = {}
+    url = "https://m.nhsec.com/customer/event/eventList.json"
+    try:
+        r = requests.get(url, headers={"User-Agent": UA,
+                         "X-Requested-With": "XMLHttpRequest",
+                         "Referer": "https://m.nhsec.com/customer/event/eventList"}, timeout=30)
+        j = r.json()
+        content = (((j or {}).get("result") or {}).get("content")) or []
+        items = []
+        for it in content[:10]:
+            if not isinstance(it, dict):
+                continue
+            mc = it.get("mContent") or ""
+            imgs = re.findall(r'<img[^>]+src=["\']([^"\']+)["\']', mc, re.I)
+            items.append({
+                "mTitle": (it.get("mTitle") or "")[:50],
+                "mNo": it.get("mNo"),
+                "mContent_len": len(mc),
+                "mContent_text": re.sub(r"<[^>]+>", " ", mc)[:300],
+                "imgs": [s[:140] for s in imgs][:8],
+                "mFile1": it.get("mFile1"), "mFile2": it.get("mFile2"),
+                "mFile3": it.get("mFile3"), "mFilePath": it.get("mFilePath"),
+            })
+        out["items"] = items
+    except Exception as e:
+        out["error"] = f"{type(e).__name__}: {str(e)[:150]}"
+    return out
+
+
 # ── 키움/NH/이미지: Playwright ─────────────────────────────────────
 async def probe_kiwoom(browser):
     out = {}
@@ -419,6 +451,7 @@ async def probe_images(browser):
 async def main():
     findings["kb"] = probe_kb()
     findings["nh_json"] = probe_nh_json()
+    findings["nh_images"] = probe_nh_images()
     from playwright.async_api import async_playwright
     async with async_playwright() as pw:
         browser = await pw.chromium.launch()
