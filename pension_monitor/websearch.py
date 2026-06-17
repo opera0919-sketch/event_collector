@@ -59,9 +59,11 @@ def fetch_kiwoom_pension(firm="키움증권"):
         text = _search(_PROMPT)
         start, end = text.find("["), text.rfind("]")
         if start < 0 or end < 0:
-            print("[websearch] 키움 JSON 미발견")
+            print(f"[websearch] 키움 JSON 미발견. 응답앞부분: {text[:200]!r}")
             return []
         rows = json.loads(text[start:end + 1])
+        if not rows:
+            print(f"[websearch] 키움 빈 배열. 응답앞부분: {text[:200]!r}")
     except Exception as e:
         print(f"[websearch] 키움 수집 실패: {type(e).__name__}: {str(e)[:140]}")
         return []
