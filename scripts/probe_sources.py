@@ -262,6 +262,37 @@ _NH_CLICK_JS = r"""
 """
 
 
+async def probe_nh_mno(browser):
+    """NH: 각 카드의 mNo 가 어디서 오는지(컨테이너 HTML / 인라인 스크립트) 파악."""
+    out = {}
+    url = "https://m.nhsec.com/customer/event/eventList"
+    page = await browser.new_page(user_agent=UA, locale="ko-KR")
+    try:
+        await page.goto(url, wait_until="commit", timeout=45000)
+        await page.wait_for_timeout(7000)
+        out["containers"] = await page.evaluate(r"""
+        () => Array.from(document.querySelectorAll('a.click_area')).slice(0,3).map(a => {
+          const li = a.closest('li') || a.parentElement;
+          const all = {};
+          for (const el of [a, li, ...a.querySelectorAll('*')]) {
+            for (const n of (el.getAttributeNames?el.getAttributeNames():[])) {
+              if (/mno|seq|idx|data-|id|num/i.test(n)) all[el.tagName+'.'+n] = el.getAttribute(n);
+            }
+          }
+          return { liHtml: (li?li.outerHTML:'').slice(0,800), dataAttrs: all };
+        })
+        """)
+        html = await page.content()
+        out["mno_hits"] = list(dict.fromkeys(re.findall(r".{0,40}mNo.{0,60}", html, re.I)))[:20]
+        out["fn_hits"] = list(dict.fromkeys(
+            re.findall(r"(?:function\s+\w+|on\w+\s*=|\.click_area)[^\n;{]{0,90}", html)))[:25]
+    except Exception as e:
+        out["error"] = f"{type(e).__name__}: {str(e)[:150]}"
+    finally:
+        await page.close()
+    return out
+
+
 async def probe_detail(browser):
     out = {}
     out["미래에셋"] = await probe_detail_nav(
@@ -270,6 +301,7 @@ async def probe_detail(browser):
     out["NH"] = await probe_detail_nav(
         browser, "https://m.nhsec.com/customer/event/eventList",
         _NH_ITEM_JS, _NH_CLICK_JS, wait_list=7000)
+    out["NH_mno"] = await probe_nh_mno(browser)
     return out
 
 
