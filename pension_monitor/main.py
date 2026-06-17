@@ -236,7 +236,7 @@ def finalize(events):
     return final
 
 
-OCR_BUDGET = 16          # 1회 실행 OCR 호출 상한 (캐시 덕에 보통 2주차부터 급감)
+OCR_BUDGET = 24          # 1회 실행 OCR 호출 상한 (콜드런에 6개사 상세 이미지 커버; 캐시 덕에 2주차부터 급감)
 OCR_TIME_BUDGET = 300    # OCR 전체 시간 예산(초)
 OCR_PACE_SEC = 6.5       # Gemini 무료티어 10 RPM 준수용 호출 간 간격
 
