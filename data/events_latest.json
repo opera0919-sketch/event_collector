@@ -1,5 +1,5 @@
 {
- "collected_at": "2026-06-17T02:40:16.384689+00:00",
+ "collected_at": "2026-06-17T02:49:58.552783+00:00",
  "firms_failed": [
   "키움증권"
  ],
@@ -205,24 +205,24 @@
   {
    "firm_name": "KB증권",
    "event_name": "연금, TDF & ETF 굴려볼까? 시즌 2",
-   "start_date": null,
-   "end_date": null,
+   "start_date": "2026-03-31",
+   "end_date": "2026-04-01",
    "event_url": "https://www.kbsec.com/go.able?linkcd=s060902030000&seq=10009679&idt=20260331&clsfcd=4&gubun=1",
    "raw_text": "연금, TDF & ETF 굴려볼까? 시즌 2",
    "acct_pension": true,
    "acct_irp": true,
    "acct_dc": false,
    "acct_etc": null,
-   "conditions": null,
-   "benefits": null,
+   "conditions": "- 본 이벤트는 개인(신용)정보 선택 동의(편의서비스) 및 문자 동의 고객에 한하여 지급 되며, 이벤트 종료일 및 추첨일 기준 개인(신용)정보 선택 동의(편의서비스) 등과 관련 철회가 있을 경우, 이벤트 대상에서 제외됩니다. [정보제공동의 바로가기] / - 순매수 금액은 기간 중 매수체결금액-매도체결금액(결제일 기준)으로 계산되며, 이벤트 이전 보유 중인  | * 지급일 기준 개인(신용)정보 선택동의(편의서비스) 등과 관련 철회가 있을 경우, 이벤트 대상에서 제외됩니다. / * 본 이벤트는 당사 사정에 따라 일정이 변경되거나 중단될 수 있습니다. (단, 기 조건 충족고객 및 당첨고객 제외)",
+   "benefits": "조건 : 100만원 이상 ~ 300만원 미만, 경품 : 스타벅스 땡스 어 라떼 세트(1만원 상당) 1매, 추첨인원 : 전원지급 | 조건 : 300만원 이상 ~ 500만원 미만, 경품 : 스타벅스 땡스 어 라떼 세트(1만원 상당) 2매, 추첨인원 : 전원지급 | 조건 : 500만원 이상, 경품 : 스타벅스 땡스 어 라떼 세트(1만원 상당) 3매, 추첨인원 : 전원지급 | 조건 : 100만원 이상 ~ 300만원 미만, 경품 : 스타벅스 땡스 어 라떼 세트(1만원 상당) 1매, 추첨인원 : 500명 | 조건 : 300만원 이상 ~ 500만원 미만, 경품 : 스타벅스 땡스 어 라떼 세트(1만원 상당) 2매, 추첨인원 : 300명 | 조건 : 500만원 이상, 경품 : 스타벅스 땡스 어 라떼 세트(1만원 상당) 3매, 추첨인원 : 200명 | 조건 : 100만원 이상 ~ 300만원 미만, 경품 : 스타벅스 e카드 교환권 1만원권, 추첨인원 : 전원지급 | 조건 : 300만원 이상 ~ 500만",
    "remarks": null,
-   "content_hash": "d0a272e247163427"
+   "content_hash": "1ee9c3afea30cebe"
   },
   {
    "firm_name": "KB증권",
    "event_name": "퇴직연금 DC, 첫 만남 이벤트",
-   "start_date": null,
-   "end_date": null,
+   "start_date": "2026-03-31",
+   "end_date": "2026-04-01",
    "event_url": "https://www.kbsec.com/go.able?linkcd=s060902030000&seq=10009676&idt=20260331&clsfcd=4&gubun=1",
    "raw_text": "퇴직연금 DC, 첫 만남 이벤트",
    "acct_pension": false,
@@ -230,31 +230,31 @@
    "acct_dc": true,
    "acct_etc": null,
    "conditions": null,
-   "benefits": null,
+   "benefits": "- 순입금 1천만원 이상 : 혜택 신세계이마트상품권 3만원 | - 순입금 1원 이상 ~ 1천만원 미만 : 혜택 신세계이마트상품권 1만원 | *  퇴직연금 감독규정에 따라 KB증권에서 제공되는 퇴직연금(DC/IRP) 관련 이벤트 혜택은 동일 연도(2026년) 기준 고객 1인당 합산 최대 3만원으로 제한되며,  4분기 본 이벤트 혜택 고객은 2027년 연간 한도에 | - 퇴직연금 감독규정에 따라 KB증권에서 제공되는 퇴직연금(DC/IRP) 관련 이벤트 혜택은 동일 연도(2026년) 기준 고객 1인당 합산 최대 3만원으로 제한되며, 4분기 본 이벤트 혜택 고객은 2027년 연간 한도에 합산됩니다.",
    "remarks": null,
-   "content_hash": "66be2aa517f6b6c1"
+   "content_hash": "6cbc4b38ed07c293"
   },
   {
    "firm_name": "KB증권",
    "event_name": "2026 시즌2 연금저축 순입금(이전) 이벤트",
-   "start_date": null,
-   "end_date": null,
+   "start_date": "2026-03-30",
+   "end_date": "2026-04-01",
    "event_url": "https://www.kbsec.com/go.able?linkcd=s060902030000&seq=10009671&idt=20260330&clsfcd=4&gubun=1",
    "raw_text": "2026 시즌2 연금저축 순입금(이전) 이벤트",
    "acct_pension": true,
    "acct_irp": false,
    "acct_dc": false,
    "acct_etc": null,
-   "conditions": null,
-   "benefits": null,
+   "conditions": "- 이벤트 대상 : 연금저축 계좌 보유 (기존/신규) 개인고객 / - 혜택 지급 일자 : 2026년 8월 말일경 (신세계상품권, ETF쿠폰, 추첨 경품)",
+   "benefits": "- 최초 신규고객이라면 개설 & 1백만원 순입금시 전원 2만원 쿠폰 혜택 | - 순입금 구간별 최대 200만원 상품권 혜택 (★타사 이전 2배 인정) | - 펀드 매수 시 연금저축 ETF 쿠폰 최대 30만원 혜택 | 1백만원 이상 순입금시 전원 ETF 쿠폰 혜택 | * 잔고유지기간(7/1~7/31) 1원이라도 출금(해지/이전/매도 포함) 발생 시 혜택 대상에서 제외 | * 연금저축 ETF 쿠폰은 M-able > My쿠폰함으로 지급 예정 (최소주문금액 100만원 이상 시 사용 가능) | 최대 200만원 신세계 상품권 증정 | (예, 타사에서 2억 5천만원 이전 → 5억으로 인정 : 200만원 혜택) | 순입금 구간 : 1백만원 이상 ~ 3백만원 미만 / 혜택 : 신세계상품권 5천원 | 순입금 구간 : 3백만원 이상 ~ 5백만원 미만 / 혜택 : 신세계상품권 1만원 | 순입금 구간 : 5백만원 이상 ~ 1천만원 미만 / 혜택 : 신세계상품권 2만원 | 순입금 구간 : 1천만원 이상 ~ ",
    "remarks": null,
-   "content_hash": "0f30a298d6b97dc2"
+   "content_hash": "83c5cdc5e9113201"
   },
   {
    "firm_name": "KB증권",
    "event_name": "2026 시즌2 IRP 순입금(이전) 이벤트",
    "start_date": null,
-   "end_date": null,
+   "end_date": "2026-03-30",
    "event_url": "https://www.kbsec.com/go.able?linkcd=s060902030000&seq=10009668&idt=20260330&clsfcd=4&gubun=1",
    "raw_text": "2026 시즌2 IRP 순입금(이전) 이벤트",
    "acct_pension": false,
@@ -263,14 +263,14 @@
    "acct_etc": null,
    "conditions": null,
    "benefits": null,
-   "remarks": null,
-   "content_hash": "d25e93d8c5e9f855"
+   "remarks": "상세 자동추출 실패 — 원문 확인 필요 (이미지 공지 가능성)",
+   "content_hash": "49007eddad25592b"
   },
   {
    "firm_name": "KB증권",
    "event_name": "2026년 연금저축 온라인 ETF 매매수수료 혜택 이벤트",
-   "start_date": null,
-   "end_date": null,
+   "start_date": "2025-12-31",
+   "end_date": "2026-01-01",
    "event_url": "https://www.kbsec.com/go.able?linkcd=s060902030000&seq=10009370&idt=20251231&clsfcd=4&gubun=1",
    "raw_text": "2026년 연금저축 온라인 ETF 매매수수료 혜택 이벤트",
    "acct_pension": true,
@@ -279,14 +279,14 @@
    "acct_etc": null,
    "conditions": null,
    "benefits": null,
-   "remarks": null,
-   "content_hash": "c98e51c59bba8a22"
+   "remarks": "상세 자동추출 실패 — 원문 확인 필요 (이미지 공지 가능성)",
+   "content_hash": "6058ca7de0c7db0c"
   },
   {
    "firm_name": "KB증권",
    "event_name": "IRP 무료 수수료 혜택 이벤트",
    "start_date": null,
-   "end_date": null,
+   "end_date": "2024-10-25",
    "event_url": "https://www.kbsec.com/go.able?linkcd=s060902030000&seq=10007688&idt=20241025&clsfcd=4&gubun=1",
    "raw_text": "IRP 무료 수수료 혜택 이벤트",
    "acct_pension": false,
@@ -295,8 +295,8 @@
    "acct_etc": null,
    "conditions": null,
    "benefits": null,
-   "remarks": null,
-   "content_hash": "c0c598d4f1eb7610"
+   "remarks": "상세 자동추출 실패 — 원문 확인 필요 (이미지 공지 가능성)",
+   "content_hash": "5964164ff3051e4e"
   },
   {
    "firm_name": "NH투자증권",
