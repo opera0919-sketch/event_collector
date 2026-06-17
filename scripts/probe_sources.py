@@ -53,6 +53,47 @@ def probe_kb():
     return out
 
 
+# ── NH eventList.json 구조 (requests) ─────────────────────────────
+def probe_nh_json():
+    out = {}
+    url = "https://m.nhsec.com/customer/event/eventList.json"
+    try:
+        r = requests.get(url, headers={"User-Agent": UA,
+                         "X-Requested-With": "XMLHttpRequest",
+                         "Referer": "https://m.nhsec.com/customer/event/eventList"}, timeout=30)
+        out["status"] = r.status_code
+        out["len"] = len(r.text)
+        try:
+            j = r.json()
+        except Exception:
+            out["not_json_head"] = r.text[:500]
+            return out
+
+        def walk(node, path, depth=0):
+            """이벤트 목록으로 보이는 list[dict] 를 찾아 키/샘플을 기록."""
+            if depth > 5:
+                return
+            if isinstance(node, list) and node and isinstance(node[0], dict):
+                keys = sorted(node[0].keys())
+                if any(re.search(r"mNo|title|subject|nm|name|start|end|period|date|content",
+                                 " ".join(keys), re.I)):
+                    out.setdefault("lists", []).append({
+                        "path": path, "count": len(node), "keys": keys,
+                        "sample": {k: str(v)[:120] for k, v in node[0].items()}})
+                for i, it in enumerate(node[:2]):
+                    walk(it, f"{path}[{i}]", depth + 1)
+            elif isinstance(node, dict):
+                out.setdefault("top_paths", []).append(path or "root")
+                for k, v in node.items():
+                    walk(v, f"{path}.{k}" if path else k, depth + 1)
+
+        walk(j, "")
+        out["top_paths"] = list(dict.fromkeys(out.get("top_paths", [])))[:30]
+    except Exception as e:
+        out["error"] = f"{type(e).__name__}: {str(e)[:150]}"
+    return out
+
+
 # ── 키움/NH/이미지: Playwright ─────────────────────────────────────
 async def probe_kiwoom(browser):
     out = {}
@@ -377,6 +418,7 @@ async def probe_images(browser):
 
 async def main():
     findings["kb"] = probe_kb()
+    findings["nh_json"] = probe_nh_json()
     from playwright.async_api import async_playwright
     async with async_playwright() as pw:
         browser = await pw.chromium.launch()
