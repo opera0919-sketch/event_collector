@@ -64,8 +64,7 @@ async def collect():
                     failed.append(firm)
                 events.extend(got)
             except Exception as e:
-                print(f"[수집실패] {firm}: {type(e).__name__}: {e}")
-                traceback.print_exc()
+                print(f"[수집실패] {firm}: {type(e).__name__}: {str(e)[:160]}")
                 failed.append(firm)
 
         # 간헐 지연/거부 대응: 실패 증권사 1회 재시도 (구조적 실패 증권사는 제외)

@@ -86,8 +86,9 @@ def _generate(parts, schema=None, retries=2):
     headers = {"x-goog-api-key": API_KEY, "content-type": "application/json"}
     for attempt in range(retries + 1):
         r = requests.post(url, headers=headers, data=json.dumps(body), timeout=60)
-        if r.status_code == 429 and attempt < retries:   # 무료 티어 RPM 초과 → 대기 후 재시도
-            time.sleep(20)
+        # 429(RPM 초과)·5xx(일시 과부하/503) → 대기 후 재시도
+        if r.status_code in (429, 500, 502, 503, 529) and attempt < retries:
+            time.sleep(10 * (attempt + 1))
             continue
         r.raise_for_status()
         data = r.json()

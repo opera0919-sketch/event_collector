@@ -12,6 +12,7 @@ GEMINI_API_KEY 없으면 no-op.
 
 import json
 import os
+import time
 
 import requests
 
@@ -33,15 +34,20 @@ def enabled() -> bool:
     return bool(API_KEY)
 
 
-def _search(prompt):
+def _search(prompt, retries=2):
     body = {
         "contents": [{"parts": [{"text": prompt}]}],
         "tools": [{"google_search": {}}],
         "generationConfig": {"temperature": 0},
     }
     url = ENDPOINT.format(model=MODEL)
-    r = requests.post(url, headers={"x-goog-api-key": API_KEY, "content-type": "application/json"},
-                      data=json.dumps(body), timeout=120)
+    headers = {"x-goog-api-key": API_KEY, "content-type": "application/json"}
+    for attempt in range(retries + 1):
+        r = requests.post(url, headers=headers, data=json.dumps(body), timeout=120)
+        if r.status_code in (429, 500, 502, 503, 529) and attempt < retries:  # 일시 과부하 → 재시도
+            time.sleep(10 * (attempt + 1))
+            continue
+        break
     r.raise_for_status()
     data = r.json()
     cands = data.get("candidates") or []
