@@ -8,5 +8,5 @@ SCRAPERS = [
     ("삼성증권", samsungpop.scrape, True),
     ("키움증권", kiwoom.scrape, True),  # 정적 우선이지만 모바일 렌더 폴백에 browser 필요
     ("KB증권", kbsec.scrape, True),
-    ("NH투자증권", nhqv.scrape, True),
+    ("NH투자증권", nhqv.scrape, False),  # eventList.json(상세 본문 포함) requests 수집
 ]

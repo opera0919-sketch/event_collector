@@ -142,7 +142,10 @@ async def enrich_details(browser, pension_events):
         if fetched >= MAX_DETAIL_FETCH or time.monotonic() - started > DETAIL_BUDGET_SEC:
             print(f"[상세] 예산 도달 — {fetched}건 조회 후 중단")
             break
-        # _content_url: 본문이 별도 엔드포인트에 있는 경우(NH getContent 등) 그쪽을 받는다.
+        # 스크레이퍼가 이미 상세 본문을 채운 경우(NH eventList.json) 재조회 불필요.
+        if ev.get("_detail_text"):
+            continue
+        # _content_url: 본문이 별도 엔드포인트에 있는 경우 그쪽을 받는다.
         url = ev.get("_content_url") or ev.get("event_url") or ""
         list_like = url.rstrip("/").endswith(("eventList", "r01.do", "CUST_09_0003.jsp"))
         if not url.startswith("http") or list_like:
