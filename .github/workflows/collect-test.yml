@@ -1,57 +1,36 @@
 name: collect-test
 
 # 상세-우선 수집 검증용: DB/메일 없이 --collect-only 로 수집·분류만 수행하고
-# data/events_latest.json 을 커밋 + Step Summary 로 품질을 확인한다.
-# - workflow_dispatch: 수동 검증
-# - schedule: 2026-06-17 21:14 UTC 1회 예약 테스트(Gemini 일일 쿼터 리셋 후 OCR 검증).
-#   cron 은 매일 반복되지만 아래 'one-shot guard' 가 지정일 외에는 즉시 종료시킨다.
+# data/events_latest.json 을 커밋 + Step Summary 로 품질을 확인한다. (수동 실행 전용)
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '14 21 * * *'   # 매일 21:14 UTC — 가드로 2026-06-17 1회만 실제 수행
 
 permissions:
   contents: write
-
-env:
-  RUN_DATE: '2026-06-17'    # 예약 테스트 실제 수행일 (이후 날짜엔 즉시 종료)
 
 jobs:
   collect:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - name: One-shot guard (예약 실행은 지정일에만 수행)
-        id: guard
-        run: |
-          if [ "${{ github.event_name }}" = "schedule" ] && [ "$(date -u +%F)" != "${RUN_DATE}" ]; then
-            echo "지정일(${RUN_DATE}) 아님 — 예약 테스트 종료"
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
       - uses: actions/checkout@v4
-        if: steps.guard.outputs.skip != 'true'
       - uses: actions/setup-python@v5
-        if: steps.guard.outputs.skip != 'true'
         with:
           python-version: '3.12'
       - name: Install dependencies
-        if: steps.guard.outputs.skip != 'true'
         run: |
-          pip install playwright requests beautifulsoup4
+          pip install playwright requests beautifulsoup4 openpyxl
           playwright install --with-deps chromium
       - name: Collect only (no DB/mail; OCR on detail-page images)
-        if: steps.guard.outputs.skip != 'true'
         env:
           DEBUG: '1'
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python -m pension_monitor.main --collect-only
       - name: Step summary (수집·혜택 품질 요약)
-        if: steps.guard.outputs.skip != 'true' && always()
+        if: always()
         run: |
           python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
-          import json, pathlib
+          import json
           try:
               d = json.load(open("data/events_latest.json"))
           except Exception as e:
@@ -64,14 +43,14 @@ jobs:
           print(f"- 수집 실패 증권사: {d.get('firms_failed') or '없음'}")
           print(f"- 연금 이벤트: **{len(evs)}건** · 혜택 채워짐: **{filled}/{len(evs)}**")
           print(f"- 증권사별: {dict(byf)}\n")
-          print("| 증권사 | 이벤트 | 혜택(앞 80자) |")
+          print("| 증권사 | 이벤트 | 혜택(앞 120자) |")
           print("|---|---|---|")
           for e in evs:
-              b = (e.get("benefits") or "(없음)").replace("|"," ")[:80]
+              b = (e.get("benefits") or "(없음)").replace("|"," ")[:120]
               print(f"| {e['firm_name']} | {e['event_name'][:28]} | {b} |")
           PY
       - name: Commit collected data
-        if: steps.guard.outputs.skip != 'true' && always()
+        if: always()
         run: |
           git config user.name "pension-monitor-bot"
           git config user.email "noreply@github.com"
@@ -79,7 +58,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "변경 없음"
           else
-            git commit -m "test: collect-only 수집 결과 (예약 검증 ${RUN_DATE})"
+            git commit -m "test: collect-only 수집 결과 (상세-우선 검증)"
             git pull --rebase origin ${{ github.ref_name }} || true
             git push origin HEAD:${{ github.ref_name }}
           fi

@@ -98,18 +98,12 @@ async def collect():
                     still.append(firm)
             failed = still
 
-        # 직접 수집이 WAF(EverSafe)로 막힌 증권사 → web_search 폴백(공식 도메인 한정)
-        from . import websearch
-        if "키움증권" in failed and websearch.enabled():
-            kw = websearch.fetch_kiwoom_pension()
-            if kw:
-                events.extend(kw)
-                failed = [f for f in failed if f != "키움증권"]
+        # 정책: 웹검색 방식 미사용 — 데이터는 실제 페이지에서만 수집한다.
+        # (키움 등 WAF 차단 증권사는 수집 실패로 처리하고 리포트에 명시)
 
         # 연금 이벤트만 상세 보강
         pension = [e for e in events
-                   if e.get("_via_search")
-                   or is_pension(e["event_name"] + " " + e.get("raw_text", ""))]
+                   if is_pension(e["event_name"] + " " + e.get("raw_text", ""))]
         await enrich_details(browser, pension)
         await browser.close()
     return events, failed
@@ -209,20 +203,19 @@ def classify_all(events):
     for ev in events:
         # 연금 판별/계좌 판별은 목록 텍스트만 사용 — 상세 페이지의 네비/배너 문구 오염 방지
         blob = " ".join([ev["event_name"], ev.get("raw_text", "")])
-        if not (ev.get("_category") == "연금" or ev.get("_via_search") or is_pension(blob)):
+        if not (ev.get("_category") == "연금" or is_pension(blob)):
             continue
-        if not ev.get("_via_search"):              # web_search 결과는 계좌/혜택 이미 채워짐
-            ev.update(detect_accounts(blob))
-            details = extract_details(ev.get("_detail_text", ""))
-            ev["conditions"] = details["conditions"] or ev.get("_conditions_hint")
-            # 혜택: 상세 본문 추출 우선. 목록 요약(_benefits_hint)은 OCR 실패 시
-            # 최후 폴백으로만 사용 → 빈약한 요약이 OCR(상세 이미지)을 막지 않게 한다.
-            ev["benefits"] = details["benefits"]
-            ev["remarks"] = None if ev["benefits"] else details["remarks"]
-            if not ev.get("start_date") and not ev.get("end_date") and ev.get("_detail_text"):
-                from .classify import parse_dates
-                s, e = parse_dates(ev["_detail_text"][:2000])
-                ev["start_date"], ev["end_date"] = ev.get("start_date") or s, ev.get("end_date") or e
+        ev.update(detect_accounts(blob))
+        details = extract_details(ev.get("_detail_text", ""))
+        ev["conditions"] = details["conditions"] or ev.get("_conditions_hint")
+        # 혜택: 상세 본문 추출 우선. 목록 요약(_benefits_hint)은 OCR 실패 시
+        # 최후 폴백으로만 사용 → 빈약한 요약이 OCR(상세 이미지)을 막지 않게 한다.
+        ev["benefits"] = details["benefits"]
+        ev["remarks"] = None if ev["benefits"] else details["remarks"]
+        if not ev.get("start_date") and not ev.get("end_date") and ev.get("_detail_text"):
+            from .classify import parse_dates
+            s, e = parse_dates(ev["_detail_text"][:2000])
+            ev["start_date"], ev["end_date"] = ev.get("start_date") or s, ev.get("end_date") or e
         out.append(ev)
     return out
 
@@ -318,6 +311,84 @@ def enrich_benefits(pension):
         print(f"[OCR] {n_ocr}건 이미지 인식 수행")
 
 
+REVERIFY_OCR_BUDGET = 24      # 재검증 단계 OCR 호출 상한 (신규/변경 건 한정)
+
+
+def _fresh_detail(ev):
+    """이벤트의 실제 상세 페이지에서 (본문텍스트, OCR대상 이미지URL)을 새로 읽는다.
+    웹검색 미사용 — 증권사별 실제 페이지/엔드포인트만 사용. 실패 시 ('', None)."""
+    from bs4 import BeautifulSoup
+    from .scrapers.static_generic import fetch_html
+    from .scrapers import nhqv, koreainvestment
+    firm, url = ev["firm_name"], (ev.get("event_url") or "")
+    if firm == "NH투자증권":
+        import re as _re
+        m = _re.search(r"mNo=(\d+)", url)
+        if not m:
+            return "", None
+        return nhqv.content_to_text_image(nhqv.fetch_content_html(m.group(1)))
+    if firm == "한국투자증권" and ev.get("_detail_id"):
+        return (koreainvestment.fetch_detail_text(ev["_detail_id"]) or ""), None
+    if not url.startswith("http") or _is_list_url(url):
+        return "", None
+    soup = BeautifulSoup(fetch_html(url, retries=2), "html.parser")
+    for tag in soup(["script", "style"]):
+        tag.decompose()
+    return soup.get_text("\n", strip=True), _img_from_html(soup, url)
+
+
+def reverify_new_changed(pension, existing):
+    """신규/변경 건을 실제 상세 페이지에서 다시 읽어 조건/혜택을 재추출·덮어쓴다.
+    (정책: 웹검색 미사용, 실제 페이지 접속 확인. 재추출 실패/빈값이면 1차 값 유지 + '검토 필요' 플래그.)"""
+    import time
+    from . import vision
+    from .classify import extract_details
+
+    by_key = {(e["firm_name"], e["event_name"], e.get("start_date")): e for e in existing}
+    started, n_ocr, n_chk = time.monotonic(), 0, 0
+    for ev in pension:
+        key = (ev["firm_name"], ev["event_name"], ev.get("start_date"))
+        old = by_key.get(key)
+        if old is not None and old.get("content_hash") == content_hash(ev):
+            continue                               # 미변경 → 재검증 불필요
+        n_chk += 1
+        try:
+            text, image = _fresh_detail(ev)
+        except Exception as e:
+            print(f"[재검증] 페이지 접속 실패 {ev['firm_name']} {ev['event_name'][:24]}: {type(e).__name__}")
+            ev["remarks"] = "재검증 실패(상세 페이지 접속 불가) — 원문 확인 필요"
+            continue
+        det = extract_details(text)
+        v_cond, v_ben = det["conditions"], det["benefits"]
+        # 본문 텍스트에 혜택이 없으면(이미지 공지) 상세 이미지 재OCR
+        if not v_ben and image and vision.enabled() \
+                and n_ocr < REVERIFY_OCR_BUDGET and time.monotonic() - started < OCR_TIME_BUDGET:
+            if n_ocr:
+                time.sleep(OCR_PACE_SEC)
+            n_ocr += 1
+            res = vision.extract(image, referer=ev.get("event_url") or "", hint=ev["event_name"])
+            ben = (res.get("benefits") or "").strip()
+            if ben and not any(j in ben for j in _OCR_JUNK):
+                v_ben = ben
+                v_cond = v_cond or res.get("conditions")
+            for k in ("acct_pension", "acct_irp", "acct_dc"):
+                if res.get(k):
+                    ev[k] = True
+            if res.get("acct_etc") and not ev.get("acct_etc"):
+                ev["acct_etc"] = res["acct_etc"]
+        # 재추출 성공 → 권위 데이터로 덮어쓰기. 실패(빈값) → 1차 값 유지 + 플래그
+        if v_ben or v_cond:
+            if v_cond:
+                ev["conditions"] = v_cond
+            if v_ben:
+                ev["benefits"] = v_ben
+            ev["remarks"] = None
+        elif not ev.get("benefits"):
+            ev["remarks"] = "재검증 실패(상세 본문/이미지에서 혜택 미확인) — 원문 확인 필요"
+    if n_chk:
+        print(f"[재검증] 신규/변경 {n_chk}건 실제 페이지 재추출 (재OCR {n_ocr}건)")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--collect-only", action="store_true")
@@ -326,7 +397,10 @@ def main():
     events, failed = asyncio.run(collect())
     pension = classify_all(events)
     enrich_benefits(pension)          # 이미지 OCR / DB 캐시로 혜택 보강 (hash 계산 전)
-    # OCR·본문 추출 모두 실패한 경우에만 목록 요약을 혜택 폴백으로 사용.
+    # 신규/변경 건은 실제 상세 페이지에서 재추출·덮어쓰기로 재검증(잘못된 데이터 적재 방지).
+    existing = db.fetch_all_events() if db.enabled() else []
+    reverify_new_changed(pension, existing)
+    # 본문·OCR·재검증 모두 실패한 경우에만 목록 요약을 혜택 폴백으로 사용.
     for ev in pension:
         if not ev.get("benefits") and ev.get("_benefits_hint"):
             ev["benefits"] = ev["_benefits_hint"]
@@ -373,7 +447,16 @@ def main():
 
     subject = (f"[연금이벤트 위클리] {today} — 진행중 {len(diff['active'])}건 "
                f"(신규 {len(diff['new'])}, 종료 {len(diff['closed'])})")
-    sent = mailer.send(subject, report_md)
+    # DB 테이블(pension_events) 전체를 xlsx 로 첨부. DB 미사용 시 이번 수집분으로 대체.
+    attachments = []
+    try:
+        table_rows = db.fetch_all_events() if db.enabled() else pension
+        xlsx = report_mod.build_xlsx(table_rows)
+        attachments = [(f"pension_events_{today}.xlsx", xlsx,
+                        "vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
+    except Exception as e:
+        print(f"[xlsx] 첨부 생성 실패(무시): {type(e).__name__}: {str(e)[:120]}")
+    sent = mailer.send(subject, report_md, attachments=attachments)
     write_step_summary(
         f"진행중 {len(diff['active'])} · 신규 {len(diff['new'])} · 종료 {len(diff['closed'])} "
         f"· 변경 {len(diff['changed'])} · 수집실패 {failed or '없음'} · 메일 {'발송' if sent else '스킵'}")

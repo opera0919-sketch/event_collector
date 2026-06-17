@@ -27,7 +27,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install playwright requests beautifulsoup4
+          pip install playwright requests beautifulsoup4 openpyxl
           playwright install --with-deps chromium
 
       - name: Run monitor

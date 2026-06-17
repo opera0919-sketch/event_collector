@@ -2,6 +2,48 @@
 """주간 리포트 생성 (계획안 §7 형식)."""
 
 import datetime as dt
+import io
+
+# 메일 첨부 xlsx 의 열 구성 (pension_events 테이블)
+_XLSX_COLS = [
+    ("firm_name", "증권사"), ("event_name", "이벤트명"), ("status", "상태"),
+    ("start_date", "시작일"), ("end_date", "종료일"),
+    ("acct_pension", "연금저축"), ("acct_irp", "IRP"), ("acct_dc", "DC"), ("acct_etc", "기타계좌"),
+    ("conditions", "참여조건"), ("benefits", "혜택내용"), ("remarks", "비고"), ("event_url", "출처URL"),
+]
+
+
+def build_xlsx(rows: list) -> bytes:
+    """DB 테이블(pension_events 행 리스트)을 xlsx 바이트로 직렬화. openpyxl 사용."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Alignment
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "pension_events"
+    ws.append([label for _, label in _XLSX_COLS])
+    for c in ws[1]:
+        c.font = Font(bold=True)
+    # 진행중 우선, 증권사·종료일 순
+    rows = sorted(rows or [], key=lambda e: (e.get("status") != "진행중",
+                                             e.get("firm_name") or "", e.get("end_date") or "9999"))
+    for r in rows:
+        out = []
+        for key, _ in _XLSX_COLS:
+            v = r.get(key)
+            if isinstance(v, bool):
+                v = "○" if v else ""
+            out.append("" if v is None else v)
+        ws.append(out)
+    widths = {"이벤트명": 36, "참여조건": 60, "혜택내용": 80, "출처URL": 50}
+    for i, (_, label) in enumerate(_XLSX_COLS, start=1):
+        ws.column_dimensions[ws.cell(row=1, column=i).column_letter].width = widths.get(label, 12)
+    for row in ws.iter_rows(min_row=2):
+        for c in row:
+            c.alignment = Alignment(vertical="top", wrap_text=True)
+    ws.freeze_panes = "A2"
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
 
 
 def _b(v):

@@ -3,6 +3,7 @@
 
 import smtplib
 import ssl
+from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -60,16 +61,24 @@ def _md_to_html(md: str) -> str:
     return f"<html><body style='font-family:sans-serif'>{html}</body></html>"
 
 
-def send(subject: str, report_md: str) -> bool:
+def send(subject: str, report_md: str, attachments=None) -> bool:
+    """attachments: [(filename, bytes, mime_subtype)] — 예: ('events.xlsx', b'...',
+    'vnd.openxmlformats-officedocument.spreadsheetml.sheet'). DB 테이블 xlsx 첨부용."""
     if not enabled():
         print("[mailer] SMTP 미설정 → 발송 스킵")
         return False
-    msg = MIMEMultipart("alternative")
+    msg = MIMEMultipart("mixed")
     msg["Subject"] = subject
     msg["From"] = MAIL_SENDER
     msg["To"] = ", ".join(MAIL_RECIPIENTS)
-    msg.attach(MIMEText(report_md, "plain", "utf-8"))
-    msg.attach(MIMEText(_md_to_html(report_md), "html", "utf-8"))
+    body = MIMEMultipart("alternative")
+    body.attach(MIMEText(report_md, "plain", "utf-8"))
+    body.attach(MIMEText(_md_to_html(report_md), "html", "utf-8"))
+    msg.attach(body)
+    for fn, data, subtype in (attachments or []):
+        part = MIMEApplication(data, _subtype=subtype)
+        part.add_header("Content-Disposition", "attachment", filename=fn)
+        msg.attach(part)
     ctx = ssl.create_default_context()
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ctx) as s:
         s.login(MAIL_SENDER, MAIL_APP_PASSWORD)
