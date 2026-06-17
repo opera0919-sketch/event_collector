@@ -112,17 +112,17 @@
     "snip": ""
    },
    {
-    "url": "https://www.kiwoom.com/e/kms/assets/images/icon/icon_evt_footer_logo.png",
+    "url": "https://www.kiwoom.com/e/m/common/event/VIngEventView?evfw=sSTHm7m1HFPFAktJ",
     "status": 200,
-    "ct": "image/png",
+    "ct": "application/javascript;charset=UTF-8",
     "blen": 0,
     "hit": false,
     "snip": ""
    },
    {
-    "url": "https://www.kiwoom.com/e/m/common/event/VIngEventView?evfw=sSTHm7m1HFPFAktJ",
+    "url": "https://www.kiwoom.com/e/kms/assets/images/icon/icon_evt_footer_logo.png",
     "status": 200,
-    "ct": "application/javascript;charset=UTF-8",
+    "ct": "image/png",
     "blen": 0,
     "hit": false,
     "snip": ""
@@ -232,25 +232,206 @@
    }
   ],
   "삼성_3722_textlen": 1242,
-  "미래에셋_목록": {
-   "error": "TimeoutError: Page.goto: Timeout 45000ms exceeded.\nCall log:\n  - navigating to \"https://securities.miraeasset.com/mw/mki/mki7000/r01.d"
-  }
+  "미래에셋_목록": [
+   {
+    "src": "https://securities.miraeasset.com/public/mw/menu/chatbot_menu_smaller.png",
+    "alt": "챗봇(Chatbot)",
+    "w": 416,
+    "h": 176
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202606006/2-1_MTS_list_640x280_Light.jpg",
+    "alt": "null",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202606005/2-1_MTS_list_640x280_Light.jpg",
+    "alt": "오랜만에 국장으로! 다시 시작하는 국내주식",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202606004/2-1_MTS_list_640x280_Light.jpg",
+    "alt": "국내 장외채권 순매수 이벤트(26.6~8월)",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202605014/2-1_MTS_list_640x280_Light.jpg",
+    "alt": "null",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202605012/2-1_MTS_list_640x280_Light.jpg",
+    "alt": "null",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202605011/2-1_MTS_list_640x280_Light.jpg",
+    "alt": "중개형ISA 이벤트 (26년 6월~7월)",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202603008/1774951006248.jpg",
+    "alt": "null",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202603006/1774484852572.jpg",
+    "alt": "null",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202603007/1774947324232.jpg",
+    "alt": "null",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202603005/2-1_MTS_list_640x280_Light.jpg",
+    "alt": "이벤트명: 우리 아이 부자 만들기, 미래로 떠나는 90일 투자 여행 \n기간: 2026. 03.30 ~ 07.31 (실적 집계기간 10월 31일까",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202512004/2-1_MTS_list_640x280_Light.jpg",
+    "alt": "면제부터 우대까지\n\n다이렉트로 수수료 다이어트\n\n2026.02.02~06.30\n\n신청후 90일간 0% \n\n\n\n대상 : 미래에셋증권 최초신규 고객",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202512005/2-1_MTS_list_640x280_Light.jpg",
+    "alt": "웰컴 혜택\n반가운 첫만남\n설레는 첫투자 \n2026.02.02~06.30\n대상 : 미래에셋증권 최초 신규고객\n내용 : 다이렉트 주식계좌 개설 후 ",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202512019/1767164025649.jpg",
+    "alt": "null",
+    "w": 640,
+    "h": 280
+   },
+   {
+    "src": "https://securities.miraeasset.com/public/mw/event/202601005/2-1_MTS_list_640x280_Light_2.jpg",
+    "alt": "다이렉트 중개형ISA 온라인 매매수수료 평생우대혜택 안내",
+    "w": 640,
+    "h": 280
+   }
+  ],
+  "미래에셋_목록_textlen": 650
  },
  "detail_nav": {
   "미래에셋": {
    "xhr": [
     {
-     "url": "https://analytics.google.com/g/collect?v=2&tid=G-EK6Y32KK40&gtm=45je66f1v881882933za20gzb866468316zd866468316&_p=1781676170807&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AEAAAGQ&ae=a&are=1&cid=949959786.1781676",
+     "url": "https://analytics.google.com/g/collect?v=2&tid=G-EK6Y32KK40&gtm=45je66g0h2v881882933z8866468316za20gzb866468316zd866468316&_p=1781676378125&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAGQ&are=1&cid=189924061",
+     "status": 204,
+     "ct": "text/plain",
+     "snip": ""
+    },
+    {
+     "url": "https://www.google-analytics.com/j/collect?v=1&_v=j102&a=1576068415&t=pageview&_s=1&dl=https%3A%2F%2Fsecurities.miraeasset.com%2Fmw%2Fmki%2Fmki7000%2Fv01.do%3Fcs_ecis_id%3D202606006%26pub_sect%3DO%26m",
+     "status": 200,
+     "ct": "text/plain",
+     "snip": "2,x"
+    },
+    {
+     "url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202606006&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
+     "status": 200,
+     "ct": "text/html;charset=euc-kr",
+     "snip": "\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n<!DOCTYPE html>\r\n<html lang=\"ko\">\r\n<head>\r\n\t\r\n\r\n\r\n\t<meta charset=\"euc-kr\">\r\n\t<meta http-equiv=\"X-UA-Compatible\" content=\"ie=edge\">\r\n    <meta name=\"viewport\" content=\"wid"
+    },
+    {
+     "url": "https://analytics.google.com/g/collect?v=2&tid=G-EK6Y32KK40&gtm=45je66g0h2v881882933za20gzb866468316zd866468316&_p=1781676378125&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AEAAAGQ&ae=a&are=1&cid=1899240619.1781",
      "status": 204,
      "ct": "text/plain",
      "snip": ""
     }
    ],
-   "items": [],
+   "items": [
+    {
+     "text": "NEW 2026.06.15 ~ 2026.08.14",
+     "tag": "A",
+     "href": "#none",
+     "onclick": "",
+     "imgsrc": "/public/mw/event/202606006/2-1_MTS_list_640x280_Light.jpg",
+     "html": "<li onclick=\"detailView('202606006','1','null','O')\">\t\t<a href=\"#none\" class=\"eventLst\">\t\t\t<div class=\"evInfo\">\t\t\t\t<div class=\"labelSet\">\t\t\t\t\t<span class=\"ico_label ev1\"><em>NEW</em></span>\t\t\t\t</div>\t\t\t\t<span class=\"img\"><img src=\"/public/mw/event/202606006/2-1_MTS_list_640x280_Light.jpg\" alt=\"null\"></span>\t\t\t\t<p class=\"subject\">찾았다! 투자 스위치 ELS 청약하고 혜택 ON!</p>\t\t\t\t<span class=\"date\">2026.06.15 ~ 20",
+     "attrs": {
+      "href": "#none",
+      "class": "eventLst"
+     }
+    },
+    {
+     "text": "NEW 2026.06.15 ~ 2026.07.31",
+     "tag": "A",
+     "href": "#none",
+     "onclick": "",
+     "imgsrc": "/public/mw/event/202606005/2-1_MTS_list_640x280_Light.jpg",
+     "html": "<li onclick=\"detailView('202606005','1','null','O')\">\t\t<a href=\"#none\" class=\"eventLst\">\t\t\t<div class=\"evInfo\">\t\t\t\t<div class=\"labelSet\">\t\t\t\t\t<span class=\"ico_label ev1\"><em>NEW</em></span>\t\t\t\t</div>\t\t\t\t<span class=\"img\"><img src=\"/public/mw/event/202606005/2-1_MTS_list_640x280_Light.jpg\" alt=\"오랜만에 국장으로! 다시 시작하는 국내주식\"></span>\t\t\t\t<p class=\"subject\">오랜만에 국장으로! 다시 시작하는 국내주식</p>\t\t\t\t<span class=\"date\">",
+     "attrs": {
+      "href": "#none",
+      "class": "eventLst"
+     }
+    },
+    {
+     "text": "진행중 2026.06.08 ~ 2026.08.25",
+     "tag": "A",
+     "href": "#none",
+     "onclick": "",
+     "imgsrc": "/public/mw/event/202606004/2-1_MTS_list_640x280_Light.jpg",
+     "html": "<li onclick=\"detailView('202606004','1','null','O')\">\t\t<a href=\"#none\" class=\"eventLst\">\t\t\t<div class=\"evInfo\">\t\t\t\t<div class=\"labelSet\">\t\t\t\t\t<span class=\"ico_label ev3\"><em>진행중</em></span>\t\t\t\t</div>\t\t\t\t<span class=\"img\"><img src=\"/public/mw/event/202606004/2-1_MTS_list_640x280_Light.jpg\" alt=\"국내 장외채권 순매수 이벤트(26.6~8월)\"></span>\t\t\t\t<p class=\"subject\">이자에 혜택을 더하다 이제는 채권으로 Check In!</p>\t\t\t\t<span class",
+     "attrs": {
+      "href": "#none",
+      "class": "eventLst"
+     }
+    },
+    {
+     "text": "진행중 2026.06.08 ~ 2026.07.31",
+     "tag": "A",
+     "href": "#none",
+     "onclick": "",
+     "imgsrc": "/public/mw/event/202605014/2-1_MTS_list_640x280_Light.jpg",
+     "html": "<li onclick=\"detailView('202605014','1','null','O')\">\t\t<a href=\"#none\" class=\"eventLst\">\t\t\t<div class=\"evInfo\">\t\t\t\t<div class=\"labelSet\">\t\t\t\t\t<span class=\"ico_label ev3\"><em>진행중</em></span>\t\t\t\t</div>\t\t\t\t<span class=\"img\"><img src=\"/public/mw/event/202605014/2-1_MTS_list_640x280_Light.jpg\" alt=\"null\"></span>\t\t\t\t<p class=\"subject\">K-Wave, 국내주식형펀드로 넓어지는 투자 선택</p>\t\t\t\t<span class=\"date\">2026.06.08 ~ 20",
+     "attrs": {
+      "href": "#none",
+      "class": "eventLst"
+     }
+    },
+    {
+     "text": "진행중 2026.06.08 ~ 2026.07.31",
+     "tag": "A",
+     "href": "#none",
+     "onclick": "",
+     "imgsrc": "/public/mw/event/202605012/2-1_MTS_list_640x280_Light.jpg",
+     "html": "<li onclick=\"detailView('202605012','1','null','O')\">\t\t<a href=\"#none\" class=\"eventLst\">\t\t\t<div class=\"evInfo\">\t\t\t\t<div class=\"labelSet\">\t\t\t\t\t<span class=\"ico_label ev3\"><em>진행중</em></span>\t\t\t\t</div>\t\t\t\t<span class=\"img\"><img src=\"/public/mw/event/202605012/2-1_MTS_list_640x280_Light.jpg\" alt=\"null\"></span>\t\t\t\t<p class=\"subject\">중개형 ISA에 ETF 담고 혜택도 담고!</p>\t\t\t\t<span class=\"date\">2026.06.08 ~ 2026.0",
+     "attrs": {
+      "href": "#none",
+      "class": "eventLst"
+     }
+    },
+    {
+     "text": "진행중 2026.06.01 ~ 2026.07.31",
+     "tag": "A",
+     "href": "#none",
+     "onclick": "",
+     "imgsrc": "/public/mw/event/202605011/2-1_MTS_list_640x280_Light.jpg",
+     "html": "<li onclick=\"detailView('202605011','1','null','O')\">\t\t<a href=\"#none\" class=\"eventLst\">\t\t\t<div class=\"evInfo\">\t\t\t\t<div class=\"labelSet\">\t\t\t\t\t<span class=\"ico_label ev3\"><em>진행중</em></span>\t\t\t\t</div>\t\t\t\t<span class=\"img\"><img src=\"/public/mw/event/202605011/2-1_MTS_list_640x280_Light.jpg\" alt=\"중개형ISA 이벤트 (26년 6월~7월)\"></span>\t\t\t\t<p class=\"subject\">Shall We ISA? 미래에셋증권과 함께 하실래요?</p>\t\t\t\t<span class=\"",
+     "attrs": {
+      "href": "#none",
+      "class": "eventLst"
+     }
+    }
+   ],
    "before_url": "https://securities.miraeasset.com/mw/mki/mki7000/r01.do",
-   "after_url": "https://securities.miraeasset.com/mw/mki/mki7000/r01.do",
+   "after_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202606006&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
    "frames": [
-    "https://securities.miraeasset.com/mw/mki/mki7000/r01.do"
+    "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202606006&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do"
    ],
    "detail_imgs": [
     {
@@ -258,15 +439,21 @@
      "alt": "챗봇(Chatbot)",
      "w": 416,
      "h": 176
+    },
+    {
+     "src": "https://securities.miraeasset.com/public/mw/event/202606006/1-1_Mobile_detail_720[2].jpg",
+     "alt": "",
+     "w": 720,
+     "h": 8783
     }
    ],
-   "detail_textlen": 37,
-   "detail_text_head": "닫기 홈 미래에셋증권 닫기 로그인 로그아웃 김미래님 검색 검색 닫기"
+   "detail_textlen": 3778,
+   "detail_text_head": "이벤트 상세 닫기 닫기 홈 미래에셋증권 닫기 검색 검색 #미래에셋현대카드#공모주#연금 닫기 MY 트레이딩 금융상품 연금자산 투자정보 뱅킹/서비스 공지/이벤트 이용안내 MY 자산분석 MY자산 MY연금 투자수익률 NEW 진행중 2026.06.15 ~ 2026.08.14 공유하기 찾았다! 투자 스위치 ELS청약하고 혜택 ON! 2026.06.15 ~ 08.14 대상 : 온라인에서 공모 원화 ELS를 청약하고 이벤트 기간 내 배정(입고)된 개인 고객 ※ 미래에셋증권 홈페이지, M-STOCK, KAIROS를 통한 청약건에 한함 ※ ELS 청약 가능 계좌 대상(랩계좌, 신탁계좌 제외) ※ 원화/외화 ELB, DLS, DLB 및 외화 ELS 제외 ※ 이벤트 신청 필수 내용 : 이벤트 신청 후, 아래 혜택별 조건 충족하면 혜택 제공 경품지급 : 2026년 9월 중순 예정 혜택 1 이벤트 기간 내 온라인 ELS 청약고객 대상 모바일상품권 제공 (조건충족시) 배정(입고)금액 1천만원 이상 롯데모바일상품권 1만원 배정(입고)금액 3천만원 이상 롯데모바일상품권 3만원 배정(입고)금액 5천만원 이상 롯데모바일상품권 5만원 • 이벤트 기간 내 배정(입고)금액으로 산정 • 고객별(고객"
   },
   "NH": {
    "xhr": [
     {
-     "url": "https://m.nhsec.com/customer/event/eventView?mNo=1010&t=1781676189486",
+     "url": "https://m.nhsec.com/customer/event/eventView?mNo=1010&t=1781676389632",
      "status": 200,
      "ct": "text/html; charset=euc-kr",
      "snip": "\r\n\r\n\r\n\r\n<!DOCTYPE html>\r\n<html lang=\"ko\">\r\n<head>\r\n\t<meta charset=\"euc-kr\">\r\n\t<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\r\n\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1"
@@ -278,7 +465,7 @@
      "snip": "\r\n\r\n\r\n<!doctype html>\r\n<html lang=\"ko\">\r\n<head>\r\n\t<meta charset=\"euc-kr\">\r\n\t<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\r\n\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0"
     },
     {
-     "url": "https://www.google-analytics.com/j/collect?v=1&_v=j102&aip=1&a=2054008729&t=pageview&_s=1&dl=https%3A%2F%2Fm.nhsec.com%2Fcustomer%2Fevent%2FeventView%3FmNo%3D1010%26t%3D1781676189486&dr=https%3A%2F%2F",
+     "url": "https://www.google-analytics.com/j/collect?v=1&_v=j102&aip=1&a=27170859&t=pageview&_s=1&dl=https%3A%2F%2Fm.nhsec.com%2Fcustomer%2Fevent%2FeventView%3FmNo%3D1010%26t%3D1781676389632&dr=https%3A%2F%2Fm.",
      "status": 200,
      "ct": "text/plain",
      "snip": "2,x"
@@ -353,9 +540,9 @@
     }
    ],
    "before_url": "https://m.nhsec.com/customer/event/eventList",
-   "after_url": "https://m.nhsec.com/customer/event/eventView?mNo=1010&t=1781676189486",
+   "after_url": "https://m.nhsec.com/customer/event/eventView?mNo=1010&t=1781676389632",
    "frames": [
-    "https://m.nhsec.com/customer/event/eventView?mNo=1010&t=1781676189486",
+    "https://m.nhsec.com/customer/event/eventView?mNo=1010&t=1781676389632",
     "https://m.nhsec.com/customer/event/getContent?mPeriod=ING&mNo=1010"
    ],
    "detail_imgs": [
@@ -426,6 +613,82 @@
     "onclick=\"linkApp.confirm(this,'FINDID')",
     "onclick=\"showCounsel('online', $(this))",
     "onclick=\"showCounsel('phone', $(this))"
+   ]
+  },
+  "NH_list": {
+   "xhr": [
+    {
+     "url": "https://m.nhsec.com/customer/event/eventList.json",
+     "status": 200,
+     "ct": "application/json;charset=UTF-8",
+     "blen": 105809,
+     "has_mno": true,
+     "hit": true,
+     "snip": "{\"result\":{\"content\":[{\"searchType\":null,\"searchText\":null,\"action\":false,\"mode\":\"LIST\",\"page\":1,\"pageSize\":12,\"offset\":0,\"sort\":null,\"condition\":{\"mContent\":\"<p style=\\\"position: relative;\\\"><img src=\\\"https://m.nhqv.com/fileUpload/namoCrossEditor/temp/1780985224627.png\\\" title=\\\"\\\" alt=\\\"\\\" style=\\\"vertical-align: baseline; border: 0px solid rgb(0, 0, 0);\\\"><a href=\\\"javascript:openWebPage1()\\\" "
+    },
+    {
+     "url": "https://m.nhsec.com/customer/event/eventList",
+     "status": 200,
+     "ct": "text/html; charset=euc-kr",
+     "blen": 49539,
+     "has_mno": true,
+     "hit": true,
+     "snip": "\r\n\r\n\r\n\r\n<!DOCTYPE html>\r\n<html lang=\"ko\">\r\n<head>\r\n\t<meta charset=\"euc-kr\">\r\n\t<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\r\n\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\r\n\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t\r\n\t\t\r\n\t\t\r\n\t\t\r\n\t\t\r\n\t\t\r\n\t\t\r\n\t\t\r\n\t\t\t\r\n\t\t\t\r\n\t\t\t\r\n\t\t\t\r\n\t\t\t\r\n\t\t\r\n\t\r\n\t\r\n\t<meta property=\"og:type\" content=\"website\" />\r\n\t<meta property=\"og:url\"\tcontent=\"https://m.n"
+    },
+    {
+     "url": "https://m.nhsec.com/transkeyServlet?op=getKeyboardHash",
+     "status": 200,
+     "ct": "text/javascript;charset=EUC-KR",
+     "blen": 212,
+     "has_mno": false,
+     "hit": false,
+     "snip": ""
+    },
+    {
+     "url": "https://m.nhsec.com/transkeyServlet?op=getInitTime",
+     "status": 200,
+     "ct": "text/javascript;charset=EUC-KR",
+     "blen": 169,
+     "has_mno": false,
+     "hit": false,
+     "snip": ""
+    },
+    {
+     "url": "https://m.nhsec.com/transkeyServlet?op=getToken&1781676414970",
+     "status": 200,
+     "ct": "text/javascript;charset=EUC-KR",
+     "blen": 22,
+     "has_mno": false,
+     "hit": false,
+     "snip": ""
+    },
+    {
+     "url": "https://www.google-analytics.com/j/collect?v=1&_v=j102&aip=1&a=747120702&t=pageview&_s=1&dl=https%3A%2F%2Fm.nhsec.com%2Fcustomer%2Fevent%2FeventList&dr=&ul=ko-kr&dt=%EA%B3%A0%EA%B0%9D%EC%84%BC%ED%84%B",
+     "status": 200,
+     "ct": "text/plain",
+     "blen": 3,
+     "has_mno": false,
+     "hit": false,
+     "snip": ""
+    },
+    {
+     "url": "https://www.facebook.com/x/oauth/status?client_id=186194884845926&input_token&origin=1&redirect_uri=https%3A%2F%2Fm.nhsec.com%2Fcustomer%2Fevent%2FeventList&sdk=joey&wants_cookie_data=false",
+     "status": 200,
+     "ct": "text/plain; charset=UTF-8",
+     "blen": 0,
+     "has_mno": false,
+     "hit": false,
+     "snip": ""
+    },
+    {
+     "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-MFK7S9YRXT&gtm=45je66f1v9175614440z8811194320za20gzb811194320zd811194320&_p=1781676417999&gcd=13l3l3l3l1l1&npa=0&dma=0&are=1&cid=2050552649.1781676",
+     "status": 204,
+     "ct": "text/plain",
+     "blen": 0,
+     "has_mno": false,
+     "hit": false,
+     "snip": ""
+    }
    ]
   }
  }
