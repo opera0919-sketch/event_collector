@@ -82,7 +82,8 @@ def extract_details(detail_text: str) -> dict:
     cond, bene = [], []
     for i, line in enumerate(lines):
         compact = line.replace(" ", "")
-        if any(k in compact for k in ("참여대상", "이벤트대상", "참여조건", "응모대상", "대상고객", "참여방법")):
+        if any(k in compact for k in ("참여대상", "이벤트대상", "참여조건", "응모대상", "대상고객", "참여방법")) \
+                or compact.startswith(("대상:", "대상：")):   # 상세 페이지 흔한 표기 "대상 : ..."
             cond.append(" / ".join(lines[i:i + 2])[:200])
         # 혜택: 키워드 + 금액/수치 동반 시에만. 다른 이벤트 제목(…이벤트)으로 끝나는 줄 제외
         if any(k in compact for k in ("혜택", "지급", "경품", "리워드", "상품권", "수수료우대", "캐시백")) \
