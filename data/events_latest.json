@@ -1,6 +1,8 @@
 {
- "collected_at": "2026-06-17T06:33:37.102837+00:00",
- "firms_failed": [],
+ "collected_at": "2026-06-17T06:42:18.608386+00:00",
+ "firms_failed": [
+  "키움증권"
+ ],
  "events": [
   {
    "firm_name": "미래에셋증권",
@@ -13,10 +15,10 @@
    "acct_irp": true,
    "acct_dc": false,
    "acct_etc": null,
-   "conditions": "IRP 계좌 보유 고객 대상. 타사 연금 수관, 퇴직금 입금 또는 ISA 만기전환 입금 중 하나를 진행하고 이벤트 신청 필수(분기별 1회 가능). 순입금액은 타사 연금 수관, 퇴직금, ISA 만기전환 금액을 합산하며, 사은품 지급 시까지 이벤트 조건을 유지해야 함.",
-   "benefits": "IRP 순입금 금액에 따라 롯데 모바일 상품권 최대 3만원 지급. 1천만원 이상 3천만원 미만 입금 시 1만원, 3천만원 이상 입금 시 3만원.",
-   "remarks": null,
-   "content_hash": "54508341c64c17cb"
+   "conditions": null,
+   "benefits": null,
+   "remarks": "상세 자동추출 실패 — 원문 확인 필요 (이미지 공지 가능성)",
+   "content_hash": "1fdc7c9c38292b79"
   },
   {
    "firm_name": "미래에셋증권",
@@ -26,13 +28,13 @@
    "event_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202603006&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
    "raw_text": "「투자하는 연금」2026년 개인연금 입금 이벤트 null",
    "acct_pension": true,
-   "acct_irp": true,
+   "acct_irp": false,
    "acct_dc": false,
    "acct_etc": null,
-   "conditions": "개인연금 계좌 보유 고객이 타사 연금을 가져오거나 ISA를 연금으로 전환, 또는 퇴직금을 입금해야 합니다. 이벤트 신청이 필수이며, 사은품 지급 시점까지 이벤트 조건을 유지해야 합니다.",
-   "benefits": "롯데 모바일 상품권 최대 100만원 지급. 타사 연금 이전 또는 ISA 연금 전환 시 순입금액의 1.5배를 인정하여 최대 100만원 상품권을, 퇴직금 입금 시 최대 3만원 상품권을 지급합니다. 개인연금 랩(WRAP) 가입 시 순입금액의 3배를 인정하여 더 높은 혜택을 받을 수 있습니다.",
-   "remarks": null,
-   "content_hash": "47148c197dff5a69"
+   "conditions": null,
+   "benefits": null,
+   "remarks": "상세 자동추출 실패 — 원문 확인 필요 (이미지 공지 가능성)",
+   "content_hash": "40132b156a9d7aaf"
   },
   {
    "firm_name": "미래에셋증권",
@@ -455,70 +457,6 @@
    "benefits": "ELS 가입하고 이벤트 혜택 받아보세요",
    "remarks": null,
    "content_hash": "d84690251bb04e5a"
-  },
-  {
-   "firm_name": "키움증권",
-   "event_name": "연금 나와라 뚝딱",
-   "start_date": "2026-04-03",
-   "end_date": "2026-06-30",
-   "acct_pension": true,
-   "acct_irp": false,
-   "acct_dc": false,
-   "acct_etc": null,
-   "benefits": "연금저축 신규 가입 고객을 대상으로 추첨을 통해 1만원에서 최대 50만원까지 현금 지급.",
-   "conditions": "연금저축 계좌를 처음 개설하고 10만원 이상 순입금한 고객.",
-   "event_url": "https://www.kiwoom.com/h/customer/event/event_list.do",
-   "raw_text": "연금 나와라 뚝딱",
-   "remarks": "Google 검색 수집(공식 도메인 한정) — EverSafe 직접차단 대응",
-   "content_hash": "b0dc815a39cb0658"
-  },
-  {
-   "firm_name": "키움증권",
-   "event_name": "연금키움 수수료/순입금 이벤트",
-   "start_date": "2026-04-01",
-   "end_date": "2026-06-30",
-   "acct_pension": true,
-   "acct_irp": false,
-   "acct_dc": false,
-   "acct_etc": null,
-   "benefits": "연금저축 계좌 신규 개설 또는 타사 이전 고객에게 1년간 ETF 거래 수수료 우대 혜택 제공. 순입금 금액에 따라 최대 100만원 상당의 상품권 지급. 500만원 이상 순입금 및 1건 이상 거래 시 추첨을 통해 국내 상장 ETF 1주 제공 (1000명).",
-   "conditions": "사전 신청 필수. 연금저축 계좌 신규 개설 또는 타사 이전 고객. 순입금 금액 조건 충족. 500만원 이상 순입금 및 1건 이상 거래 (ETF 1주 추첨).",
-   "event_url": "https://www.kiwoom.com/h/customer/event/event_list.do",
-   "raw_text": "연금키움 수수료/순입금 이벤트",
-   "remarks": "Google 검색 수집(공식 도메인 한정) — EverSafe 직접차단 대응",
-   "content_hash": "0b1186d5bda86a27"
-  },
-  {
-   "firm_name": "키움증권",
-   "event_name": "연금 ETF 이벤트",
-   "start_date": "2026-04-01",
-   "end_date": "2026-06-30",
-   "acct_pension": true,
-   "acct_irp": false,
-   "acct_dc": false,
-   "acct_etc": null,
-   "benefits": "연금저축계좌에서 지정 운용사 ETF 거래 시 순 매수금액에 따라 최대 18만원 혜택 (상품권). 최근 6개월간 연금저축계좌 거래 없던 휴면 고객이 해당 ETF 1만원 이상 순매수 및 잔고 유지 시 최대 5잔 커피쿠폰 추가 지급.",
-   "conditions": "연금저축계좌를 통해 지정된 운용사의 ETF 거래. 이벤트 신청 필수.",
-   "event_url": "https://www.kiwoom.com/h/customer/event/event_list.do",
-   "raw_text": "연금 ETF 이벤트",
-   "remarks": "Google 검색 수집(공식 도메인 한정) — EverSafe 직접차단 대응",
-   "content_hash": "681add05dbd06c86"
-  },
-  {
-   "firm_name": "키움증권",
-   "event_name": "퇴직연금 도입요청 이벤트",
-   "start_date": "2026-06-01",
-   "end_date": "2026-07-31",
-   "acct_pension": false,
-   "acct_irp": true,
-   "acct_dc": true,
-   "acct_etc": null,
-   "benefits": "IRP 서비스 출시 시점에 맞춰 계좌 개설 안내 제공. 사전등록 고객에게 키움포인트 지급 예정.",
-   "conditions": "모바일 트레이딩 시스템(MTS) '영웅문S#'에서 사전등록 신청.",
-   "event_url": "https://www.kiwoom.com/h/customer/event/event_list.do",
-   "raw_text": "퇴직연금 도입요청 이벤트",
-   "remarks": "Google 검색 수집(공식 도메인 한정) — EverSafe 직접차단 대응",
-   "content_hash": "46e4c54c18a34402"
   }
  ]
 }
