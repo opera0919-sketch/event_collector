@@ -34,6 +34,18 @@ KNOWN_HARD = {"키움증권"}
 DEBUG = os.environ.get("DEBUG", "").lower() in ("1", "true", "yes")
 
 
+# 개별 상세가 아니라 목록 페이지 그 자체인 URL(상세 본문 없음) — 경로(path) 기준 판정.
+# 쿼리스트링(예: 미래에셋 상세의 returnURL=/…/r01.do)에 목록 경로가 들어가도 오판 않도록 path 만 본다.
+_LIST_PATH_SUFFIXES = ("eventList", "r01.do", "CUST_09_0003.jsp")
+
+
+def _is_list_url(url: str) -> bool:
+    from urllib.parse import urlparse
+    p = urlparse(url)
+    # 삼성은 목록/상세가 같은 경로(noticeEvent.do)에 cmd=eventList/eventView 로 구분.
+    return p.path.rstrip("/").endswith(_LIST_PATH_SUFFIXES) or "eventList" in p.query
+
+
 def write_step_summary(line: str):
     """GitHub Actions Step Summary 에 한 줄 기록 (실패 분석을 로그 전체 없이)."""
     path = os.environ.get("GITHUB_STEP_SUMMARY")
@@ -147,8 +159,7 @@ async def enrich_details(browser, pension_events):
             continue
         # _content_url: 본문이 별도 엔드포인트에 있는 경우 그쪽을 받는다.
         url = ev.get("_content_url") or ev.get("event_url") or ""
-        list_like = url.rstrip("/").endswith(("eventList", "r01.do", "CUST_09_0003.jsp"))
-        if not url.startswith("http") or list_like:
+        if not url.startswith("http") or _is_list_url(url):
             continue
         # 한투: 상세 텍스트 경로(혜택 폴백은 목록 부제). 이미지 OCR 불필요.
         if ev["firm_name"] == "한국투자증권" and ev.get("_detail_id"):
@@ -237,8 +248,7 @@ def _resolve_banner(ev):
     if ev.get("_image_url"):
         return ev["_image_url"]
     url = ev.get("_content_url") or ev.get("event_url") or ""
-    if (not url.startswith("http")
-            or url.rstrip("/").endswith(("eventList", "r01.do", "CUST_09_0003.jsp"))):
+    if not url.startswith("http") or _is_list_url(url):
         return None
     try:
         from urllib.parse import urlparse
