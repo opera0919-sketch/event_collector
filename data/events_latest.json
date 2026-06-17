@@ -1,7 +1,6 @@
 {
- "collected_at": "2026-06-17T03:03:30.202578+00:00",
+ "collected_at": "2026-06-17T03:14:29.153257+00:00",
  "firms_failed": [
-  "키움증권",
   "한국투자증권"
  ],
  "events": [
@@ -276,6 +275,54 @@
    "benefits": null,
    "remarks": null,
    "content_hash": "d70648e3727e97f1"
+  },
+  {
+   "firm_name": "키움증권",
+   "event_name": "연금키움 수수료/순입금 이벤트",
+   "start_date": "2026-04-01",
+   "end_date": "2026-06-30",
+   "acct_pension": true,
+   "acct_irp": false,
+   "acct_dc": false,
+   "acct_etc": null,
+   "benefits": "ETF 거래 수수료 1년 할인",
+   "conditions": "이벤트 신청 필수, 지급 시점까지 연금저축 계좌 유지",
+   "event_url": "https://www.kiwoom.com/h/customer/event/VEventMainView?event_type=1",
+   "raw_text": "연금키움 수수료/순입금 이벤트",
+   "remarks": "Google 검색 수집(공식 도메인 한정) — EverSafe 직접차단 대응",
+   "content_hash": "06212808bb682bda"
+  },
+  {
+   "firm_name": "키움증권",
+   "event_name": "연금 나와라 뚝딱",
+   "start_date": "2026-04-03",
+   "end_date": "2026-06-30",
+   "acct_pension": true,
+   "acct_irp": false,
+   "acct_dc": false,
+   "acct_etc": null,
+   "benefits": null,
+   "conditions": null,
+   "event_url": "https://www.kiwoom.com/h/customer/event/VEventMainView?event_type=1",
+   "raw_text": "연금 나와라 뚝딱",
+   "remarks": "Google 검색 수집(공식 도메인 한정) — EverSafe 직접차단 대응",
+   "content_hash": "d7a53b9d7e523690"
+  },
+  {
+   "firm_name": "키움증권",
+   "event_name": "퇴직연금 도입요청 이벤트",
+   "start_date": "2026-06-01",
+   "end_date": "2026-07-31",
+   "acct_pension": false,
+   "acct_irp": false,
+   "acct_dc": false,
+   "acct_etc": "퇴직연금",
+   "benefits": null,
+   "conditions": null,
+   "event_url": "https://www.kiwoom.com/h/customer/event/VEventMainView?event_type=1",
+   "raw_text": "퇴직연금 도입요청 이벤트",
+   "remarks": "Google 검색 수집(공식 도메인 한정) — EverSafe 직접차단 대응",
+   "content_hash": "bcda7075d3c089ab"
   }
  ]
 }
