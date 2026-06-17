@@ -1,5 +1,5 @@
 {
- "collected_at": "2026-06-17T06:19:22.928484+00:00",
+ "collected_at": "2026-06-17T06:25:19.992932+00:00",
  "firms_failed": [
   "키움증권"
  ],
@@ -17,7 +17,7 @@
    "acct_etc": null,
    "conditions": null,
    "benefits": null,
-   "remarks": null,
+   "remarks": "상세 자동추출 실패 — 원문 확인 필요 (이미지 공지 가능성)",
    "content_hash": "1fdc7c9c38292b79"
   },
   {
@@ -33,7 +33,7 @@
    "acct_etc": null,
    "conditions": null,
    "benefits": null,
-   "remarks": null,
+   "remarks": "상세 자동추출 실패 — 원문 확인 필요 (이미지 공지 가능성)",
    "content_hash": "40132b156a9d7aaf"
   },
   {
@@ -49,7 +49,7 @@
    "acct_etc": null,
    "conditions": null,
    "benefits": null,
-   "remarks": null,
+   "remarks": "상세 자동추출 실패 — 원문 확인 필요 (이미지 공지 가능성)",
    "content_hash": "a16cae7d4145dfc5"
   },
   {
@@ -63,10 +63,10 @@
    "acct_irp": true,
    "acct_dc": true,
    "acct_etc": null,
-   "conditions": null,
-   "benefits": null,
+   "conditions": "대상: 미성년 자녀 고객 (만19세미만) / *자녀 계정으로 이벤트 신청 필수 | · 이벤트 대상계좌 상태가 ‘정상’인 고객에 한하여 혜택을 지급합니다(계좌폐쇄시 지급대상 아님) / · 이벤트 참여를 위해서는 아래의 조건이 필요 할 수 있습니다. 확인해주세요",
+   "benefits": "혜택 용돈2만원",
    "remarks": null,
-   "content_hash": "75717498be1afbae"
+   "content_hash": "b4ac56ccb5de198d"
   },
   {
    "firm_name": "미래에셋증권",
@@ -81,7 +81,7 @@
    "acct_etc": null,
    "conditions": null,
    "benefits": null,
-   "remarks": null,
+   "remarks": "상세 자동추출 실패 — 원문 확인 필요 (이미지 공지 가능성)",
    "content_hash": "b5b449a5c2e65c57"
   },
   {
@@ -97,7 +97,7 @@
    "acct_etc": null,
    "conditions": null,
    "benefits": null,
-   "remarks": null,
+   "remarks": "상세 자동추출 실패 — 원문 확인 필요 (이미지 공지 가능성)",
    "content_hash": "01d2b4ed4090be4d"
   },
   {
@@ -333,8 +333,8 @@
   {
    "firm_name": "KB증권",
    "event_name": "2026년 연금저축 온라인 ETF 매매수수료 혜택 이벤트",
-   "start_date": "2025-12-31",
-   "end_date": "2026-01-01",
+   "start_date": null,
+   "end_date": null,
    "event_url": "https://www.kbsec.com/go.able?linkcd=s060902030000&seq=10009370&idt=20251231&clsfcd=4&gubun=1",
    "raw_text": "2026년 연금저축 온라인 ETF 매매수수료 혜택 이벤트",
    "acct_pension": true,
@@ -343,14 +343,14 @@
    "acct_etc": null,
    "conditions": null,
    "benefits": null,
-   "remarks": "상세 자동추출 실패 — 원문 확인 필요 (이미지 공지 가능성)",
-   "content_hash": "6058ca7de0c7db0c"
+   "remarks": null,
+   "content_hash": "c98e51c59bba8a22"
   },
   {
    "firm_name": "KB증권",
    "event_name": "IRP 무료 수수료 혜택 이벤트",
    "start_date": null,
-   "end_date": "2024-10-25",
+   "end_date": null,
    "event_url": "https://www.kbsec.com/go.able?linkcd=s060902030000&seq=10007688&idt=20241025&clsfcd=4&gubun=1",
    "raw_text": "IRP 무료 수수료 혜택 이벤트",
    "acct_pension": false,
@@ -359,8 +359,8 @@
    "acct_etc": null,
    "conditions": null,
    "benefits": null,
-   "remarks": "상세 자동추출 실패 — 원문 확인 필요 (이미지 공지 가능성)",
-   "content_hash": "5964164ff3051e4e"
+   "remarks": null,
+   "content_hash": "c0c598d4f1eb7610"
   },
   {
    "firm_name": "NH투자증권",
