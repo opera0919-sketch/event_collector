@@ -215,7 +215,9 @@ def classify_all(events):
             ev.update(detect_accounts(blob))
             details = extract_details(ev.get("_detail_text", ""))
             ev["conditions"] = details["conditions"] or ev.get("_conditions_hint")
-            ev["benefits"] = details["benefits"] or ev.get("_benefits_hint")
+            # 혜택: 상세 본문 추출 우선. 목록 요약(_benefits_hint)은 OCR 실패 시
+            # 최후 폴백으로만 사용 → 빈약한 요약이 OCR(상세 이미지)을 막지 않게 한다.
+            ev["benefits"] = details["benefits"]
             ev["remarks"] = None if ev["benefits"] else details["remarks"]
             if not ev.get("start_date") and not ev.get("end_date") and ev.get("_detail_text"):
                 from .classify import parse_dates
@@ -324,6 +326,11 @@ def main():
     events, failed = asyncio.run(collect())
     pension = classify_all(events)
     enrich_benefits(pension)          # 이미지 OCR / DB 캐시로 혜택 보강 (hash 계산 전)
+    # OCR·본문 추출 모두 실패한 경우에만 목록 요약을 혜택 폴백으로 사용.
+    for ev in pension:
+        if not ev.get("benefits") and ev.get("_benefits_hint"):
+            ev["benefits"] = ev["_benefits_hint"]
+            ev["remarks"] = None
     pension = finalize(pension)       # content_hash + 내부키 제거
     by_firm = {}
     for ev in pension:
