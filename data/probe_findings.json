@@ -29,6 +29,15 @@
   ],
   "date_row_html": []
  },
+ "nh_json": {
+  "status": 200,
+  "len": 105767,
+  "top_paths": [
+   "root",
+   "result"
+  ],
+  "error": "TypeError: 're.Match' object is not iterable"
+ },
  "kiwoom": {
   "desktop_final": "https://www1.kiwoom.com/h/customer/event/VIngEventView",
   "desktop": [
@@ -96,25 +105,9 @@
     "snip": "@charset \"UTF-8\";\nhtml,body{height:100%;touch-action: pan-y;}\n* {\n\tmargin: 0;\n\tpadding: 0;\n\tborder: 0;\n\tvertical-align: baseline;\t\n}\n.hidden\t{width:0;height:0;font-size:0;line-height:0;text-indent:-99"
    },
    {
-    "url": "https://www.kiwoom.com/e/common/event/SIngEventListAjax",
-    "status": 400,
-    "ct": "application/json;charset=utf-8",
-    "blen": 94,
-    "hit": false,
-    "snip": "{\r\n \"eversafeThreat\":true,\r\n \"message\":\"CD-14000\",\r\n\"action\":\"/e/common/error\",\r\n\"type\":\"1\"\r\n}"
-   },
-   {
     "url": "https://www.kiwoom.com/e/kws/assets/js/event/eventCommon.js?contextPath=/e&version=20250724",
     "status": 200,
     "ct": "application/x-javascript",
-    "blen": 0,
-    "hit": false,
-    "snip": ""
-   },
-   {
-    "url": "https://www.kiwoom.com/e/m/common/event/VIngEventView?evfw=sSTHm7m1HFPFAktJ",
-    "status": 200,
-    "ct": "application/javascript;charset=UTF-8",
     "blen": 0,
     "hit": false,
     "snip": ""
@@ -128,9 +121,25 @@
     "snip": ""
    },
    {
+    "url": "https://www.kiwoom.com/e/m/common/event/VIngEventView?evfw=sSTHm7m1HFPFAktJ",
+    "status": 200,
+    "ct": "application/javascript;charset=UTF-8",
+    "blen": 0,
+    "hit": false,
+    "snip": ""
+   },
+   {
     "url": "https://www.kiwoom.com/e/kms/assets/images/event/evt_common/evt-icon-arrow-left.png",
     "status": 200,
     "ct": "image/png",
+    "blen": 0,
+    "hit": false,
+    "snip": ""
+   },
+   {
+    "url": "https://www.kiwoom.com/e/common/event/SIngEventListAjax",
+    "status": 400,
+    "ct": "application/json;charset=utf-8",
     "blen": 0,
     "hit": false,
     "snip": ""
@@ -330,13 +339,13 @@
   "미래에셋": {
    "xhr": [
     {
-     "url": "https://analytics.google.com/g/collect?v=2&tid=G-EK6Y32KK40&gtm=45je66g0h2v881882933z8866468316za20gzb866468316zd866468316&_p=1781676378125&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAGQ&are=1&cid=189924061",
+     "url": "https://analytics.google.com/g/collect?v=2&tid=G-EK6Y32KK40&gtm=45je66f1v881882933z8866468316za20gzb866468316zd866468316&_p=1781676585536&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAGQ&are=1&cid=1776948069.",
      "status": 204,
      "ct": "text/plain",
      "snip": ""
     },
     {
-     "url": "https://www.google-analytics.com/j/collect?v=1&_v=j102&a=1576068415&t=pageview&_s=1&dl=https%3A%2F%2Fsecurities.miraeasset.com%2Fmw%2Fmki%2Fmki7000%2Fv01.do%3Fcs_ecis_id%3D202606006%26pub_sect%3DO%26m",
+     "url": "https://www.google-analytics.com/j/collect?v=1&_v=j102&a=469617456&t=pageview&_s=1&dl=https%3A%2F%2Fsecurities.miraeasset.com%2Fmw%2Fmki%2Fmki7000%2Fv01.do%3Fcs_ecis_id%3D202606006%26pub_sect%3DO%26mo",
      "status": 200,
      "ct": "text/plain",
      "snip": "2,x"
@@ -348,7 +357,7 @@
      "snip": "\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n<!DOCTYPE html>\r\n<html lang=\"ko\">\r\n<head>\r\n\t\r\n\r\n\r\n\t<meta charset=\"euc-kr\">\r\n\t<meta http-equiv=\"X-UA-Compatible\" content=\"ie=edge\">\r\n    <meta name=\"viewport\" content=\"wid"
     },
     {
-     "url": "https://analytics.google.com/g/collect?v=2&tid=G-EK6Y32KK40&gtm=45je66g0h2v881882933za20gzb866468316zd866468316&_p=1781676378125&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AEAAAGQ&ae=a&are=1&cid=1899240619.1781",
+     "url": "https://analytics.google.com/g/collect?v=2&tid=G-EK6Y32KK40&gtm=45je66f1v881882933za20gzb866468316zd866468316&_p=1781676585536&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AEAAAGQ&ae=a&are=1&cid=1776948069.178167",
      "status": 204,
      "ct": "text/plain",
      "snip": ""
@@ -453,7 +462,7 @@
   "NH": {
    "xhr": [
     {
-     "url": "https://m.nhsec.com/customer/event/eventView?mNo=1010&t=1781676389632",
+     "url": "https://m.nhsec.com/customer/event/eventView?mNo=1010&t=1781676594943",
      "status": 200,
      "ct": "text/html; charset=euc-kr",
      "snip": "\r\n\r\n\r\n\r\n<!DOCTYPE html>\r\n<html lang=\"ko\">\r\n<head>\r\n\t<meta charset=\"euc-kr\">\r\n\t<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\r\n\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1"
@@ -465,7 +474,7 @@
      "snip": "\r\n\r\n\r\n<!doctype html>\r\n<html lang=\"ko\">\r\n<head>\r\n\t<meta charset=\"euc-kr\">\r\n\t<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\r\n\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0"
     },
     {
-     "url": "https://www.google-analytics.com/j/collect?v=1&_v=j102&aip=1&a=27170859&t=pageview&_s=1&dl=https%3A%2F%2Fm.nhsec.com%2Fcustomer%2Fevent%2FeventView%3FmNo%3D1010%26t%3D1781676389632&dr=https%3A%2F%2Fm.",
+     "url": "https://www.google-analytics.com/j/collect?v=1&_v=j102&aip=1&a=553168021&t=pageview&_s=1&dl=https%3A%2F%2Fm.nhsec.com%2Fcustomer%2Fevent%2FeventView%3FmNo%3D1010%26t%3D1781676594943&dr=https%3A%2F%2Fm",
      "status": 200,
      "ct": "text/plain",
      "snip": "2,x"
@@ -540,9 +549,9 @@
     }
    ],
    "before_url": "https://m.nhsec.com/customer/event/eventList",
-   "after_url": "https://m.nhsec.com/customer/event/eventView?mNo=1010&t=1781676389632",
+   "after_url": "https://m.nhsec.com/customer/event/eventView?mNo=1010&t=1781676594943",
    "frames": [
-    "https://m.nhsec.com/customer/event/eventView?mNo=1010&t=1781676389632",
+    "https://m.nhsec.com/customer/event/eventView?mNo=1010&t=1781676594943",
     "https://m.nhsec.com/customer/event/getContent?mPeriod=ING&mNo=1010"
    ],
    "detail_imgs": [
@@ -648,13 +657,13 @@
      "url": "https://m.nhsec.com/transkeyServlet?op=getInitTime",
      "status": 200,
      "ct": "text/javascript;charset=EUC-KR",
-     "blen": 169,
+     "blen": 167,
      "has_mno": false,
      "hit": false,
      "snip": ""
     },
     {
-     "url": "https://m.nhsec.com/transkeyServlet?op=getToken&1781676414970",
+     "url": "https://m.nhsec.com/transkeyServlet?op=getToken&1781676616650",
      "status": 200,
      "ct": "text/javascript;charset=EUC-KR",
      "blen": 22,
@@ -663,7 +672,7 @@
      "snip": ""
     },
     {
-     "url": "https://www.google-analytics.com/j/collect?v=1&_v=j102&aip=1&a=747120702&t=pageview&_s=1&dl=https%3A%2F%2Fm.nhsec.com%2Fcustomer%2Fevent%2FeventList&dr=&ul=ko-kr&dt=%EA%B3%A0%EA%B0%9D%EC%84%BC%ED%84%B",
+     "url": "https://www.google-analytics.com/j/collect?v=1&_v=j102&aip=1&a=1886414550&t=pageview&_s=1&dl=https%3A%2F%2Fm.nhsec.com%2Fcustomer%2Fevent%2FeventList&dr=&ul=ko-kr&dt=%EA%B3%A0%EA%B0%9D%EC%84%BC%ED%84%",
      "status": 200,
      "ct": "text/plain",
      "blen": 3,
@@ -681,7 +690,7 @@
      "snip": ""
     },
     {
-     "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-MFK7S9YRXT&gtm=45je66f1v9175614440z8811194320za20gzb811194320zd811194320&_p=1781676417999&gcd=13l3l3l3l1l1&npa=0&dma=0&are=1&cid=2050552649.1781676",
+     "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-MFK7S9YRXT&gtm=45je66f1v9175614440z8811194320za20gzb811194320zd811194320&_p=1781676619486&gcd=13l3l3l3l1l1&npa=0&dma=0&are=1&cid=2140089241.1781676",
      "status": 204,
      "ct": "text/plain",
      "blen": 0,
