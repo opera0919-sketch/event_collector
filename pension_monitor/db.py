@@ -144,18 +144,23 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
         })
         run_id = run[0]["id"] if run else None
         result["run_id"] = run_id
+        # PostgREST 일괄 insert 는 모든 객체의 키 집합이 동일해야 함(PGRST102).
+        # 신규/종료/변경 로그의 키를 통일(미사용 필드는 None)해서 한 번에 적재.
+        def _log(eid, ctype, field=None, old=None, new=None):
+            return {"run_id": run_id, "event_id": eid, "change_type": ctype,
+                    "field_name": field[:60] if field else None,
+                    "old_value": str(old)[:2000] if old is not None else None,
+                    "new_value": str(new)[:2000] if new is not None else None}
         logs = []
         for ev in new_events:
             if ev.get("id"):
-                logs.append({"run_id": run_id, "event_id": ev["id"], "change_type": "신규"})
+                logs.append(_log(ev["id"], "신규"))
         for old in closed:
             if old.get("id"):
-                logs.append({"run_id": run_id, "event_id": old["id"], "change_type": "종료"})
+                logs.append(_log(old["id"], "종료"))
         for ev, f, o, n in changed:
             if ev.get("id"):
-                logs.append({"run_id": run_id, "event_id": ev["id"], "change_type": "변경",
-                             "field_name": f[:60], "old_value": str(o or "")[:2000],
-                             "new_value": str(n or "")[:2000]})
+                logs.append(_log(ev["id"], "변경", f, o, n))
         if logs:
             _safe(_post, "event_changes", logs, prefer="return=minimal")
     return result
