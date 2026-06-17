@@ -133,6 +133,146 @@ async def probe_nh(browser):
     return out
 
 
+# 상세 페이지 이미지 + 텍스트 길이 (OCR 대상 파악용)
+_DETAIL_IMG_JS = r"""
+() => Array.from(document.querySelectorAll('img'))
+  .map(i => ({src: (i.currentSrc||i.src||i.getAttribute('data-src')||'').slice(0,200),
+              alt: (i.alt||'').slice(0,80), w: i.naturalWidth, h: i.naturalHeight}))
+  .filter(i => i.src && i.w >= 200 && i.h >= 150
+               && !/logo|icon|btn|sprite|nav_|bullet|arrow|blank|dot/i.test(i.src))
+  .slice(0, 12)
+"""
+
+
+async def probe_detail_nav(browser, list_url, item_js, click_js, wait_list=7000):
+    """리스트 첫 항목을 클릭해 ① 상세 URL 구조 ② 상세 페이지 이미지/텍스트를 파악.
+
+    item_js: 리스트 항목들의 링크/onclick/속성 표본을 반환하는 JS
+    click_js: 첫 항목(또는 그 링크)을 click() 하는 JS
+    """
+    out = {"xhr": []}
+    page = await browser.new_page(user_agent=UA, locale="ko-KR")
+
+    async def on_resp(resp):
+        try:
+            u = resp.url
+            if re.search(r"(event|evt|detail|view|notice|\.do|Ajax|ajax|api)", u, re.I) \
+                    and not re.search(r"\.(css|js|png|jpg|jpeg|gif|svg|woff|ico)(\?|$)", u, re.I):
+                ct = resp.headers.get("content-type", "")
+                body = ""
+                if "json" in ct or "text" in ct or "html" in ct:
+                    try:
+                        body = (await resp.text())[:300]
+                    except Exception:
+                        body = ""
+                out["xhr"].append({"url": u[:200], "status": resp.status,
+                                   "ct": ct[:40], "snip": body[:200]})
+        except Exception:
+            pass
+
+    page.on("response", on_resp)
+    try:
+        await page.goto(list_url, wait_until="commit", timeout=45000)
+        await page.wait_for_timeout(wait_list)
+        out["items"] = await page.evaluate(item_js)
+        out["before_url"] = page.url
+        out["xhr"] = []  # 리스트 로딩 XHR 은 버리고, 클릭 이후만 본다
+        try:
+            await page.evaluate(click_js)
+            await page.wait_for_timeout(6000)
+            out["after_url"] = page.url
+            out["frames"] = [f.url[:160] for f in page.frames][:8]
+            out["detail_imgs"] = await page.evaluate(_DETAIL_IMG_JS)
+            body = await page.inner_text("body")
+            compact = " ".join(body.split())
+            out["detail_textlen"] = len(compact)
+            out["detail_text_head"] = compact[:600]
+        except Exception as e:
+            out["click_error"] = f"{type(e).__name__}: {str(e)[:150]}"
+        out["xhr"] = out["xhr"][:20]
+    except Exception as e:
+        out["error"] = f"{type(e).__name__}: {str(e)[:150]}"
+    finally:
+        await page.close()
+    return out
+
+
+# 미래에셋: 리스트 li(기간 포함, 배너 img) → 첫 항목 클릭
+_MIRAE_ITEM_JS = r"""
+() => {
+  const dateRe = /\d{4}[.\-\/]\s?\d{1,2}[.\-\/]\s?\d{1,2}/;
+  const out = [];
+  for (const li of document.querySelectorAll('li')) {
+    const t = (li.innerText||'').replace(/\s+/g,' ').trim();
+    if (!dateRe.test(t) || li.querySelector('li') || t.length > 300) continue;
+    const a = li.closest('a[href]') || li.querySelector('a[href]');
+    const img = li.querySelector('img');
+    const tgt = a || li;
+    const attrs = {};
+    for (const n of (tgt.getAttributeNames?tgt.getAttributeNames():[])) attrs[n]=(tgt.getAttribute(n)||'').slice(0,140);
+    out.push({ text: t.slice(0,90), tag: tgt.tagName,
+               href: a?a.getAttribute('href'):null,
+               onclick: tgt.getAttribute('onclick')||'',
+               imgsrc: img?(img.getAttribute('src')||''):'',
+               html: li.outerHTML.slice(0,400), attrs });
+    if (out.length>=6) break;
+  }
+  return out;
+}
+"""
+_MIRAE_CLICK_JS = r"""
+() => {
+  const dateRe = /\d{4}[.\-\/]\s?\d{1,2}[.\-\/]\s?\d{1,2}/;
+  for (const li of document.querySelectorAll('li')) {
+    const t = (li.innerText||'').replace(/\s+/g,' ').trim();
+    if (!dateRe.test(t) || li.querySelector('li') || t.length > 300) continue;
+    const tgt = li.querySelector('a, button, img') || li;
+    tgt.click();
+    return;
+  }
+}
+"""
+
+# NH: a.click_area 첫 카드 클릭
+_NH_ITEM_JS = r"""
+() => {
+  const out = [];
+  let cards = Array.from(document.querySelectorAll('a.click_area'));
+  if (!cards.length) cards = Array.from(document.querySelectorAll('li'))
+      .filter(li => (li.innerText||'').includes('이벤트기간') && !li.querySelector('li'));
+  for (const el of cards.slice(0,6)) {
+    const attrs = {};
+    for (const n of (el.getAttributeNames?el.getAttributeNames():[])) attrs[n]=(el.getAttribute(n)||'').slice(0,140);
+    const img = el.querySelector('img');
+    out.push({ text:(el.innerText||'').replace(/\s+/g,' ').trim().slice(0,90),
+               tag: el.tagName, onclick: el.getAttribute('onclick')||'',
+               imgsrc: img?(img.getAttribute('src')||''):'',
+               html: el.outerHTML.slice(0,400), attrs });
+  }
+  return out;
+}
+"""
+_NH_CLICK_JS = r"""
+() => {
+  let el = document.querySelector('a.click_area');
+  if (!el) el = Array.from(document.querySelectorAll('li'))
+      .find(li => (li.innerText||'').includes('이벤트기간') && !li.querySelector('li'));
+  if (el) el.click();
+}
+"""
+
+
+async def probe_detail(browser):
+    out = {}
+    out["미래에셋"] = await probe_detail_nav(
+        browser, "https://securities.miraeasset.com/mw/mki/mki7000/r01.do",
+        _MIRAE_ITEM_JS, _MIRAE_CLICK_JS, wait_list=9000)
+    out["NH"] = await probe_detail_nav(
+        browser, "https://m.nhsec.com/customer/event/eventList",
+        _NH_ITEM_JS, _NH_CLICK_JS, wait_list=7000)
+    return out
+
+
 async def probe_images(browser):
     out = {}
     targets = [
@@ -170,6 +310,8 @@ async def main():
         findings["kiwoom"] = await probe_kiwoom(browser)
         findings["nh"] = await probe_nh(browser)
         findings["images"] = await probe_images(browser)
+        # 개별 상세 페이지 URL 구조 + 상세 이미지/텍스트 (상세-우선 수집 전환용)
+        findings["detail_nav"] = await probe_detail(browser)
         await browser.close()
 
     import pathlib

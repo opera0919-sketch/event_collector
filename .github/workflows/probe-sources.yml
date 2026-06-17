@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - claude/pension-event-monitoring-8lfq26
+      - claude/pension-event-data-collection-u6gtn1
     paths:
       - 'scripts/probe_sources.py'
       - '.github/workflows/probe-sources.yml'
