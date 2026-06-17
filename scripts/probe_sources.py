@@ -75,8 +75,8 @@ def probe_nh_json():
                 return
             if isinstance(node, list) and node and isinstance(node[0], dict):
                 keys = sorted(node[0].keys())
-                if any(re.search(r"mNo|title|subject|nm|name|start|end|period|date|content",
-                                 " ".join(keys), re.I)):
+                if re.search(r"mNo|title|subject|nm|name|start|end|period|date|content",
+                             " ".join(keys), re.I):
                     out.setdefault("lists", []).append({
                         "path": path, "count": len(node), "keys": keys,
                         "sample": {k: str(v)[:120] for k, v in node[0].items()}})
