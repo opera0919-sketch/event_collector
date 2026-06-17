@@ -2,14 +2,9 @@ name: collect-test
 
 # 상세-우선 수집 검증용: DB/메일 없이 --collect-only 로 수집·분류만 수행하고
 # data/events_latest.json 을 브랜치에 커밋해 세션에서 품질을 확인한다.
+# 수동 실행 전용(workflow_dispatch) — push 마다 Gemini OCR 쿼터를 소모하지 않도록.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - claude/pension-event-data-collection-u6gtn1
-    paths:
-      - 'pension_monitor/**'
-      - '.github/workflows/collect-test.yml'
 
 permissions:
   contents: write

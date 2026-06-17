@@ -22,7 +22,7 @@ from .scrapers import SCRAPERS
 from .scrapers.base import load_page
 from .scrapers.koreainvestment import fetch_detail_text
 
-MAX_DETAIL_FETCH = 20       # 상세 페이지 조회 상한 (사이트 부하 + 실행시간)
+MAX_DETAIL_FETCH = 36       # 상세 페이지 조회 상한 (6개사 연금 이벤트 전건 커버; 시간은 아래 예산이 보호)
 DETAIL_BUDGET_SEC = 200     # 상세 조회 전체 시간 예산 (초과 시 중단 → 런 행 방지)
 
 # 매 실행 구조적으로 실패하는(헤드리스 차단 등) 증권사 — 재시도 패스에서 제외해
