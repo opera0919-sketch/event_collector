@@ -22,8 +22,8 @@ from .scrapers import SCRAPERS
 from .scrapers.base import load_page
 from .scrapers.koreainvestment import fetch_detail_text
 
-MAX_DETAIL_FETCH = 12       # 상세 페이지 조회 상한 (사이트 부하 + 실행시간)
-DETAIL_BUDGET_SEC = 120     # 상세 조회 전체 시간 예산 (초과 시 중단 → 런 행 방지)
+MAX_DETAIL_FETCH = 20       # 상세 페이지 조회 상한 (사이트 부하 + 실행시간)
+DETAIL_BUDGET_SEC = 200     # 상세 조회 전체 시간 예산 (초과 시 중단 → 런 행 방지)
 
 # 매 실행 구조적으로 실패하는(헤드리스 차단 등) 증권사 — 재시도 패스에서 제외해
 # 불필요한 풀 타임아웃 대기를 없앤다. 1차 시도만 하고 실패로 둔다.
@@ -104,7 +104,35 @@ async def collect():
     return events, failed
 
 
+JS_LARGEST_IMG = r"""
+() => {
+  const imgs = Array.from(document.querySelectorAll('img'))
+    .map(i => ({src: i.currentSrc || i.src || '', w: i.naturalWidth, h: i.naturalHeight}))
+    .filter(i => i.src && i.w >= 280 && i.h >= 180
+                 && !/logo|icon|btn|sprite|nav_|bullet|arrow|blank|dot/i.test(i.src))
+    .sort((a, b) => (b.w * b.h) - (a.w * a.h));
+  return imgs.length ? imgs[0].src : null;
+}
+"""
+
+
+def _img_from_html(soup, base_url):
+    """정적 HTML 에서 콘텐츠 배너 이미지 1개 추출 (아이콘/로고 제외)."""
+    import re as _re
+    from urllib.parse import urljoin
+    for img in soup.find_all("img"):
+        src = img.get("src") or img.get("data-src") or ""
+        if not src or _re.search(r"(logo|icon|btn|bullet|sprite|blank|dot|arrow|nav_)", src, _re.I):
+            continue
+        if _re.search(r"(cmd=down|/event/|fileUpload|mlist|/public/mw/event|upload\.file|/img/|/images/)",
+                      src, _re.I):
+            return urljoin(base_url, src)
+    return None
+
+
 async def enrich_details(browser, pension_events):
+    """상세 페이지에서 텍스트 + 배너 이미지(_image_url) 확보.
+    스크레이퍼가 이미 _image_url 을 준 경우(NH/미래에셋)는 이미지 탐색 생략."""
     import time
     from bs4 import BeautifulSoup
     from .scrapers.static_generic import fetch_html
@@ -116,27 +144,43 @@ async def enrich_details(browser, pension_events):
             print(f"[상세] 예산 도달 — {fetched}건 조회 후 중단")
             break
         url = ev.get("event_url") or ""
-        if not url.startswith("http") or url.rstrip("/").endswith(("eventList", "r01.do")):
+        list_like = url.rstrip("/").endswith(("eventList", "r01.do", "CUST_09_0003.jsp"))
+        if not url.startswith("http") or list_like:
             continue
+        # 한투: 상세 텍스트 경로(혜택 폴백은 목록 부제). 이미지 OCR 불필요.
+        if ev["firm_name"] == "한국투자증권" and ev.get("_detail_id"):
+            try:
+                ev["_detail_text"] = (fetch_detail_text(ev["_detail_id"]) or "")[:8000]
+                fetched += 1
+            except Exception as e:
+                print(f"[상세실패] 한국투자증권 {ev['event_name'][:24]}: {type(e).__name__}")
+            continue
+        need_img = not ev.get("_image_url")
         detail_text = ""
         try:
-            if ev["firm_name"] == "한국투자증권" and ev.get("_detail_id"):
-                detail_text = fetch_detail_text(ev["_detail_id"])
-            else:
-                # requests 우선 (키움은 헤드리스 차단이라 필수), 부족하면 브라우저
+            try:
+                soup = BeautifulSoup(fetch_html(url, retries=1), "html.parser")
+                for tag in soup(["script", "style"]):
+                    tag.decompose()
+                detail_text = soup.get_text("\n", strip=True)
+                if need_img:
+                    img = _img_from_html(soup, url)
+                    if img:
+                        ev["_image_url"] = img
+                        need_img = False
+            except Exception:
+                detail_text = ""
+            # 정적 텍스트가 빈약하면(JS 렌더) 브라우저로 텍스트+이미지 확보 (KB 상세 등)
+            if len(detail_text) < 200 and ev["firm_name"] != "키움증권":
+                page = await load_page(browser, url, wait_ms=4000, retries=2)
                 try:
-                    soup = BeautifulSoup(fetch_html(url, retries=1), "html.parser")
-                    for tag in soup(["script", "style"]):
-                        tag.decompose()
-                    detail_text = soup.get_text("\n", strip=True)
-                except Exception:
-                    detail_text = ""
-                if len(detail_text) < 200 and ev["firm_name"] != "키움증권":
-                    page = await load_page(browser, url, wait_ms=4000, retries=2)
-                    try:
-                        detail_text = await page.inner_text("body")
-                    finally:
-                        await page.close()
+                    detail_text = await page.inner_text("body")
+                    if need_img:
+                        src = await page.evaluate(JS_LARGEST_IMG)
+                        if src:
+                            ev["_image_url"] = src
+                finally:
+                    await page.close()
             fetched += 1
         except Exception as e:
             print(f"[상세실패] {ev['firm_name']} {ev['event_name'][:30]}: {type(e).__name__}")
@@ -176,9 +220,12 @@ def finalize(events):
     return final
 
 
-OCR_BUDGET = 10          # 1회 실행 OCR 호출 상한 (비용 + 무료티어 RPD 통제)
-OCR_TIME_BUDGET = 200    # OCR 전체 시간 예산(초)
+OCR_BUDGET = 16          # 1회 실행 OCR 호출 상한 (캐시 덕에 보통 2주차부터 급감)
+OCR_TIME_BUDGET = 300    # OCR 전체 시간 예산(초)
 OCR_PACE_SEC = 6.5       # Gemini 무료티어 10 RPM 준수용 호출 간 간격
+
+# OCR이 '이미지에 혜택 없음' 류 무의미 응답을 낸 경우 빈 값 처리 (검토필요로 남김)
+_OCR_JUNK = ("명시되어 있지", "명시되어있지", "확인 필요", "없습니다", "알 수 없", "정보가 없")
 
 
 def _resolve_banner(ev):
@@ -232,7 +279,7 @@ def enrich_benefits(pension):
             continue
         if not vision.enabled() or n_ocr >= OCR_BUDGET or time.monotonic() - started > OCR_TIME_BUDGET:
             continue
-        img = _resolve_banner(ev)
+        img = ev.get("_image_url") or _resolve_banner(ev)
         if not img:
             continue
         if n_ocr:
@@ -241,8 +288,9 @@ def enrich_benefits(pension):
         res = vision.extract(img, referer=ev.get("event_url") or "", hint=ev["event_name"])
         if not res:
             continue
-        if res.get("benefits"):
-            ev["benefits"] = res["benefits"]
+        ben = (res.get("benefits") or "").strip()
+        if ben and not any(j in ben for j in _OCR_JUNK):
+            ev["benefits"] = ben
             ev["remarks"] = None
         if res.get("conditions"):
             ev["conditions"] = ev.get("conditions") or res["conditions"]
