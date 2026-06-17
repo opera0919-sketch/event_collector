@@ -293,6 +293,46 @@ async def probe_nh_mno(browser):
     return out
 
 
+async def probe_nh_list(browser):
+    """NH: eventList 로딩 시 발생하는 목록 데이터 XHR(본문 포함) 캡처 → mNo 출처 확인."""
+    out = {"xhr": []}
+    url = "https://m.nhsec.com/customer/event/eventList"
+    page = await browser.new_page(user_agent=UA, locale="ko-KR")
+
+    async def on_resp(resp):
+        try:
+            u = resp.url
+            if re.search(r"\.(css|js|png|jpg|jpeg|gif|svg|woff|ico)(\?|$)", u, re.I):
+                return
+            if "nhsec" not in u and "nhqv" not in u:
+                return
+            ct = resp.headers.get("content-type", "")
+            body = ""
+            if "json" in ct or "text" in ct or "html" in ct:
+                try:
+                    body = await resp.text()
+                except Exception:
+                    body = ""
+            has = bool(re.search(r"mNo|이벤트기간|eventList|getList|listAjax", body, re.I))
+            out["xhr"].append({"url": u[:200], "status": resp.status, "ct": ct[:40],
+                               "blen": len(body), "has_mno": ("mNo" in body),
+                               "hit": has, "snip": body[:400] if has else ""})
+        except Exception:
+            pass
+
+    page.on("response", on_resp)
+    try:
+        await page.goto(url, wait_until="networkidle", timeout=45000)
+        await page.wait_for_timeout(6000)
+        out["xhr"].sort(key=lambda x: (not x["hit"], not x["has_mno"], -x["blen"]))
+        out["xhr"] = out["xhr"][:15]
+    except Exception as e:
+        out["error"] = f"{type(e).__name__}: {str(e)[:150]}"
+    finally:
+        await page.close()
+    return out
+
+
 async def probe_detail(browser):
     out = {}
     out["미래에셋"] = await probe_detail_nav(
@@ -302,6 +342,7 @@ async def probe_detail(browser):
         browser, "https://m.nhsec.com/customer/event/eventList",
         _NH_ITEM_JS, _NH_CLICK_JS, wait_list=7000)
     out["NH_mno"] = await probe_nh_mno(browser)
+    out["NH_list"] = await probe_nh_list(browser)
     return out
 
 
