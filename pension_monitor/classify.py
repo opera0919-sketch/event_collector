@@ -84,16 +84,19 @@ def extract_details(detail_text: str) -> dict:
         compact = line.replace(" ", "")
         if any(k in compact for k in ("참여대상", "이벤트대상", "참여조건", "응모대상", "대상고객", "참여방법")) \
                 or compact.startswith(("대상:", "대상：")):   # 상세 페이지 흔한 표기 "대상 : ..."
-            cond.append(" / ".join(lines[i:i + 2])[:200])
+            cond.append(" / ".join(lines[i:i + 2])[:300])
         # 혜택: 키워드 + 금액/수치 동반 시에만. 다른 이벤트 제목(…이벤트)으로 끝나는 줄 제외
-        if any(k in compact for k in ("혜택", "지급", "경품", "리워드", "상품권", "수수료우대", "캐시백")) \
-                and re.search(r"[\d만천]+\s?원|\d+%|무료|평생", compact) \
+        # (다단계 금액조건/리워드를 빠짐없이 담기 위해 줄 단위로 모두 수집)
+        if any(k in compact for k in ("혜택", "지급", "경품", "리워드", "상품권", "수수료우대", "캐시백",
+                                      "증정", "당첨", "추첨", "선착순")) \
+                and re.search(r"[\d만천]+\s?원|\d+%|무료|평생|\d+명", compact) \
                 and not compact.endswith("이벤트"):
-            bene.append(line[:200])
+            bene.append(line[:300])
     if cond:
-        out["conditions"] = " | ".join(dict.fromkeys(cond))[:500]
+        out["conditions"] = " | ".join(dict.fromkeys(cond))[:2000]
     if bene:
-        out["benefits"] = " | ".join(dict.fromkeys(bene))[:500]
+        # 다단계 혜택을 누락 없이 — 한도를 넉넉히
+        out["benefits"] = " | ".join(dict.fromkeys(bene))[:3000]
     if not cond and not bene:
         out["remarks"] = "상세 자동추출 실패 — 원문 확인 필요 (이미지 공지 가능성)"
     return out

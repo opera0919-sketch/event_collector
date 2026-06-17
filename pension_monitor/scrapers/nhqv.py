@@ -20,7 +20,34 @@ from ..config import UA
 
 LIST_JSON = "https://m.nhsec.com/customer/event/eventList.json"
 EVENT_VIEW = "https://m.nhsec.com/customer/event/eventView?mNo={mno}"
+CONTENT_URL = "https://m.nhsec.com/customer/event/getContent?mPeriod=ING&mNo={mno}"
 _FILE_BASE = "https://m.nhsec.com/fileUpload/nhmobile/event/{name}"
+
+
+def fetch_content_html(mno: str, retries=3) -> str:
+    """개별 이벤트 상세 본문 HTML(getContent) 직접 조회 — 재검증용 실제-페이지 읽기."""
+    last = None
+    for attempt in range(retries):
+        try:
+            r = requests.get(CONTENT_URL.format(mno=mno), headers={
+                "User-Agent": UA, "X-Requested-With": "XMLHttpRequest",
+                "Referer": EVENT_VIEW.format(mno=mno)}, timeout=30)
+            r.raise_for_status()
+            r.encoding = r.apparent_encoding
+            return r.text
+        except Exception as e:
+            last = e
+            time.sleep(2 ** attempt)
+    raise last
+
+
+def content_to_text_image(html: str):
+    """getContent / mContent HTML → (본문 텍스트, OCR 대상 이미지 URL)."""
+    soup = BeautifulSoup(html or "", "html.parser")
+    image = _content_image(html, [])
+    for tag in soup(["script", "style"]):
+        tag.decompose()
+    return soup.get_text("\n", strip=True), image
 
 
 def _to_iso(d):
