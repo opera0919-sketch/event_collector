@@ -22,6 +22,11 @@ LIST_JSON = "https://m.nhsec.com/customer/event/eventList.json"
 EVENT_VIEW = "https://m.nhsec.com/customer/event/eventView?mNo={mno}"
 CONTENT_URL = "https://m.nhsec.com/customer/event/getContent?mPeriod=ING&mNo={mno}"
 _FILE_BASE = "https://m.nhsec.com/fileUpload/nhmobile/event/{name}"
+# 일시 연결 타임아웃 대응: 두 공식 도메인을 번갈아 시도 (m.nhsec.com ↔ m.nhqv.com)
+_LIST_JSON_HOSTS = [
+    "https://m.nhsec.com/customer/event/eventList.json",
+    "https://m.nhqv.com/customer/event/eventList.json",
+]
 
 
 def fetch_content_html(mno: str, retries=3) -> str:
@@ -74,15 +79,18 @@ def _content_image(mcontent, mfiles):
     return None
 
 
-def _fetch_json(retries=4):
+def _fetch_json(retries=3):
+    """eventList.json 조회. 두 공식 도메인을 번갈아 시도하며 일시 타임아웃을 흡수."""
     last = None
     for attempt in range(retries):
+        url = _LIST_JSON_HOSTS[attempt % len(_LIST_JSON_HOSTS)]
+        host = url.split("/")[2]
         try:
-            r = requests.get(LIST_JSON, headers={
+            r = requests.get(url, headers={
                 "User-Agent": UA,
                 "X-Requested-With": "XMLHttpRequest",
-                "Referer": "https://m.nhsec.com/customer/event/eventList",
-            }, timeout=30)
+                "Referer": f"https://{host}/customer/event/eventList",
+            }, timeout=40)
             r.raise_for_status()
             return r.json()
         except Exception as e:

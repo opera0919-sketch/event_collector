@@ -29,6 +29,10 @@ DETAIL_BUDGET_SEC = 200     # 상세 조회 전체 시간 예산 (초과 시 중
 # 불필요한 풀 타임아웃 대기를 없앤다. 1차 시도만 하고 실패로 둔다.
 KNOWN_HARD = {"키움증권"}
 
+# 일시 네트워크 블립(미래에셋/NH 간헐 타임아웃) 흡수용: 실패 증권사 재시도 패스 수와 간격.
+RETRY_PASSES = 2
+RETRY_PASS_DELAY_SEC = 8
+
 # 상세 로그(이벤트 전건·리포트 전문)는 로그/토큰 비용이 커서 기본 off.
 # 디버깅 시 DEBUG=1 로 활성화.
 DEBUG = os.environ.get("DEBUG", "").lower() in ("1", "true", "yes")
@@ -79,10 +83,14 @@ async def collect():
                 print(f"[수집실패] {firm}: {type(e).__name__}: {str(e)[:160]}")
                 failed.append(firm)
 
-        # 간헐 지연/거부 대응: 실패 증권사 1회 재시도 (구조적 실패 증권사는 제외)
-        retryable = [f for f in failed if f not in KNOWN_HARD]
-        if retryable:
-            print(f"[재시도] {retryable}")
+        # 간헐 지연/거부(일시 타임아웃) 대응: 실패 증권사를 시간 간격을 두고 여러 번
+        # 재시도해 짧은 네트워크 블립을 흡수한다 (구조적 실패 증권사 KNOWN_HARD 는 제외).
+        for attempt in range(RETRY_PASSES):
+            retryable = [f for f in failed if f not in KNOWN_HARD]
+            if not retryable:
+                break
+            await asyncio.sleep(RETRY_PASS_DELAY_SEC)
+            print(f"[재시도 {attempt + 1}/{RETRY_PASSES}] {retryable}")
             still = [f for f in failed if f in KNOWN_HARD]
             for firm, fn, needs_browser in SCRAPERS:
                 if firm not in retryable:

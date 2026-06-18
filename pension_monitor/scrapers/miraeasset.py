@@ -54,7 +54,8 @@ _LABELS = re.compile(r"^(NEW|진행중|종료임박|마감임박|이벤트)\s*")
 
 
 async def scrape(browser):
-    page = await load_page(browser, LIST_URL, wait_ms=9000, retries=4, timeout_ms=60000)
+    # 일시 타임아웃 대응은 collect() 의 재시도 패스가 담당 → 여기선 패스당 시간을 적당히 제한.
+    page = await load_page(browser, LIST_URL, wait_ms=9000, retries=3, timeout_ms=45000)
     try:
         items = await page.evaluate(JS_LI_ITEMS)
         events, seen = [], set()
