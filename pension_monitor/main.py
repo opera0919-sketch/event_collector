@@ -237,12 +237,34 @@ def finalize(events):
     return final
 
 
-OCR_BUDGET = 24          # 1회 실행 OCR 호출 상한 (콜드런에 6개사 상세 이미지 커버; 캐시 덕에 2주차부터 급감)
-OCR_TIME_BUDGET = 300    # OCR 전체 시간 예산(초)
+STRUCT_BUDGET = 40       # 1회 실행 Gemini 구조화 호출 상한 (본문 텍스트는 저비용, 이미지 폴백 포함)
+OCR_TIME_BUDGET = 360    # 구조화 전체 시간 예산(초)
 OCR_PACE_SEC = 6.5       # Gemini 무료티어 10 RPM 준수용 호출 간 간격
+_TEXT_MIN = 200          # 이 길이 이상이면 본문 텍스트로 구조화, 미만이면 이미지 OCR
 
-# OCR이 '이미지에 혜택 없음' 류 무의미 응답을 낸 경우 빈 값 처리 (검토필요로 남김)
+# Gemini가 '명시 안 됨' 류 무의미 응답을 낸 경우 빈 값 처리 (검토필요로 남김)
 _OCR_JUNK = ("명시되어 있지", "명시되어있지", "확인 필요", "없습니다", "알 수 없", "정보가 없")
+
+
+def _apply_structured(ev, res):
+    """Gemini 표준 구조화 결과를 이벤트에 반영(덮어쓰기). 무의미 응답은 무시."""
+    if not res:
+        return False
+    ben = (res.get("benefits") or "").strip()
+    got = False
+    if ben and not any(j in ben for j in _OCR_JUNK):
+        ev["benefits"] = ben
+        ev["remarks"] = None
+        got = True
+    cond = (res.get("conditions") or "").strip()
+    if cond and not any(j in cond for j in _OCR_JUNK):
+        ev["conditions"] = cond
+    for k in ("acct_pension", "acct_irp", "acct_dc"):
+        if res.get(k):
+            ev[k] = True
+    if res.get("acct_etc") and not ev.get("acct_etc"):
+        ev["acct_etc"] = res["acct_etc"]
+    return got
 
 
 def _resolve_banner(ev):
@@ -273,50 +295,42 @@ def _resolve_banner(ev):
     return None
 
 
-def enrich_benefits(pension):
-    """혜택이 빈 이벤트를 이미지 OCR(또는 DB 캐시)로 보강.
-    - DB에 이미 혜택이 있으면 재사용(재-OCR 안 함) → 안정 이벤트는 1회만 OCR.
-    - GEMINI_API_KEY 없으면 OCR 스킵(파이프라인 정상)."""
+def enrich_structured(pension):
+    """모든 이벤트의 조건/혜택을 Gemini로 '동일 표준 형식'으로 구조화(형식·가독성 통일).
+    - 상세 본문 텍스트가 충분하면 텍스트로 구조화(저비용), 빈약하면 상세 이미지 OCR.
+    - GEMINI_API_KEY 없으면 휴리스틱(classify_all) 값을 그대로 유지."""
     import time
     from . import vision
 
-    existing = db.fetch_all_events() if db.enabled() else []
-    by_key = {(e["firm_name"], e["event_name"], e.get("start_date")): e for e in existing}
+    if not vision.enabled():
+        print("[구조화] GEMINI 미설정 → 휴리스틱 값 유지")
+        return
     started = time.monotonic()
-    n_ocr = 0
+    n = 0
     for ev in pension:
-        if ev.get("benefits"):
-            continue
-        old = by_key.get((ev["firm_name"], ev["event_name"], ev.get("start_date")))
-        if old and old.get("benefits"):            # 캐시 적중
-            ev["benefits"] = old["benefits"]
-            ev["conditions"] = ev.get("conditions") or old.get("conditions")
-            ev["remarks"] = None
-            continue
-        if not vision.enabled() or n_ocr >= OCR_BUDGET or time.monotonic() - started > OCR_TIME_BUDGET:
-            continue
-        img = ev.get("_image_url") or _resolve_banner(ev)
-        if not img:
-            continue
-        if n_ocr:
-            time.sleep(OCR_PACE_SEC)          # 무료티어 RPM 준수
-        n_ocr += 1
-        res = vision.extract(img, referer=ev.get("event_url") or "", hint=ev["event_name"])
-        if not res:
-            continue
-        ben = (res.get("benefits") or "").strip()
-        if ben and not any(j in ben for j in _OCR_JUNK):
-            ev["benefits"] = ben
-            ev["remarks"] = None
-        if res.get("conditions"):
-            ev["conditions"] = ev.get("conditions") or res["conditions"]
-        for k in ("acct_pension", "acct_irp", "acct_dc"):
-            if res.get(k):
-                ev[k] = True
-        if res.get("acct_etc") and not ev.get("acct_etc"):
-            ev["acct_etc"] = res["acct_etc"]
-    if n_ocr:
-        print(f"[OCR] {n_ocr}건 이미지 인식 수행")
+        if n >= STRUCT_BUDGET or time.monotonic() - started > OCR_TIME_BUDGET:
+            print(f"[구조화] 예산 도달 — {n}건 후 중단")
+            break
+        text = (ev.get("_detail_text") or "").strip()
+        res = {}
+        # 1) 본문 텍스트 우선 (이미지 다운로드 불필요 → 저비용)
+        if len(text) >= _TEXT_MIN:
+            if n:
+                time.sleep(OCR_PACE_SEC)
+            n += 1
+            res = vision.extract_from_text(text, hint=ev["event_name"])
+        # 2) 본문이 빈약하거나 혜택을 못 얻으면 상세 이미지 OCR
+        if not (res.get("benefits") or "").strip():
+            img = ev.get("_image_url") or _resolve_banner(ev)
+            if img and n < STRUCT_BUDGET and time.monotonic() - started <= OCR_TIME_BUDGET:
+                if n:
+                    time.sleep(OCR_PACE_SEC)
+                n += 1
+                r2 = vision.extract(img, referer=ev.get("event_url") or "", hint=ev["event_name"])
+                if (r2.get("benefits") or "").strip():
+                    res = r2
+        _apply_structured(ev, res)
+    print(f"[구조화] Gemini {n}건 호출 (텍스트/이미지 통일 포맷)")
 
 
 REVERIFY_OCR_BUDGET = 24      # 재검증 단계 OCR 호출 상한 (신규/변경 건 한정)
@@ -366,35 +380,35 @@ def reverify_new_changed(pension, existing):
             print(f"[재검증] 페이지 접속 실패 {ev['firm_name']} {ev['event_name'][:24]}: {type(e).__name__}")
             ev["remarks"] = "재검증 실패(상세 페이지 접속 불가) — 원문 확인 필요"
             continue
-        det = extract_details(text)
-        v_cond, v_ben = det["conditions"], det["benefits"]
-        # 본문 텍스트에 혜택이 없으면(이미지 공지) 상세 이미지 재OCR
-        if not v_ben and image and vision.enabled() \
-                and n_ocr < REVERIFY_OCR_BUDGET and time.monotonic() - started < OCR_TIME_BUDGET:
-            if n_ocr:
-                time.sleep(OCR_PACE_SEC)
-            n_ocr += 1
-            res = vision.extract(image, referer=ev.get("event_url") or "", hint=ev["event_name"])
-            ben = (res.get("benefits") or "").strip()
-            if ben and not any(j in ben for j in _OCR_JUNK):
-                v_ben = ben
-                v_cond = v_cond or res.get("conditions")
-            for k in ("acct_pension", "acct_irp", "acct_dc"):
-                if res.get(k):
-                    ev[k] = True
-            if res.get("acct_etc") and not ev.get("acct_etc"):
-                ev["acct_etc"] = res["acct_etc"]
-        # 재추출 성공 → 권위 데이터로 덮어쓰기. 실패(빈값) → 1차 값 유지 + 플래그
-        if v_ben or v_cond:
-            if v_cond:
-                ev["conditions"] = v_cond
-            if v_ben:
-                ev["benefits"] = v_ben
+        # enrich_structured 가 이미 실제-페이지 데이터로 구조화했으면(혜택 있음) 그 값을
+        # 인정하고 재호출하지 않는다(쿼터 절약). 비어 있는 건만 신선한 본문/이미지로 재구조화.
+        if ev.get("benefits"):
+            ev["remarks"] = None
+            continue
+        res = {}
+        if vision.enabled() and n_ocr < REVERIFY_OCR_BUDGET \
+                and time.monotonic() - started < OCR_TIME_BUDGET:
+            if len((text or "").strip()) >= _TEXT_MIN:
+                if n_ocr:
+                    time.sleep(OCR_PACE_SEC)
+                n_ocr += 1
+                res = vision.extract_from_text(text, hint=ev["event_name"])
+            if not (res.get("benefits") or "").strip() and image and n_ocr < REVERIFY_OCR_BUDGET:
+                if n_ocr:
+                    time.sleep(OCR_PACE_SEC)
+                n_ocr += 1
+                r2 = vision.extract(image, referer=ev.get("event_url") or "", hint=ev["event_name"])
+                if (r2.get("benefits") or "").strip():
+                    res = r2
+        if not (res.get("benefits") or "").strip() and not vision.enabled():
+            det = extract_details(text)                # 폴백: Gemini 미사용 시 휴리스틱
+            res = {"benefits": det["benefits"], "conditions": det["conditions"]}
+        if _apply_structured(ev, res):
             ev["remarks"] = None
         elif not ev.get("benefits"):
             ev["remarks"] = "재검증 실패(상세 본문/이미지에서 혜택 미확인) — 원문 확인 필요"
     if n_chk:
-        print(f"[재검증] 신규/변경 {n_chk}건 실제 페이지 재추출 (재OCR {n_ocr}건)")
+        print(f"[재검증] 신규/변경 {n_chk}건 확인 (보강 Gemini {n_ocr}건)")
 
 
 def main():
@@ -404,11 +418,11 @@ def main():
 
     events, failed = asyncio.run(collect())
     pension = classify_all(events)
-    enrich_benefits(pension)          # 이미지 OCR / DB 캐시로 혜택 보강 (hash 계산 전)
-    # 신규/변경 건은 실제 상세 페이지에서 재추출·덮어쓰기로 재검증(잘못된 데이터 적재 방지).
+    enrich_structured(pension)        # 모든 이벤트를 Gemini로 동일 표준 형식 구조화(형식 통일)
+    # 신규/변경 건은 실제 상세 페이지에서 재구조화·덮어쓰기로 재검증(잘못된 데이터 적재 방지).
     existing = db.fetch_all_events() if db.enabled() else []
     reverify_new_changed(pension, existing)
-    # 본문·OCR·재검증 모두 실패한 경우에만 목록 요약을 혜택 폴백으로 사용.
+    # 본문·구조화·재검증 모두 실패한 경우에만 목록 요약을 혜택 폴백으로 사용.
     for ev in pension:
         if not ev.get("benefits") and ev.get("_benefits_hint"):
             ev["benefits"] = ev["_benefits_hint"]

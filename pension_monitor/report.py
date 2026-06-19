@@ -78,7 +78,9 @@ def build_report(diff: dict, firms_failed: list) -> str:
     for ev in diff["closed"]:
         lines.append(f"- 🔚 {ev['firm_name']} 「{ev['event_name']}」 종료")
     for ev, f, o, n in diff["changed"]:
-        lines.append(f"- ✏️ {ev['firm_name']} 「{ev['event_name']}」 {f}: {o} → {n}")
+        o1 = str(o or "").replace("\n", " · ")[:80]
+        n1 = str(n or "").replace("\n", " · ")[:80]
+        lines.append(f"- ✏️ {ev['firm_name']} 「{ev['event_name']}」 {f}: {o1} → {n1}")
     lines.append("")
 
     soon = [e for e in active if e.get("end_date")
@@ -98,7 +100,9 @@ def build_report(diff: dict, firms_failed: list) -> str:
         "|---|---|---|---|---|---|---|---|",
     ]
     for ev in active:
-        benefits = (ev.get("benefits") or ev.get("remarks") or "")[:60].replace("|", "/")
+        # 표준 형식 혜택은 줄바꿈 포함 → 표 셀에선 ' · '로 접어 한 줄로(원문/xlsx는 줄바꿈 유지)
+        benefits = (ev.get("benefits") or ev.get("remarks") or "")
+        benefits = benefits.replace("\n", " · ").replace("|", "/")[:70]
         name = ev["event_name"][:40].replace("|", "/")
         url = ev.get("event_url") or ""
         name_cell = f"[{name}]({url})" if url.startswith("http") else name
