@@ -118,20 +118,34 @@ def _generate(parts, schema=None, retries=2):
     return ""
 
 
+# 일일 쿼터 소진(429) 감지 시 이후 호출을 즉시 건너뛴다(429 재시도 폭주로 런이 길어지는 것 방지).
+_BLOCKED = False
+
+
+def blocked() -> bool:
+    return _BLOCKED
+
+
 def _run(parts, label: str) -> dict:
+    global _BLOCKED
     try:
         text = _generate(parts, schema=_SCHEMA)
         parsed = json.loads(text)
         print(f"[vision] {label} 성공 → benefits={str(parsed.get('benefits','')).replace(chr(10),' ')[:40]}")
         return parsed
     except Exception as e:
-        print(f"[vision] {label} 실패: {type(e).__name__}: {str(e)[:120]}")
+        msg = str(e)
+        if "429" in msg or "RESOURCE_EXHAUSTED" in msg:
+            if not _BLOCKED:
+                print("[vision] 429 쿼터 소진 감지 → 이후 Gemini 호출 건너뜀(휴리스틱 폴백)")
+            _BLOCKED = True
+        print(f"[vision] {label} 실패: {type(e).__name__}: {msg[:120]}")
         return {}
 
 
 def extract(image_url: str, referer: str = "", hint: str = "") -> dict:
     """배너 이미지에서 이벤트 정보를 표준 형식으로 추출. 실패/미설정 시 빈 dict."""
-    if not enabled():
+    if not enabled() or _BLOCKED:
         return {}
     b64, media = fetch_image_b64(image_url, referer)
     if not b64:
@@ -146,7 +160,7 @@ def extract(image_url: str, referer: str = "", hint: str = "") -> dict:
 def extract_from_text(detail_text: str, hint: str = "") -> dict:
     """상세 페이지 본문 텍스트에서 이벤트 정보를 (이미지와) 동일 표준 형식으로 추출.
     형식 통일의 핵심 — 텍스트 기반 증권사(한투/삼성/KB)도 이미지 기반과 같은 구조로 정규화."""
-    if not enabled():
+    if not enabled() or _BLOCKED:
         return {}
     text = (detail_text or "").strip()
     if len(text) < 60:

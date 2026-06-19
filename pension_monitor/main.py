@@ -380,7 +380,11 @@ def reverify_new_changed(pension, existing):
             print(f"[재검증] 페이지 접속 실패 {ev['firm_name']} {ev['event_name'][:24]}: {type(e).__name__}")
             ev["remarks"] = "재검증 실패(상세 페이지 접속 불가) — 원문 확인 필요"
             continue
-        # 신선한 본문/이미지를 enrich_structured 와 동일한 표준 형식으로 재구조화 후 덮어쓰기.
+        # enrich_structured 가 이미 실제-페이지 데이터로 구조화했으면(혜택 있음) 그 값을
+        # 인정하고 재호출하지 않는다(쿼터 절약). 비어 있는 건만 신선한 본문/이미지로 재구조화.
+        if ev.get("benefits"):
+            ev["remarks"] = None
+            continue
         res = {}
         if vision.enabled() and n_ocr < REVERIFY_OCR_BUDGET \
                 and time.monotonic() - started < OCR_TIME_BUDGET:
@@ -389,24 +393,22 @@ def reverify_new_changed(pension, existing):
                     time.sleep(OCR_PACE_SEC)
                 n_ocr += 1
                 res = vision.extract_from_text(text, hint=ev["event_name"])
-            if not (res.get("benefits") or "").strip() and image \
-                    and n_ocr < REVERIFY_OCR_BUDGET:
+            if not (res.get("benefits") or "").strip() and image and n_ocr < REVERIFY_OCR_BUDGET:
                 if n_ocr:
                     time.sleep(OCR_PACE_SEC)
                 n_ocr += 1
                 r2 = vision.extract(image, referer=ev.get("event_url") or "", hint=ev["event_name"])
                 if (r2.get("benefits") or "").strip():
                     res = r2
-        # 폴백: Gemini 미사용/실패 시 휴리스틱
         if not (res.get("benefits") or "").strip() and not vision.enabled():
-            det = extract_details(text)
+            det = extract_details(text)                # 폴백: Gemini 미사용 시 휴리스틱
             res = {"benefits": det["benefits"], "conditions": det["conditions"]}
         if _apply_structured(ev, res):
             ev["remarks"] = None
         elif not ev.get("benefits"):
             ev["remarks"] = "재검증 실패(상세 본문/이미지에서 혜택 미확인) — 원문 확인 필요"
     if n_chk:
-        print(f"[재검증] 신규/변경 {n_chk}건 실제 페이지 재구조화 (Gemini {n_ocr}건)")
+        print(f"[재검증] 신규/변경 {n_chk}건 확인 (보강 Gemini {n_ocr}건)")
 
 
 def main():
