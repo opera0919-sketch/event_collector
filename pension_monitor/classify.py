@@ -41,6 +41,36 @@ def detect_accounts(text: str) -> dict:
 
 
 _DATE_RE = re.compile(r"(\d{4})\s*[.\-/년]\s*(\d{1,2})\s*[.\-/월]\s*(\d{1,2})")
+# '기간' 키워드 근처의 'YYYY..MM..DD ~ YYYY..MM..DD' (한글/숫자 날짜 모두).
+# 유지/접수/추첨/지급/잔고/입금 '…기간'은 이벤트 기간이 아니므로 제외(부정 룩비하인드).
+_PERIOD_NEAR = re.compile(
+    r"(?<!유지)(?<!접수)(?<!추첨)(?<!지급)(?<!잔고)(?<!입금)(?<!인정)기간[^0-9]{0,12}"
+    r"(\d{4})\s*[.\-/년]\s*(\d{1,2})\s*[.\-/월]\s*(\d{1,2})"
+    r"[^0-9~∼-]{0,12}[~∼-][^0-9]{0,12}"
+    r"(\d{4})\s*[.\-/년]\s*(\d{1,2})\s*[.\-/월]\s*(\d{1,2})")
+
+
+def _mk(y, m, d):
+    try:
+        if 1 <= int(m) <= 12 and 1 <= int(d) <= 31:
+            return f"{int(y)}-{int(m):02d}-{int(d):02d}"
+    except (TypeError, ValueError):
+        pass
+    return None
+
+
+def extract_period(text: str):
+    """상세 본문에서 '기간 : YYYY..~..YYYY..' 형태의 이벤트 기간을 우선 추출.
+    KB처럼 목록의 게시일이 시작/종료일로 잘못 들어가는 것을 본문 기준으로 교정하기 위함.
+    반환: (시작ISO, 종료ISO) 또는 (None, None)."""
+    t = " ".join((text or "").split())
+    m = _PERIOD_NEAR.search(t)
+    if m:
+        s = _mk(*m.group(1, 2, 3))
+        e = _mk(*m.group(4, 5, 6))
+        if s and e and s <= e:
+            return s, e
+    return None, None
 
 
 def parse_dates(text: str):
@@ -53,6 +83,26 @@ def parse_dates(text: str):
         # 단일 날짜는 종료일(마감)로 보는 게 안전
         return None, dates[0]
     return None, None
+
+
+def suspicious_dates(start, end) -> bool:
+    """스크레이퍼가 준 기간이 의심스러운지(게시일 오인 등) 판정."""
+    import datetime as _dt
+    def iso(s):
+        try:
+            return _dt.date.fromisoformat(s)
+        except (TypeError, ValueError):
+            return None
+    sd, ed = iso(start), iso(end)
+    if not start or not end:
+        return True                       # 한쪽 누락
+    if sd and ed and (sd > ed or (ed - sd).days <= 1):
+        return True                       # 역전 또는 1일 이하(게시일 오인 의심)
+    for x in (sd, ed):
+        if x and not (2025 <= x.year <= 2027):
+            return True                   # 연도 비정상
+    return False
+
 
 
 # 사이트 공통 문구(네비/푸터/배너) — 상세 추출에서 제외

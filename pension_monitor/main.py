@@ -16,7 +16,8 @@ import sys
 import traceback
 
 from . import db, mailer, report as report_mod
-from .classify import is_pension, detect_accounts, extract_details, content_hash
+from .classify import (is_pension, detect_accounts, extract_details, content_hash,
+                       suspicious_dates)
 from .config import TRIGGER_TYPE
 from .scrapers import SCRAPERS
 from .scrapers.base import load_page
@@ -220,10 +221,16 @@ def classify_all(events):
         # 최후 폴백으로만 사용 → 빈약한 요약이 OCR(상세 이미지)을 막지 않게 한다.
         ev["benefits"] = details["benefits"]
         ev["remarks"] = None if ev["benefits"] else details["remarks"]
-        if not ev.get("start_date") and not ev.get("end_date") and ev.get("_detail_text"):
-            from .classify import parse_dates
-            s, e = parse_dates(ev["_detail_text"][:2000])
-            ev["start_date"], ev["end_date"] = ev.get("start_date") or s, ev.get("end_date") or e
+        # 기간 교정: 목록에서 온 시작/종료일이 의심스러우면(게시일 오인 등) 상세 본문의
+        # '기간 : …~…' 표기로 교정한다 (KB 등). Gemini 없이도 동작.
+        from .classify import extract_period, suspicious_dates, parse_dates
+        if ev.get("_detail_text") and suspicious_dates(ev.get("start_date"), ev.get("end_date")):
+            ps, pe = extract_period(ev["_detail_text"])
+            if ps and pe:
+                ev["start_date"], ev["end_date"] = ps, pe
+            elif not ev.get("start_date") and not ev.get("end_date"):
+                s, e = parse_dates(ev["_detail_text"][:2000])
+                ev["start_date"], ev["end_date"] = s, e
         out.append(ev)
     return out
 
@@ -259,6 +266,18 @@ def _apply_structured(ev, res):
     cond = (res.get("conditions") or "").strip()
     if cond and not any(j in cond for j in _OCR_JUNK):
         ev["conditions"] = cond
+    # 기간: Gemini가 상세에서 읽은 이벤트 기간을 권위 데이터로 사용(게시일 오인 교정).
+    import datetime as _dt
+    def _v(s):
+        try:
+            return _dt.date.fromisoformat((s or "").strip()).isoformat()
+        except (TypeError, ValueError):
+            return None
+    ps, pe = _v(res.get("period_start")), _v(res.get("period_end"))
+    if ps and pe and ps <= pe and 2025 <= int(ps[:4]) <= 2027:
+        ev["start_date"], ev["end_date"] = ps, pe
+    elif pe and 2025 <= int(pe[:4]) <= 2028 and suspicious_dates(ev.get("start_date"), ev.get("end_date")):
+        ev["end_date"] = pe                    # 종료일만 신뢰 가능할 때 교정
     for k in ("acct_pension", "acct_irp", "acct_dc"):
         if res.get(k):
             ev[k] = True

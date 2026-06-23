@@ -38,13 +38,19 @@ _SCHEMA = {
             "참여조건을 '한 줄에 하나씩' 라벨 형식으로 정리(줄바꿈 구분). 해당하는 항목만: "
             "'대상: ...', '기간: ...', '신청: ...'(신청필수/마케팅동의 등), '유지조건: ...', '한도: ...'. "
             "광고 문구·중복 설명 제외, 핵심 요건만 간결히.")},
+        "period_start": {"type": "string", "description": (
+            "이벤트 시작일을 YYYY-MM-DD로. 자료의 '기간/이벤트기간' 표기 기준(접수/추첨/지급일 아님). "
+            "연도가 없으면 빈 문자열, 상시/무기한이면 빈 문자열.")},
+        "period_end": {"type": "string", "description": (
+            "이벤트 종료일을 YYYY-MM-DD로. '기간' 표기의 마지막 날짜. 상시/무기한이면 빈 문자열.")},
         "acct_pension": {"type": "boolean", "description": "연금저축 계좌 대상이면 true"},
         "acct_irp": {"type": "boolean", "description": "IRP 계좌 대상이면 true"},
         "acct_dc": {"type": "boolean", "description": "DC(확정기여) 퇴직연금 대상이면 true"},
         "acct_etc": {"type": "string", "description": "기타 대상계좌(ISA 등). 없으면 빈 문자열"},
         "is_pension": {"type": "boolean", "description": "연금(연금저축/IRP/DC/퇴직연금) 관련이면 true"},
     },
-    "required": ["benefits", "conditions", "acct_pension", "acct_irp", "acct_dc", "acct_etc", "is_pension"],
+    "required": ["benefits", "conditions", "period_start", "period_end",
+                 "acct_pension", "acct_irp", "acct_dc", "acct_etc", "is_pension"],
 }
 
 # 텍스트·이미지 공통 추출 규칙 (형식 통일의 핵심)
@@ -54,6 +60,8 @@ _RULES = (
     "'조건 → 리워드 (지급방식·인원)' 형식으로. 입금/거래/이전/계좌개설 등 조건별 리워드가 다르면 각 조합을 "
     "모두 별도 줄로(임의 요약·대표값 금지). 지급방식(전원/선착순/추첨)과 인원·한도 수치 포함.\n"
     "- 조건: '대상/기간/신청/유지조건/한도' 라벨로 한 줄씩, 핵심 요건만.\n"
+    "- 기간(period_start/period_end): 이벤트 '기간' 표기의 시작·종료일을 YYYY-MM-DD로. "
+    "접수일·추첨일·지급일이 아닌 이벤트 진행 기간 기준. 상시/무기한이면 빈 값.\n"
     "- 광고 문구·인사말·면책/유의사항은 제외한다.\n"
     "- 자료에 없는 내용은 추측하지 말고 빈 값으로 둔다."
 )
