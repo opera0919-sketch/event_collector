@@ -60,17 +60,17 @@ def build_report(diff: dict, firms_failed: list) -> str:
     today = dt.date.today()
     active = sorted(diff["active"], key=lambda e: (e["firm_name"], e.get("end_date") or "9999"))
     lines = [
-        f"# 연금 이벤트 위클리 ({today.isoformat()} 기준)",
+        f"# 연금 이벤트 리포트 ({today.isoformat()} 기준)",
         "",
         "## 요약",
         f"진행중 {len(active)}건 | 🆕 신규 {len(diff['new'])}건 | "
-        f"🔚 종료 {len(diff['closed'])}건 | ✏️ 변경 {len(diff['changed'])}건 (전 주 대비)",
+        f"🔚 종료 {len(diff['closed'])}건 | ✏️ 변경 {len(diff['changed'])}건 (직전 대비)",
         "",
     ]
     if firms_failed:
         lines += [f"⚠️ 수집 실패: {', '.join(firms_failed)} (재시도 예정, 직전 데이터 유지)", ""]
 
-    lines.append("## 전 주 대비 주요 변동")
+    lines.append("## 직전 대비 주요 변동")
     if not (diff["new"] or diff["closed"] or diff["changed"]):
         lines.append("- 변동 없음")
     for ev in diff["new"]:
@@ -126,7 +126,7 @@ def build_report(diff: dict, firms_failed: list) -> str:
         lines.append(f"- 진행중 이벤트 최다 증권사: {most} ({len(by_firm[most])}건)")
     lines.append(f"- 대상계좌 분포: 연금저축 {ps_n}건 / IRP {irp_n}건")
     if diff["new"]:
-        lines.append(f"- 이번 주 신규 {len(diff['new'])}건 — "
+        lines.append(f"- 신규 {len(diff['new'])}건 — "
                      + ", ".join(sorted({e['firm_name'] for e in diff['new']})))
     if none_firms:
         lines.append(f"- 연금 이벤트 미진행: {', '.join(none_firms)}")

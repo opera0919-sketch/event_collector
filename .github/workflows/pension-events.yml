@@ -2,7 +2,7 @@ name: pension-events
 
 on:
   schedule:
-    - cron: '0 0 * * 1'   # 매주 월요일 09:00 KST
+    - cron: '30 22 * * 0-4'   # 월~금 07:30 KST (= 일~목 22:30 UTC)
   workflow_dispatch:
   push:
     branches:
