@@ -86,7 +86,9 @@ def parse_dates(text: str):
 
 
 def suspicious_dates(start, end) -> bool:
-    """스크레이퍼가 준 기간이 의심스러운지(게시일 오인 등) 판정."""
+    """스크레이퍼가 준 기간이 의심스러운지(게시일 오인 등) 판정.
+    장기 이벤트(예: 2024 시작 ~ 2026 종료)는 정상으로 두고, 종료일이 지나치게
+    과거(게시일 오인)거나 1일 이하·역전·누락인 경우만 의심으로 본다."""
     import datetime as _dt
     def iso(s):
         try:
@@ -98,9 +100,8 @@ def suspicious_dates(start, end) -> bool:
         return True                       # 한쪽 누락
     if sd and ed and (sd > ed or (ed - sd).days <= 1):
         return True                       # 역전 또는 1일 이하(게시일 오인 의심)
-    for x in (sd, ed):
-        if x and not (2025 <= x.year <= 2027):
-            return True                   # 연도 비정상
+    if ed and not (2026 <= ed.year <= 2028):
+        return True                       # 종료일 연도 비정상(과거 게시일 등)
     return False
 
 

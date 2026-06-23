@@ -223,14 +223,18 @@ def classify_all(events):
         ev["remarks"] = None if ev["benefits"] else details["remarks"]
         # 기간 교정: 목록에서 온 시작/종료일이 의심스러우면(게시일 오인 등) 상세 본문의
         # '기간 : …~…' 표기로 교정한다 (KB 등). Gemini 없이도 동작.
-        from .classify import extract_period, suspicious_dates, parse_dates
-        if ev.get("_detail_text") and suspicious_dates(ev.get("start_date"), ev.get("end_date")):
-            ps, pe = extract_period(ev["_detail_text"])
+        from .classify import extract_period, parse_dates
+        if suspicious_dates(ev.get("start_date"), ev.get("end_date")):
+            ps, pe = extract_period(ev.get("_detail_text", ""))
             if ps and pe:
                 ev["start_date"], ev["end_date"] = ps, pe
-            elif not ev.get("start_date") and not ev.get("end_date"):
+            elif not ev.get("start_date") and not ev.get("end_date") and ev.get("_detail_text"):
                 s, e = parse_dates(ev["_detail_text"][:2000])
                 ev["start_date"], ev["end_date"] = s, e
+            # 교정 후에도 의심스러우면 잘못된 날짜(게시일 오인 등)를 노출하지 않도록 비운다.
+            # (Gemini 기간 추출이 이후 enrich_structured 에서 채울 수 있음.)
+            if suspicious_dates(ev.get("start_date"), ev.get("end_date")):
+                ev["start_date"] = ev["end_date"] = None
         out.append(ev)
     return out
 
