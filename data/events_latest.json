@@ -1,5 +1,5 @@
 {
- "collected_at": "2026-06-23T23:33:47.326780+00:00",
+ "collected_at": "2026-06-23T23:49:14.426952+00:00",
  "firms_failed": [
   "키움증권"
  ],
@@ -7,18 +7,18 @@
   {
    "firm_name": "미래에셋증권",
    "event_name": "「투자하는 연금」2026년 IRP 입금 이벤트",
-   "start_date": "2026-01-01",
-   "end_date": "2026-12-31",
+   "start_date": "2026-04-01",
+   "end_date": "2026-06-30",
    "event_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202603008&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
    "raw_text": "「투자하는 연금」2026년 IRP 입금 이벤트 null",
    "acct_pension": false,
    "acct_irp": true,
    "acct_dc": false,
-   "acct_etc": "ISA",
-   "conditions": "대상: IRP 계좌 보유 고객\n기간: 2026.01.01 ~ 2026.12.31\n신청: 이벤트 신청 필수 (분기별 1회 가능)\n조건: 타사 연금 수관 또는 퇴직금 입금 또는 ISA 만기전환 입금\n유지조건: 사은품 지급 시까지 이벤트 조건 유지\n한도: 퇴직연금 특별이익 제공한도 연간 누적 3만원",
-   "benefits": "IRP 순입금 1천만원 이상~3천만원 미만 → 롯데 모바일 상품권 1만원 (전원)\nIRP 순입금 3천만원 이상 → 롯데 모바일 상품권 3만원 (전원)",
+   "acct_etc": null,
+   "conditions": "대상: 전체 고객\n기간: 2026.04.01 ~ 2026.06.30\n신청: 이벤트 신청 필수",
+   "benefits": "IRP 순입금 1백만원 이상 → 신세계 모바일상품권 1만원 (전원)",
    "remarks": null,
-   "content_hash": "089eb746d15f2ab6"
+   "content_hash": "d013dc9e98d38ff8"
   },
   {
    "firm_name": "미래에셋증권",
@@ -31,10 +31,10 @@
    "acct_irp": false,
    "acct_dc": false,
    "acct_etc": null,
-   "conditions": null,
+   "conditions": "기간: 2026.04.01 ~ 2026.06.30",
    "benefits": null,
    "remarks": "재검증 실패(상세 본문/이미지에서 혜택 미확인) — 원문 확인 필요",
-   "content_hash": "40132b156a9d7aaf"
+   "content_hash": "4562caea2e34347b"
   },
   {
    "firm_name": "미래에셋증권",
@@ -47,10 +47,10 @@
    "acct_irp": false,
    "acct_dc": true,
    "acct_etc": null,
-   "conditions": null,
-   "benefits": null,
-   "remarks": "재검증 실패(상세 본문/이미지에서 혜택 미확인) — 원문 확인 필요",
-   "content_hash": "a16cae7d4145dfc5"
+   "conditions": "대상: 퇴직연금 DC 계좌 보유 고객\n기간: 2026.04.01 ~ 2026.06.30\n신청: 이벤트 신청 필수",
+   "benefits": "순입금액 100만원 이상 300만원 미만 → 신세계 모바일상품권 2만원 (전원)\n순입금액 300만원 이상 → 신세계 모바일상품권 3만원 (전원)",
+   "remarks": null,
+   "content_hash": "c32968b15e7b27aa"
   },
   {
    "firm_name": "미래에셋증권",
@@ -63,10 +63,10 @@
    "acct_irp": true,
    "acct_dc": true,
    "acct_etc": null,
-   "conditions": "대상: 미성년 자녀 고객 (만19세미만) / *자녀 계정으로 이벤트 신청 필수 | · 이벤트 대상계좌 상태가 ‘정상’인 고객에 한하여 혜택을 지급합니다(계좌폐쇄시 지급대상 아님) / · 이벤트 참여를 위해서는 아래의 조건이 필요 할 수 있습니다. 확인해주세요",
-   "benefits": "혜택 용돈2만원",
+   "conditions": "대상: 미성년 자녀 고객 (만19세미만)\n신청: 이벤트 신청 후 국내주식모으기 챌린지 성공\n유지조건: 주식모으기에서 국내주식을 90일동안 합산 90만원 이상 투자하기\n한도: 1인1회",
+   "benefits": "국내주식모으기 챌린지 성공 → 용돈 2만원 (전원)",
    "remarks": null,
-   "content_hash": "b4ac56ccb5de198d"
+   "content_hash": "56f6ef8865d255f0"
   },
   {
    "firm_name": "미래에셋증권",
