@@ -467,7 +467,7 @@ def main():
 
     _write_summary(len(diff["active"]), by_firm, failed, diff=diff)
 
-    subject = (f"[연금이벤트 위클리] {today} — 진행중 {len(diff['active'])}건 "
+    subject = (f"[연금이벤트] {today} — 진행중 {len(diff['active'])}건 "
                f"(신규 {len(diff['new'])}, 종료 {len(diff['closed'])})")
     # DB 테이블(pension_events) 전체를 xlsx 로 첨부. DB 미사용 시 이번 수집분으로 대체.
     attachments = []
