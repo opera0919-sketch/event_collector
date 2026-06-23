@@ -20,7 +20,9 @@ import requests
 from .config import UA
 
 API_KEY = os.environ.get("GEMINI_API_KEY") or ""
-MODEL = os.environ.get("VISION_MODEL", "gemini-2.5-flash")
+# flash-lite: 무료 일일 한도가 높고 저렴해 일일 파이프라인에 적합(스키마 기반 추출 품질 충분).
+# 최대 완성도가 필요하면 VISION_MODEL=gemini-2.5-flash 로 덮어쓸 수 있음.
+MODEL = os.environ.get("VISION_MODEL", "gemini-2.5-flash-lite")
 ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
 # Gemini responseSchema = OpenAPI 서브셋 (additionalProperties 미지원 → 넣지 않음)
@@ -86,20 +88,26 @@ def _media_type(url: str) -> str:
     return "image/jpeg"
 
 
-def fetch_image_b64(url: str, referer: str = "") -> tuple:
-    """이미지 다운로드 → (base64, media_type). 실패 시 (None, None)."""
+def fetch_image_b64(url: str, referer: str = "", retries: int = 3) -> tuple:
+    """이미지 다운로드 → (base64, media_type). 실패 시 (None, None).
+    한투(koreainvestment) 등 일부 이미지 서버의 간헐 SSL/타임아웃에 대비해 재시도."""
+    import time
     headers = {"User-Agent": UA}
     if referer:
         headers["Referer"] = referer
-    try:
-        r = requests.get(url, headers=headers, timeout=20)
-        r.raise_for_status()
-        if len(r.content) > 7_000_000:   # 과대 이미지 방지 (~7MB, Gemini inline 한도 고려)
-            return None, None
-        return base64.standard_b64encode(r.content).decode("ascii"), _media_type(url)
-    except Exception as e:
-        print(f"[vision] 이미지 다운로드 실패 {url[:80]}: {type(e).__name__}")
-        return None, None
+    last = None
+    for attempt in range(retries):
+        try:
+            r = requests.get(url, headers=headers, timeout=20)
+            r.raise_for_status()
+            if len(r.content) > 7_000_000:   # 과대 이미지 방지 (~7MB, Gemini inline 한도 고려)
+                return None, None
+            return base64.standard_b64encode(r.content).decode("ascii"), _media_type(url)
+        except Exception as e:
+            last = e
+            time.sleep(1.5 * (attempt + 1))
+    print(f"[vision] 이미지 다운로드 실패 {url[:80]}: {type(last).__name__}")
+    return None, None
 
 
 def _generate(parts, schema=None, retries=2):

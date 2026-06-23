@@ -314,9 +314,17 @@ def _resolve_banner(ev):
     return None
 
 
-def enrich_structured(pension):
+def _is_canonical(s):
+    """이미 표준 형식(줄바꿈 또는 '→')으로 구조화된 값인지."""
+    s = s or ""
+    return "\n" in s or "→" in s
+
+
+def enrich_structured(pension, existing=None):
     """모든 이벤트의 조건/혜택을 Gemini로 '동일 표준 형식'으로 구조화(형식·가독성 통일).
     - 상세 본문 텍스트가 충분하면 텍스트로 구조화(저비용), 빈약하면 상세 이미지 OCR.
+    - DB 캐시: 미변경 건(동일 기간)이 이미 표준 형식으로 적재돼 있으면 재호출 생략
+      → 일일 실행의 Gemini 호출/쿼터를 크게 줄인다.
     - GEMINI_API_KEY 없으면 휴리스틱(classify_all) 값을 그대로 유지."""
     import time
     from . import vision
@@ -324,9 +332,24 @@ def enrich_structured(pension):
     if not vision.enabled():
         print("[구조화] GEMINI 미설정 → 휴리스틱 값 유지")
         return
+    by_key = {(e["firm_name"], e["event_name"], e.get("start_date")): e
+              for e in (existing or [])}
     started = time.monotonic()
-    n = 0
+    n, cached = 0, 0
     for ev in pension:
+        # 캐시 적중: DB에 같은 자연키 + 같은 종료일 + 이미 표준형식 혜택이면 재호출 생략
+        old = by_key.get((ev["firm_name"], ev["event_name"], ev.get("start_date")))
+        if old and old.get("end_date") == ev.get("end_date") and _is_canonical(old.get("benefits")):
+            ev["benefits"] = old["benefits"]
+            ev["conditions"] = old.get("conditions") or ev.get("conditions")
+            ev["remarks"] = None
+            for k in ("acct_pension", "acct_irp", "acct_dc"):
+                if old.get(k):
+                    ev[k] = True
+            if old.get("acct_etc") and not ev.get("acct_etc"):
+                ev["acct_etc"] = old["acct_etc"]
+            cached += 1
+            continue
         if n >= STRUCT_BUDGET or time.monotonic() - started > OCR_TIME_BUDGET:
             print(f"[구조화] 예산 도달 — {n}건 후 중단")
             break
@@ -349,7 +372,7 @@ def enrich_structured(pension):
                 if (r2.get("benefits") or "").strip():
                     res = r2
         _apply_structured(ev, res)
-    print(f"[구조화] Gemini {n}건 호출 (텍스트/이미지 통일 포맷)")
+    print(f"[구조화] Gemini {n}건 호출, 캐시 재사용 {cached}건 (텍스트/이미지 통일 포맷)")
 
 
 REVERIFY_OCR_BUDGET = 24      # 재검증 단계 OCR 호출 상한 (신규/변경 건 한정)
@@ -437,9 +460,9 @@ def main():
 
     events, failed = asyncio.run(collect())
     pension = classify_all(events)
-    enrich_structured(pension)        # 모든 이벤트를 Gemini로 동일 표준 형식 구조화(형식 통일)
-    # 신규/변경 건은 실제 상세 페이지에서 재구조화·덮어쓰기로 재검증(잘못된 데이터 적재 방지).
     existing = db.fetch_all_events() if db.enabled() else []
+    enrich_structured(pension, existing)  # Gemini 표준 구조화(미변경 건은 DB 캐시 재사용)
+    # 신규/변경 건은 실제 상세 페이지에서 재구조화·덮어쓰기로 재검증(잘못된 데이터 적재 방지).
     reverify_new_changed(pension, existing)
     # 본문·구조화·재검증 모두 실패한 경우에만 목록 요약을 혜택 폴백으로 사용.
     for ev in pension:
