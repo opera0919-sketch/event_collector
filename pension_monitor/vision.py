@@ -134,8 +134,11 @@ def _generate(parts, schema=None, retries=2):
     return ""
 
 
-# 일일 쿼터 소진(429) 감지 시 이후 호출을 즉시 건너뛴다(429 재시도 폭주로 런이 길어지는 것 방지).
+# 일일 쿼터 소진(429)이 '연속으로' 확인될 때만 이후 호출을 건너뛴다.
+# (단발 RPM 블립 1회로 런 전체 Gemini 가 막히지 않도록 — 연속 실패 임계값 사용)
 _BLOCKED = False
+_consec_429 = 0
+_BLOCK_AFTER = 3
 
 
 def blocked() -> bool:
@@ -143,18 +146,20 @@ def blocked() -> bool:
 
 
 def _run(parts, label: str) -> dict:
-    global _BLOCKED
+    global _BLOCKED, _consec_429
     try:
         text = _generate(parts, schema=_SCHEMA)
         parsed = json.loads(text)
+        _consec_429 = 0                       # 성공 → 연속 카운터 리셋
         print(f"[vision] {label} 성공 → benefits={str(parsed.get('benefits','')).replace(chr(10),' ')[:40]}")
         return parsed
     except Exception as e:
         msg = str(e)
         if "429" in msg or "RESOURCE_EXHAUSTED" in msg:
-            if not _BLOCKED:
-                print("[vision] 429 쿼터 소진 감지 → 이후 Gemini 호출 건너뜀(휴리스틱 폴백)")
-            _BLOCKED = True
+            _consec_429 += 1
+            if _consec_429 >= _BLOCK_AFTER and not _BLOCKED:
+                _BLOCKED = True
+                print(f"[vision] 429 {_consec_429}회 연속 → 일일 쿼터 소진 판단, 이후 호출 건너뜀(휴리스틱 폴백)")
         print(f"[vision] {label} 실패: {type(e).__name__}: {msg[:120]}")
         return {}
 
