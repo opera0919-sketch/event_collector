@@ -20,7 +20,9 @@ import requests
 from .config import UA
 
 API_KEY = os.environ.get("GEMINI_API_KEY") or ""
-MODEL = os.environ.get("VISION_MODEL", "gemini-2.5-flash")
+# flash-lite: 무료 일일 한도가 높고 저렴해 일일 파이프라인에 적합(스키마 기반 추출 품질 충분).
+# 최대 완성도가 필요하면 VISION_MODEL=gemini-2.5-flash 로 덮어쓸 수 있음.
+MODEL = os.environ.get("VISION_MODEL", "gemini-2.5-flash-lite")
 ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
 # Gemini responseSchema = OpenAPI 서브셋 (additionalProperties 미지원 → 넣지 않음)
@@ -38,13 +40,19 @@ _SCHEMA = {
             "참여조건을 '한 줄에 하나씩' 라벨 형식으로 정리(줄바꿈 구분). 해당하는 항목만: "
             "'대상: ...', '기간: ...', '신청: ...'(신청필수/마케팅동의 등), '유지조건: ...', '한도: ...'. "
             "광고 문구·중복 설명 제외, 핵심 요건만 간결히.")},
+        "period_start": {"type": "string", "description": (
+            "이벤트 시작일을 YYYY-MM-DD로. 자료의 '기간/이벤트기간' 표기 기준(접수/추첨/지급일 아님). "
+            "연도가 없으면 빈 문자열, 상시/무기한이면 빈 문자열.")},
+        "period_end": {"type": "string", "description": (
+            "이벤트 종료일을 YYYY-MM-DD로. '기간' 표기의 마지막 날짜. 상시/무기한이면 빈 문자열.")},
         "acct_pension": {"type": "boolean", "description": "연금저축 계좌 대상이면 true"},
         "acct_irp": {"type": "boolean", "description": "IRP 계좌 대상이면 true"},
         "acct_dc": {"type": "boolean", "description": "DC(확정기여) 퇴직연금 대상이면 true"},
         "acct_etc": {"type": "string", "description": "기타 대상계좌(ISA 등). 없으면 빈 문자열"},
         "is_pension": {"type": "boolean", "description": "연금(연금저축/IRP/DC/퇴직연금) 관련이면 true"},
     },
-    "required": ["benefits", "conditions", "acct_pension", "acct_irp", "acct_dc", "acct_etc", "is_pension"],
+    "required": ["benefits", "conditions", "period_start", "period_end",
+                 "acct_pension", "acct_irp", "acct_dc", "acct_etc", "is_pension"],
 }
 
 # 텍스트·이미지 공통 추출 규칙 (형식 통일의 핵심)
@@ -54,6 +62,8 @@ _RULES = (
     "'조건 → 리워드 (지급방식·인원)' 형식으로. 입금/거래/이전/계좌개설 등 조건별 리워드가 다르면 각 조합을 "
     "모두 별도 줄로(임의 요약·대표값 금지). 지급방식(전원/선착순/추첨)과 인원·한도 수치 포함.\n"
     "- 조건: '대상/기간/신청/유지조건/한도' 라벨로 한 줄씩, 핵심 요건만.\n"
+    "- 기간(period_start/period_end): 이벤트 '기간' 표기의 시작·종료일을 YYYY-MM-DD로. "
+    "접수일·추첨일·지급일이 아닌 이벤트 진행 기간 기준. 상시/무기한이면 빈 값.\n"
     "- 광고 문구·인사말·면책/유의사항은 제외한다.\n"
     "- 자료에 없는 내용은 추측하지 말고 빈 값으로 둔다."
 )
@@ -78,20 +88,26 @@ def _media_type(url: str) -> str:
     return "image/jpeg"
 
 
-def fetch_image_b64(url: str, referer: str = "") -> tuple:
-    """이미지 다운로드 → (base64, media_type). 실패 시 (None, None)."""
+def fetch_image_b64(url: str, referer: str = "", retries: int = 3) -> tuple:
+    """이미지 다운로드 → (base64, media_type). 실패 시 (None, None).
+    한투(koreainvestment) 등 일부 이미지 서버의 간헐 SSL/타임아웃에 대비해 재시도."""
+    import time
     headers = {"User-Agent": UA}
     if referer:
         headers["Referer"] = referer
-    try:
-        r = requests.get(url, headers=headers, timeout=20)
-        r.raise_for_status()
-        if len(r.content) > 7_000_000:   # 과대 이미지 방지 (~7MB, Gemini inline 한도 고려)
-            return None, None
-        return base64.standard_b64encode(r.content).decode("ascii"), _media_type(url)
-    except Exception as e:
-        print(f"[vision] 이미지 다운로드 실패 {url[:80]}: {type(e).__name__}")
-        return None, None
+    last = None
+    for attempt in range(retries):
+        try:
+            r = requests.get(url, headers=headers, timeout=20)
+            r.raise_for_status()
+            if len(r.content) > 7_000_000:   # 과대 이미지 방지 (~7MB, Gemini inline 한도 고려)
+                return None, None
+            return base64.standard_b64encode(r.content).decode("ascii"), _media_type(url)
+        except Exception as e:
+            last = e
+            time.sleep(1.5 * (attempt + 1))
+    print(f"[vision] 이미지 다운로드 실패 {url[:80]}: {type(last).__name__}")
+    return None, None
 
 
 def _generate(parts, schema=None, retries=2):
@@ -118,8 +134,11 @@ def _generate(parts, schema=None, retries=2):
     return ""
 
 
-# 일일 쿼터 소진(429) 감지 시 이후 호출을 즉시 건너뛴다(429 재시도 폭주로 런이 길어지는 것 방지).
+# 일일 쿼터 소진(429)이 '연속으로' 확인될 때만 이후 호출을 건너뛴다.
+# (단발 RPM 블립 1회로 런 전체 Gemini 가 막히지 않도록 — 연속 실패 임계값 사용)
 _BLOCKED = False
+_consec_429 = 0
+_BLOCK_AFTER = 3
 
 
 def blocked() -> bool:
@@ -127,18 +146,20 @@ def blocked() -> bool:
 
 
 def _run(parts, label: str) -> dict:
-    global _BLOCKED
+    global _BLOCKED, _consec_429
     try:
         text = _generate(parts, schema=_SCHEMA)
         parsed = json.loads(text)
+        _consec_429 = 0                       # 성공 → 연속 카운터 리셋
         print(f"[vision] {label} 성공 → benefits={str(parsed.get('benefits','')).replace(chr(10),' ')[:40]}")
         return parsed
     except Exception as e:
         msg = str(e)
         if "429" in msg or "RESOURCE_EXHAUSTED" in msg:
-            if not _BLOCKED:
-                print("[vision] 429 쿼터 소진 감지 → 이후 Gemini 호출 건너뜀(휴리스틱 폴백)")
-            _BLOCKED = True
+            _consec_429 += 1
+            if _consec_429 >= _BLOCK_AFTER and not _BLOCKED:
+                _BLOCKED = True
+                print(f"[vision] 429 {_consec_429}회 연속 → 일일 쿼터 소진 판단, 이후 호출 건너뜀(휴리스틱 폴백)")
         print(f"[vision] {label} 실패: {type(e).__name__}: {msg[:120]}")
         return {}
 
