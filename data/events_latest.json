@@ -1,105 +1,10 @@
 {
- "collected_at": "2026-06-25T03:41:10.149436+00:00",
+ "collected_at": "2026-06-25T06:34:13.972235+00:00",
  "firms_failed": [
-  "키움증권"
+  "키움증권",
+  "미래에셋증권"
  ],
  "events": [
-  {
-   "firm_name": "미래에셋증권",
-   "event_name": "「투자하는 연금」2026년 IRP 입금 이벤트",
-   "start_date": "2026-04-01",
-   "end_date": "2026-06-30",
-   "event_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202603008&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
-   "raw_text": "「투자하는 연금」2026년 IRP 입금 이벤트 null",
-   "acct_pension": false,
-   "acct_irp": true,
-   "acct_dc": false,
-   "acct_etc": "ISA",
-   "conditions": "대상고객: IRP 계좌 보유 고객 / 요건: 타사 연금 수관 또는 퇴직금 입금 또는 ISA 만기전환 입금 (셋 중 하나만 해당해도 인정) / 신청필수: 이벤트 신청 필수 (분기별 1회 가능) / 기간: 2026.01.01 ~ 12.31 / 유지조건: 사은품 지급 시까지 이벤트 조건 유지 / 한도: 퇴직연금 특별이익 제공한도 연간 누적 3만원 포함 / 기타: 해당하는 조건 금액 모두 합산, 위 입금 유형 외 신규 입금 금액 제외, 당사 ISA 만기전환 금액 포함, 현금 이전과 실물 이전 모두 포함, 2025~2026년 타사 이관 후 당사로 재수관한 경우는 제외, 당사 내 연금계좌 이전은 인정되지 않음, 당사 퇴직연금에서 지급된 금액은 DB만 인정 (DC, 기업형 IRP 제외), 경품 지급은 이벤트 신청일이 아닌 입금일 기준이며, 입금 완료는 이벤트 신청 분기와 동일한 분기에 이루어져야 함. 입금일이 2월인 경우 경품은 5월에 지급됨.",
-   "benefits": "IRP 순입금 1천만원 이상 ~ 3천만원 미만 → 롯데 모바일 상품권 1만원 (전원) / IRP 순입금 3천만원 이상 → 롯데 모바일 상품권 3만원 (전원)",
-   "remarks": null,
-   "content_hash": "fefa024a1d0fc709"
-  },
-  {
-   "firm_name": "미래에셋증권",
-   "event_name": "「투자하는 연금」2026년 개인연금 입금 이벤트",
-   "start_date": "2026-04-01",
-   "end_date": "2026-06-30",
-   "event_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202603006&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
-   "raw_text": "「투자하는 연금」2026년 개인연금 입금 이벤트 null",
-   "acct_pension": true,
-   "acct_irp": true,
-   "acct_dc": false,
-   "acct_etc": null,
-   "conditions": "기간: 2026.01.01 ~ 2026.12.31 / 대상고객: 개인연금 계좌 보유고객 (법인 및 당사 임직원 제외) / 참여조건: ① 타사연금 가져오기 또는 ISA 연금 전환 (두 조건 모두 해당 시 합산 인정 / 둘 중 하나만 해당해도 인정 / 당사 ISA 만기전환 포함 / 신규 입금 제외 / 타사 이전 금액에 포함된 퇴직금 재원 제외) / ② 퇴직금 입금 (타사 이전 금액에 포함된 퇴직금 재원도 포함) / 이벤트 신청 필수 (분기별 1회 가능) / 이벤트 신청한 분기와 동일한 분기에 입금 완료 필수 / 유지조건: 사은품 지급 시까지 이벤트 조건 유지 필수 / 한도: 퇴직금 입금 혜택은 퇴직연금 감독규정에 의해 최대 3만원 지급 / 제외조건: 당사내 이전 인정 불가 / 2025~2026년 타사 이관 후 재수관 건 제외",
-   "benefits": "혜택 1: 타사연금 가져오기 또는 ISA 연금 전환 시 (순입금액 1.5배 인정) → 순입금액 6백만원 이상~1천만원 미만 → 롯데 모바일 상품권 2만원 / 순입금액 1천만원 이상~3천만원 미만 → 롯데 모바일 상품권 4만원 / 순입금액 3천만원 이상~5천만원 미만 → 롯데 모바일 상품권 6만원 / 순입금액 5천만원 이상~1억원 미만 → 롯데 모바일 상품권 15만원 / 순입금액 1억원 이상~2억원 미만 → 롯데 모바일 상품권 30만원 / 순입금액 2억원 이상~3억원 미만 → 롯데 모바일 상품권 60만원 / 순입금액 3억원 이상 → 롯데 모바일 상품권 100만원 / 혜택 2: 퇴직금 입금 시 → 퇴직금 1천만원 이상~3천만원 미만 → 롯데 모바일 상품권 1만원 / 퇴직금 3천만원 이상 → 롯데 모바일 상품권 3만원 (퇴직연금 감독규정에 의해 최대 3만원) / 추가 혜택: 개인연금 랩(WRAP) 가입 시 → 타사연금 가져오기 또는 ISA 연금 전환 순입금액 3배 인정 (퇴직금 입금은 배수 인정 없음. 두 조건 모두 충족 시 더 높은 배수(3배) 기준으로 혜택 적용)",
-   "remarks": null,
-   "content_hash": "c46d0ff5e6c4b71d"
-  },
-  {
-   "firm_name": "미래에셋증권",
-   "event_name": "「투자하는 연금」2026년 퇴직연금 DC 이벤트",
-   "start_date": "2026-04-01",
-   "end_date": "2026-06-30",
-   "event_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202603007&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
-   "raw_text": "「투자하는 연금」2026년 퇴직연금 DC 이벤트 null",
-   "acct_pension": false,
-   "acct_irp": false,
-   "acct_dc": true,
-   "acct_etc": null,
-   "conditions": "대상: 미래에셋증권 퇴직연금 DC 최초 입금 가입자 (최초 납입일 기준, DC 부담금 납입이력이 없는 가입자 제외). 기간: 2026.01.01 ~ 12.31. 필수: 이벤트 신청 및 디폴트옵션 지정 필수. 순입금 산정: 최초 입금한 분기의 입금액에서 출금액을 차감. 지급: 각 분기별 당첨자 선정 후 2개월 이내 지급. 사은품 지급 시까지 이벤트 조건 유지 필수 (계좌 해지고객 제외, 출금 및 이전 시 기준금액에서 차감). 연간 퇴직연금 특별이익 제공한도(3만원) 내에서 지급되며, 당사 모든 퇴직연금 관련 이벤트 사은품 및 판촉물 금액 포함. 본 이벤트는 개인고객 대상 (법인 및 당사 임직원 제외). 이벤트는 당사 사정 또는 금융당국 지도 및 권고에 의해 사전 고지 없이 조기 종료될 수 있음 (단, 조기 종료 전 조건 충족 고객은 혜택 지급). 사은품은 모바일 상품권으로 발송되며, 발송일로부터 60일 이내 사용해야 함.",
-   "benefits": "순입금 1억원 이상 → 도미노피자 세트 (당첨자 선정) / 순입금 5천만원 이상 ~ 1억 미만 → 맥도날드 햄버거 세트 (당첨자 선정) / 순입금 5천만원 미만 → 투썸플레이스 아메리카노 1잔 (당첨자 선정)",
-   "remarks": null,
-   "content_hash": "6e18b78a12dcb7d1"
-  },
-  {
-   "firm_name": "미래에셋증권",
-   "event_name": "우리 아이 부자 만들기, 미래로 떠나는 90일 투자 여행 이벤트",
-   "start_date": "2026-03-30",
-   "end_date": "2026-07-31",
-   "event_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202603005&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
-   "raw_text": "우리 아이 부자 만들기, 미래로 떠나는 90일 투자 여행 이벤트 이벤트명: 우리 아이 부자 만들기, 미래로 떠나는 90일 투자 여행 기간: 2026. 03.30 ~ 07.31 (실적 집계기간 10월 31일까지, 추후 일정 변경 가능) 대상: 미성년 자녀 고객 (만19세미만) 프로모션 상세 투자종목 : 국내주식 모으기 가능한 전종목 * 해외주식 모으기는 이벤트 대상 아님 대상계좌 주식 모으기 가능한 계좌(주식, 개인연금) *IRP, DC 제외 조건 1. 조건 : 이벤트 신청 후 3개월 동안 국내주식 모으기 90만원 매수 체결 달성 2",
-   "acct_pension": true,
-   "acct_irp": true,
-   "acct_dc": true,
-   "acct_etc": null,
-   "conditions": "대상: 미성년 자녀 고객 (만19세미만)\n신청: 이벤트 신청 후 국내주식모으기 챌린지 성공\n유지조건: 주식모으기에서 국내주식을 90일동안 합산 90만원 이상 투자하기\n한도: 1인1회",
-   "benefits": "국내주식모으기 챌린지 성공 → 용돈 2만원 (전원)",
-   "remarks": null,
-   "content_hash": "56f6ef8865d255f0"
-  },
-  {
-   "firm_name": "미래에셋증권",
-   "event_name": "「투자하는 연금」연말정산 준비 프로젝트",
-   "start_date": "2026-01-01",
-   "end_date": "2026-06-30",
-   "event_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202512019&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
-   "raw_text": "「투자하는 연금」연말정산 준비 프로젝트 null",
-   "acct_pension": true,
-   "acct_irp": true,
-   "acct_dc": false,
-   "acct_etc": null,
-   "conditions": "대상고객: 미래에셋증권 개인연금, IRP 신규 고객 (계좌유형별 최초 신규 계좌만 인정) 및 2025년 12월 31일 기준 개인연금, IRP 무잔고 고객 / 기간: 2026.01.01~06.30 / 순입금 요건: 이벤트 기간(2026.01.01~06.30) 내 순입금 10만원 이상 (순입금액은 2026.01.01~12.31 기준) / 신청필수: 이벤트 참여 신청 필수 / 유지조건: 사은품 지급일(2027년 1월 말 예정)까지 이벤트 조건 유지 및 계좌 정상 상태 유지 / 한도: 개인연금 계좌 순입금 한도 600만원, IRP 계좌 순입금 한도 300만원 (연금계좌 세액공제 한도) / IRP 특별이익 제공 한도 연간 누적 3만원 (모든 퇴직연금 관련 이벤트 사은품 및 판촉물 금액 포함) / 제외 금액: 연금 이전 금액, 퇴직연금 입금 금액, ISA 만기자금 전환 금액",
-   "benefits": "이벤트 기간(2026.01.01~06.30) 내 순입금 10만원 이상 → 순입금액의 1% 연금지원금 (개인연금 계좌 최대 6만원 / IRP 계좌 최대 3만원 / 개인연금 및 IRP 중복지급 가능, 총 최대 9만원) (2027년 1월 말 지급, 1천원 미만 절사)",
-   "remarks": null,
-   "content_hash": "1d5b53cb343c582a"
-  },
-  {
-   "firm_name": "미래에셋증권",
-   "event_name": "다이렉트 연금저축계좌 온라인 매매수수료 우대혜택 안내",
-   "start_date": "2026-01-01",
-   "end_date": "2026-12-31",
-   "event_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202601004&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
-   "raw_text": "다이렉트 연금저축계좌 온라인 매매수수료 우대혜택 안내 다이렉트 연금저축계좌 온라인 매매수수료 우대혜택 안내",
-   "acct_pension": true,
-   "acct_irp": false,
-   "acct_dc": false,
-   "acct_etc": null,
-   "conditions": "대상고객: 다이렉트 연금저축계좌 보유 고객 (다이렉트 계좌는 비대면으로 계좌개설 시 관리점을 '다이렉트'로 선택한 계좌를 의미) / 신청필수: 없음 / 기간: 2026.01.01 ~ 12.31 / 유지조건: 계좌관리점을 '다이렉트'로 유지 (영업점으로 변경 시 수수료 우대혜택 중단 및 영업점 계좌 매매수수료 적용) / 적용매체: M-STOCK, HTS, WTS, ARS",
-   "benefits": "모든 다이렉트 연금저축계좌에서 ETF, 리츠 거래 → 온라인 매매수수료 0.0036396% (2026년, 추후 변동 가능)",
-   "remarks": null,
-   "content_hash": "23e2c0a8a0674efd"
-  },
   {
    "firm_name": "한국투자증권",
    "event_name": "IRP X 개인연금 이벤트",
@@ -159,7 +64,7 @@
    "event_url": "https://securities.koreainvestment.com/main/customer/notice/Event.jsp?gubun=i&cmd=TF04gb010002&num=6614",
    "raw_text": "퇴직연금 TDF.ETF 매수 이벤트 진행중 모바일 문화상품권 최대 3만원 혜택!! 기간 : 2026.04.01 ~ 2026.06.30 종료 5일전",
    "_detail_id": "6614",
-   "acct_pension": true,
+   "acct_pension": false,
    "acct_irp": true,
    "acct_dc": true,
    "acct_etc": null,
@@ -325,10 +230,10 @@
    "acct_irp": true,
    "acct_dc": false,
    "acct_etc": null,
-   "conditions": "대상: KB증권 고객\n기간: 2026/03/30 ~",
+   "conditions": "기간: 2026/03/30 ~ \n대상: KB증권 고객",
    "benefits": null,
    "remarks": "재검증 실패(상세 본문/이미지에서 혜택 미확인) — 원문 확인 필요",
-   "content_hash": "fb4283a01547a73c"
+   "content_hash": "8c01564ac4c421e5"
   },
   {
    "firm_name": "KB증권",
@@ -343,7 +248,7 @@
    "acct_etc": null,
    "conditions": "대상: 비대면 채널을 통해 개설한 KB증권 연금저축 최초 1계좌\n신청: 별도 이벤트 신청 없이 적용",
    "benefits": "신연금저축계좌에서 온라인으로 ETF 거래 시 수수료 혜택 → ETF 수수료 0.0050483% (전원)",
-   "remarks": "재검증 실패(상세 페이지 접속 불가) — 원문 확인 필요",
+   "remarks": null,
    "content_hash": "c99856cb93bd4389"
   },
   {
@@ -357,10 +262,10 @@
    "acct_irp": true,
    "acct_dc": false,
    "acct_etc": null,
-   "conditions": "기간: 2024-10-25 ~ 2024-12-31",
+   "conditions": null,
    "benefits": null,
    "remarks": "재검증 실패(상세 본문/이미지에서 혜택 미확인) — 원문 확인 필요",
-   "content_hash": "9fcffe4576d6c1b8"
+   "content_hash": "c0c598d4f1eb7610"
   },
   {
    "firm_name": "NH투자증권",
