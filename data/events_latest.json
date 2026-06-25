@@ -1,5 +1,5 @@
 {
- "collected_at": "2026-06-25T06:46:37.638564+00:00",
+ "collected_at": "2026-06-25T23:53:48.430768+00:00",
  "firms_failed": [
   "키움증권",
   "미래에셋증권"
@@ -45,7 +45,7 @@
    "start_date": "2026-04-01",
    "end_date": "2026-06-30",
    "event_url": "https://securities.koreainvestment.com/main/customer/notice/Event.jsp?gubun=i&cmd=TF04gb010002&num=6615",
-   "raw_text": "개인연금 TDF.ETF 매수 이벤트 진행중 모바일 문화상품권 최대 36만원 혜택!! 기간 : 2026.04.01 ~ 2026.06.30 종료 5일전",
+   "raw_text": "개인연금 TDF.ETF 매수 이벤트 진행중 모바일 문화상품권 최대 36만원 혜택!! 기간 : 2026.04.01 ~ 2026.06.30 종료 4일전",
    "_detail_id": "6615",
    "acct_pension": true,
    "acct_irp": false,
@@ -62,7 +62,7 @@
    "start_date": "2026-04-01",
    "end_date": "2026-06-30",
    "event_url": "https://securities.koreainvestment.com/main/customer/notice/Event.jsp?gubun=i&cmd=TF04gb010002&num=6614",
-   "raw_text": "퇴직연금 TDF.ETF 매수 이벤트 진행중 모바일 문화상품권 최대 3만원 혜택!! 기간 : 2026.04.01 ~ 2026.06.30 종료 5일전",
+   "raw_text": "퇴직연금 TDF.ETF 매수 이벤트 진행중 모바일 문화상품권 최대 3만원 혜택!! 기간 : 2026.04.01 ~ 2026.06.30 종료 4일전",
    "_detail_id": "6614",
    "acct_pension": false,
    "acct_irp": true,
@@ -79,7 +79,7 @@
    "start_date": "2026-04-01",
    "end_date": "2026-06-30",
    "event_url": "https://securities.koreainvestment.com/main/customer/notice/Event.jsp?gubun=i&cmd=TF04gb010002&num=6613",
-   "raw_text": "퇴직연금 DC 신규 가입 이벤트 진행중 DC 신규 입금하면 3만원 100% 증정혜택!! 기간 : 2026.04.01 ~ 2026.06.30 종료 5일전",
+   "raw_text": "퇴직연금 DC 신규 가입 이벤트 진행중 DC 신규 입금하면 3만원 100% 증정혜택!! 기간 : 2026.04.01 ~ 2026.06.30 종료 4일전",
    "_detail_id": "6613",
    "acct_pension": false,
    "acct_irp": false,
@@ -230,10 +230,10 @@
    "acct_irp": true,
    "acct_dc": false,
    "acct_etc": null,
-   "conditions": null,
+   "conditions": "대상: KB증권 고객\n기간: 2026/03/30 ~",
    "benefits": null,
    "remarks": "재검증 실패(상세 본문/이미지에서 혜택 미확인) — 원문 확인 필요",
-   "content_hash": "d25e93d8c5e9f855"
+   "content_hash": "fb4283a01547a73c"
   },
   {
    "firm_name": "KB증권",
@@ -262,10 +262,10 @@
    "acct_irp": true,
    "acct_dc": false,
    "acct_etc": null,
-   "conditions": null,
+   "conditions": "기간: 2024-10-25 ~ 2024-12-31",
    "benefits": null,
-   "remarks": "상세 자동추출 실패 — 원문 확인 필요 (이미지 공지 가능성)",
-   "content_hash": "c0c598d4f1eb7610"
+   "remarks": "재검증 실패(상세 본문/이미지에서 혜택 미확인) — 원문 확인 필요",
+   "content_hash": "9fcffe4576d6c1b8"
   },
   {
    "firm_name": "NH투자증권",

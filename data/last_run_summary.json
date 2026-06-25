@@ -1,6 +1,6 @@
 {
- "run_at": "2026-06-25T06:46:49.333800+00:00",
- "trigger": "manual",
+ "run_at": "2026-06-25T23:53:59.467705+00:00",
+ "trigger": "weekly",
  "active": 22,
  "by_firm": {
   "한국투자증권": 6,
@@ -14,6 +14,6 @@
  ],
  "new": 0,
  "closed": 0,
- "changed": 1,
+ "changed": 2,
  "note": ""
 }
