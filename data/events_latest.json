@@ -1,5 +1,5 @@
 {
- "collected_at": "2026-06-25T06:34:13.972235+00:00",
+ "collected_at": "2026-06-25T06:46:37.638564+00:00",
  "firms_failed": [
   "키움증권",
   "미래에셋증권"
@@ -230,10 +230,10 @@
    "acct_irp": true,
    "acct_dc": false,
    "acct_etc": null,
-   "conditions": "기간: 2026/03/30 ~ \n대상: KB증권 고객",
+   "conditions": null,
    "benefits": null,
    "remarks": "재검증 실패(상세 본문/이미지에서 혜택 미확인) — 원문 확인 필요",
-   "content_hash": "8c01564ac4c421e5"
+   "content_hash": "d25e93d8c5e9f855"
   },
   {
    "firm_name": "KB증권",
@@ -264,7 +264,7 @@
    "acct_etc": null,
    "conditions": null,
    "benefits": null,
-   "remarks": "재검증 실패(상세 본문/이미지에서 혜택 미확인) — 원문 확인 필요",
+   "remarks": "상세 자동추출 실패 — 원문 확인 필요 (이미지 공지 가능성)",
    "content_hash": "c0c598d4f1eb7610"
   },
   {
