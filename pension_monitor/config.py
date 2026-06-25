@@ -26,11 +26,14 @@ ACCT_ETC_KW = ["ISA", "isa", "CMA"]
 
 # 환경변수 (빈 문자열로 주입돼도 기본값 적용)
 # SUPABASE_URL 은 비밀값이 아니므로 프로젝트 기본값 내장, 키만 Secrets 필수
-SUPABASE_URL = (os.environ.get("SUPABASE_URL")
+# .strip(): GitHub Secrets 에 값을 붙여넣을 때 끝에 개행/공백이 섞이면 그대로
+# 헤더(Authorization: Bearer …\n)에 들어가 PostgREST 가 토큰을 거부(401)한다.
+# 가장 흔한 인증 실패 원인이라 모든 자격증명을 양끝 공백 제거 후 사용한다.
+SUPABASE_URL = ((os.environ.get("SUPABASE_URL") or "").strip()
                 or "https://fbkriifozbwuaoegmmcf.supabase.co").rstrip("/")
-SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or ""
-MAIL_SENDER = os.environ.get("MAIL_SENDER") or ""
-MAIL_APP_PASSWORD = os.environ.get("MAIL_APP_PASSWORD") or ""
+SUPABASE_KEY = (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
+MAIL_SENDER = (os.environ.get("MAIL_SENDER") or "").strip()
+MAIL_APP_PASSWORD = (os.environ.get("MAIL_APP_PASSWORD") or "").strip()
 MAIL_RECIPIENTS = [
     x.strip()
     for x in (os.environ.get("MAIL_RECIPIENTS") or "opera0919@gmail.com").split(",")
