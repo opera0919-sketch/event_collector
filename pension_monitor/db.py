@@ -13,9 +13,13 @@ from .config import SUPABASE_URL, SUPABASE_KEY
 
 MISSED_LIMIT = 2  # 연속 미노출 N회 → 종료 처리
 
+# 인증/네트워크 등으로 DB 가 사용 불가로 판명되면 True → 이후 모든 호출 no-op.
+# (읽기 1회 실패가 리포트·메일까지 무산시키지 않도록 파이프라인을 로컬-온리로 강등)
+_DB_DOWN = False
+
 
 def enabled() -> bool:
-    return bool(SUPABASE_URL and SUPABASE_KEY)
+    return bool(SUPABASE_URL and SUPABASE_KEY) and not _DB_DOWN
 
 
 def _headers(prefer=None):
@@ -64,7 +68,29 @@ def _safe(fn, *a, **k):
 
 
 def fetch_all_events():
-    return _get("pension_events", {"select": "*", "limit": "10000"})
+    """기존 이벤트 전건 조회. 인증/조회 실패 시 DB 를 강등(no-op)하고 [] 반환.
+
+    설계 의도(키 없으면 no-op, 쓰기는 _safe 로 보호)와 달리 이 읽기 경로만
+    무방비라 401 한 번에 런 전체(리포트·메일 포함)가 죽던 문제를 막는다.
+    실패해도 이후 수집·리포트·메일은 로컬 데이터로 계속 진행된다.
+    """
+    global _DB_DOWN
+    try:
+        return _get("pension_events", {"select": "*", "limit": "10000"})
+    except requests.exceptions.HTTPError as e:
+        code = e.response.status_code if e.response is not None else "?"
+        if code in (401, 403):
+            print(f"[db] 인증 실패({code}) — SUPABASE_SERVICE_ROLE_KEY 가 이 프로젝트의 "
+                  "service_role 키가 아닙니다(만료/오타/잘림 또는 anon·publishable 키 혼동). "
+                  "DB 동기화는 건너뛰고 수집·리포트·메일은 그대로 진행합니다.")
+        else:
+            print(f"[db] 조회 실패(HTTP {code}) — DB 동기화 생략, 파이프라인은 계속.")
+        _DB_DOWN = True
+        return []
+    except Exception as e:
+        print(f"[db] 조회 실패({type(e).__name__}: {str(e)[:120]}) — DB 동기화 생략, 파이프라인은 계속.")
+        _DB_DOWN = True
+        return []
 
 
 def sync(scraped: list, firms_failed: list, trigger_type: str):
