@@ -1,5 +1,5 @@
 {
- "run_at": "2026-06-23T23:49:14.427690+00:00",
+ "run_at": "2026-06-25T03:41:21.548798+00:00",
  "trigger": "manual",
  "active": 28,
  "by_firm": {
@@ -12,8 +12,8 @@
  "firms_failed": [
   "키움증권"
  ],
- "new": null,
- "closed": null,
- "changed": null,
+ "new": 4,
+ "closed": 0,
+ "changed": 28,
  "note": ""
 }
