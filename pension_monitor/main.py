@@ -17,7 +17,7 @@ import traceback
 
 from . import db, mailer, report as report_mod
 from .classify import (is_pension, detect_accounts, extract_details, content_hash,
-                       suspicious_dates)
+                       suspicious_dates, dates_garbled)
 from .config import TRIGGER_TYPE
 from .scrapers import SCRAPERS
 from .scrapers.base import load_page
@@ -231,9 +231,11 @@ def classify_all(events):
             elif not ev.get("start_date") and not ev.get("end_date") and ev.get("_detail_text"):
                 s, e = parse_dates(ev["_detail_text"][:2000])
                 ev["start_date"], ev["end_date"] = s, e
-            # 교정 후에도 의심스러우면 잘못된 날짜(게시일 오인 등)를 노출하지 않도록 비운다.
-            # (Gemini 기간 추출이 이후 enrich_structured 에서 채울 수 있음.)
-            if suspicious_dates(ev.get("start_date"), ev.get("end_date")):
+            # 교정 후 역전/당일(추출 깨짐)만 비운다. 단순 과거 종료일은 비우지 않고 보존
+            # → db.sync() 가 정확히 '종료'로 판정한다(비우면 default 가 '진행중'이라
+            #   과거 이벤트가 영구 활성으로 새는 버그가 됨). 한쪽만 있는 경우(상시)도 보존.
+            s2, e2 = ev.get("start_date"), ev.get("end_date")
+            if s2 and e2 and dates_garbled(s2, e2):
                 ev["start_date"] = ev["end_date"] = None
         out.append(ev)
     return out

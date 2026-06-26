@@ -105,6 +105,22 @@ def suspicious_dates(start, end) -> bool:
     return False
 
 
+def dates_garbled(start, end) -> bool:
+    """본문에서 새로 읽은 기간이 '추출 자체가 깨진' 경우만 True (역전·당일).
+    suspicious_dates 와 달리 단순 과거 날짜·한쪽만 있는 경우(상시)는 정상 데이터로
+    인정해 보존한다 — 이래야 status 가 과거 종료일을 보고 '종료'로 정확히 판정하고,
+    날짜를 통째로 비워 default(진행중)로 새는 것을 막는다."""
+    import datetime as _dt
+    def iso(s):
+        try:
+            return _dt.date.fromisoformat(s)
+        except (TypeError, ValueError):
+            return None
+    sd, ed = iso(start), iso(end)
+    if not sd or not ed:
+        return False                       # 한쪽만 있음 — 상시로 보존
+    return sd > ed or (ed - sd).days <= 1
+
 
 # 사이트 공통 문구(네비/푸터/배너) — 상세 추출에서 제외
 _BOILERPLATE = (
