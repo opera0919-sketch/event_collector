@@ -127,7 +127,7 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
             ev["id"] = old["id"]
             updates = {"last_seen_at": now, "missed_count": 0, "status": ev["status"]}
             if old.get("content_hash") != ev.get("content_hash"):
-                for f in ("end_date", "start_date", "conditions", "benefits", "acct_etc"):
+                for f in ("end_date", "start_date", "conditions", "benefits", "acct_etc", "remarks"):
                     if (old.get(f) or None) != (ev.get(f) or None):
                         changed.append((ev, f, old.get(f), ev.get(f)))
                         updates[f] = ev.get(f)
