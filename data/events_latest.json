@@ -1,7 +1,8 @@
 {
- "collected_at": "2026-06-30T23:46:31.153610+00:00",
+ "collected_at": "2026-07-02T00:01:33.597562+00:00",
  "firms_failed": [
-  "키움증권"
+  "키움증권",
+  "한국투자증권"
  ],
  "events": [
   {
@@ -85,74 +86,6 @@
    "content_hash": "d9233329cc1d0ec8"
   },
   {
-   "firm_name": "한국투자증권",
-   "event_name": "퇴직연금 DC 신규 입금 이벤트",
-   "start_date": "2026-07-01",
-   "end_date": "2026-09-30",
-   "event_url": "https://securities.koreainvestment.com/main/customer/notice/Event.jsp?gubun=i&cmd=TF04gb010002&num=6730",
-   "raw_text": "퇴직연금 DC 신규 입금 이벤트 진행중 DC 신규 입금하면 3만원 100% 증정혜택!! 기간 : 2026.07.01 ~ 2026.09.30",
-   "_detail_id": "6730",
-   "acct_pension": false,
-   "acct_irp": false,
-   "acct_dc": true,
-   "acct_etc": null,
-   "conditions": "No conditions information found in the provided text.",
-   "benefits": "No benefits information found in the provided text.",
-   "remarks": null,
-   "content_hash": "796f155ddccb1ad3"
-  },
-  {
-   "firm_name": "한국투자증권",
-   "event_name": "IRP X 개인연금 이벤트",
-   "start_date": "2026-06-01",
-   "end_date": "2026-07-31",
-   "event_url": "https://securities.koreainvestment.com/main/customer/notice/Event.jsp?gubun=i&cmd=TF04gb010002&num=6706",
-   "raw_text": "IRP X 개인연금 이벤트 진행중 한국인의 연금 텐텐 달성 기념! 기간 : 2026.06.01 ~ 2026.07.31",
-   "_detail_id": "6706",
-   "acct_pension": true,
-   "acct_irp": true,
-   "acct_dc": false,
-   "acct_etc": null,
-   "conditions": "대상: 한국투자증권 고객 누구나\n기간: 2026.06.01 ~ 2026.07.31\n신청: 개인정보 수집 동의",
-   "benefits": "IRP 순입금 1백만원 이상 → 신세계 모바일상품권 1만원 (전원)\nIRP 순입금 3백만원 이상 → 신세계 모바일상품권 2만원 (전원)\n개인연금 순입금 1백만원 이상 → 신세계 모바일상품권 1만원 (전원)\n개인연금 순입금 3백만원 이상 → 신세계 모바일상품권 2만원 (전원)",
-   "remarks": null,
-   "content_hash": "f59487d3771558b0"
-  },
-  {
-   "firm_name": "한국투자증권",
-   "event_name": "ISA 만기자금 연금전환 이벤트",
-   "start_date": "2026-06-01",
-   "end_date": "2026-07-31",
-   "event_url": "https://securities.koreainvestment.com/main/customer/notice/Event.jsp?gubun=i&cmd=TF04gb010002&num=6705",
-   "raw_text": "ISA 만기자금 연금전환 이벤트 진행중 한투+타사 ISA 연금으로 이전하세요! 기간 : 2026.06.01 ~ 2026.07.31",
-   "_detail_id": "6705",
-   "acct_pension": true,
-   "acct_irp": true,
-   "acct_dc": false,
-   "acct_etc": "ISA",
-   "conditions": "대상: ISA 만기자금 보유 고객\n기간: 2026.06.01 ~ 2026.07.31\n신청: 개인정보 수집 동의 필수",
-   "benefits": "ISA 만기자금 연금전환 시 연금계좌로 입금 → 연금계좌 입금액 100만원 이상 5만원 상품권 (전원)\nISA 만기자금 연금전환 시 연금계좌로 입금 → 연금계좌 입금액 300만원 이상 10만원 상품권 (전원)",
-   "remarks": null,
-   "content_hash": "ce2a0f035c1cf662"
-  },
-  {
-   "firm_name": "한국투자증권",
-   "event_name": "연금저축 온라인 매매수수료 우대 이벤트",
-   "start_date": "2024-12-20",
-   "end_date": "2026-12-31",
-   "event_url": "https://securities.koreainvestment.com/main/customer/notice/Event.jsp?gubun=i&cmd=TF04gb010002&num=6137",
-   "raw_text": "연금저축 온라인 매매수수료 우대 이벤트 진행중 수수료 우대로 든든하니깐 ~ 연금저축 온라인 매매수수료 우대 혜택받아가세요~! 기간 : 2024.12.20 ~ 2026.12.31",
-   "_detail_id": "6137",
-   "acct_pension": true,
-   "acct_irp": false,
-   "acct_dc": false,
-   "acct_etc": null,
-   "conditions": "대상: 연금저축계좌 보유 고객\n기간: 2024.12.20 ~ 2026.12.31",
-   "benefits": "연금저축 온라인 매매수수료 우대 (전원)",
-   "remarks": null,
-   "content_hash": "994d14ed9a60cb30"
-  },
-  {
    "firm_name": "삼성증권",
    "event_name": "[연금] 퇴직연금(IRP/DC) 파워-업! 이벤트(26.5~7월)",
    "start_date": "2026-05-01",
@@ -219,18 +152,18 @@
   {
    "firm_name": "KB증권",
    "event_name": "2026 시즌3 연금저축 순입금(이전) 이벤트",
-   "start_date": "2026-06-30",
-   "end_date": "2026-12-31",
+   "start_date": null,
+   "end_date": "2026-06-30",
    "event_url": "https://www.kbsec.com/go.able?linkcd=s060902030000&seq=10010044&idt=20260630&clsfcd=4&gubun=1",
    "raw_text": "2026 시즌3 연금저축 순입금(이전) 이벤트",
    "acct_pension": true,
    "acct_irp": false,
    "acct_dc": false,
-   "acct_etc": null,
-   "conditions": "기간: 2026-06-30 ~ 2026-12-31",
+   "acct_etc": "ISA",
+   "conditions": "기간: 2026-06-30 ~ \n대상: KB증권 고객",
    "benefits": null,
    "remarks": "재검증 실패(상세 본문/이미지에서 혜택 미확인) — 원문 확인 필요",
-   "content_hash": "7ab75997207a670c"
+   "content_hash": "d51b846f86402f39"
   },
   {
    "firm_name": "KB증권",
@@ -261,7 +194,7 @@
    "acct_etc": null,
    "conditions": "대상: KB증권 고객\n기간: 2026/06/29 ~",
    "benefits": null,
-   "remarks": "재검증 실패(상세 본문/이미지에서 혜택 미확인) — 원문 확인 필요",
+   "remarks": "상세 자동추출 실패 — 원문 확인 필요 (이미지 공지 가능성)",
    "content_hash": "7874558fed42500d"
   },
   {
@@ -309,7 +242,7 @@
    "acct_etc": null,
    "conditions": "기간: 2024/10/25 ~ 2024/12/31",
    "benefits": null,
-   "remarks": "재검증 실패(상세 페이지 접속 불가) — 원문 확인 필요",
+   "remarks": "재검증 실패(상세 본문/이미지에서 혜택 미확인) — 원문 확인 필요",
    "content_hash": "a20701aa18501988"
   },
   {
