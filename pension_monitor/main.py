@@ -17,18 +17,14 @@ import traceback
 
 from . import db, mailer, report as report_mod
 from .classify import (is_pension, detect_accounts, extract_details, content_hash,
-                       suspicious_dates)
+                       suspicious_dates, source_event_id)
 from .config import TRIGGER_TYPE
 from .scrapers import SCRAPERS
 from .scrapers.base import load_page
 from .scrapers.koreainvestment import fetch_detail_text
 
-MAX_DETAIL_FETCH = 36       # 상세 페이지 조회 상한 (6개사 연금 이벤트 전건 커버; 시간은 아래 예산이 보호)
+MAX_DETAIL_FETCH = 36       # 상세 페이지 조회 상한 (대상 증권사 연금 이벤트 전건 커버; 시간은 아래 예산이 보호)
 DETAIL_BUDGET_SEC = 200     # 상세 조회 전체 시간 예산 (초과 시 중단 → 런 행 방지)
-
-# 매 실행 구조적으로 실패하는(헤드리스 차단 등) 증권사 — 재시도 패스에서 제외해
-# 불필요한 풀 타임아웃 대기를 없앤다. 1차 시도만 하고 실패로 둔다.
-KNOWN_HARD = {"키움증권"}
 
 # 일시 네트워크 블립(미래에셋/NH 간헐 타임아웃) 흡수용: 실패 증권사 재시도 패스 수와 간격.
 RETRY_PASSES = 2
@@ -63,7 +59,7 @@ def write_step_summary(line: str):
 
 
 async def collect():
-    """6개사 수집. 반환: (events, firms_failed)"""
+    """대상 증권사(config.FIRMS) 수집. 반환: (events, firms_failed)"""
     from playwright.async_api import async_playwright
     events, failed = [], []
     async with async_playwright() as pw:
@@ -85,16 +81,15 @@ async def collect():
                 failed.append(firm)
 
         # 간헐 지연/거부(일시 타임아웃) 대응: 실패 증권사를 시간 간격을 두고 여러 번
-        # 재시도해 짧은 네트워크 블립을 흡수한다 (구조적 실패 증권사 KNOWN_HARD 는 제외).
+        # 재시도해 짧은 네트워크 블립을 흡수한다.
         for attempt in range(RETRY_PASSES):
-            retryable = [f for f in failed if f not in KNOWN_HARD]
-            if not retryable:
+            if not failed:
                 break
             await asyncio.sleep(RETRY_PASS_DELAY_SEC)
-            print(f"[재시도 {attempt + 1}/{RETRY_PASSES}] {retryable}")
-            still = [f for f in failed if f in KNOWN_HARD]
+            print(f"[재시도 {attempt + 1}/{RETRY_PASSES}] {failed}")
+            still = []
             for firm, fn, needs_browser in SCRAPERS:
-                if firm not in retryable:
+                if firm not in failed:
                     continue
                 try:
                     got = await run_one(firm, fn, needs_browser)
@@ -108,7 +103,7 @@ async def collect():
             failed = still
 
         # 정책: 웹검색 방식 미사용 — 데이터는 실제 페이지에서만 수집한다.
-        # (키움 등 WAF 차단 증권사는 수집 실패로 처리하고 리포트에 명시)
+        # (키움증권은 WAF 상시 차단으로 수집 대상 자체에서 제외 — config.FIRMS)
 
         # 연금 이벤트만 상세 보강
         pension = [e for e in events
@@ -188,7 +183,7 @@ async def enrich_details(browser, pension_events):
             except Exception:
                 detail_text = ""
             # 정적 텍스트가 빈약하면(JS 렌더) 브라우저로 텍스트+이미지 확보 (KB 상세 등)
-            if len(detail_text) < 200 and ev["firm_name"] != "키움증권":
+            if len(detail_text) < 200:
                 page = await load_page(browser, url, wait_ms=4000, retries=2)
                 try:
                     detail_text = await page.inner_text("body")
@@ -336,13 +331,12 @@ def enrich_structured(pension, existing=None):
     if not vision.enabled():
         print("[구조화] GEMINI 미설정 → 휴리스틱 값 유지")
         return
-    by_key = {(e["firm_name"], e["event_name"], e.get("start_date")): e
-              for e in (existing or [])}
+    idx = db.build_index(existing)
     started = time.monotonic()
     n, cached = 0, 0
     for ev in pension:
-        # 캐시 적중: DB에 같은 자연키 + 같은 종료일 + 이미 표준형식 혜택이면 재호출 생략
-        old = by_key.get((ev["firm_name"], ev["event_name"], ev.get("start_date")))
+        # 캐시 적중: DB에 같은 이벤트(소스ID 우선) + 같은 종료일 + 이미 표준형식 혜택이면 재호출 생략
+        old = db.find_existing(idx, ev)
         if old and old.get("end_date") == ev.get("end_date") and _is_canonical(old.get("benefits")):
             ev["benefits"] = old["benefits"]
             ev["conditions"] = old.get("conditions") or ev.get("conditions")
@@ -412,11 +406,10 @@ def reverify_new_changed(pension, existing):
     from . import vision
     from .classify import extract_details
 
-    by_key = {(e["firm_name"], e["event_name"], e.get("start_date")): e for e in existing}
+    idx = db.build_index(existing)
     started, n_ocr, n_chk = time.monotonic(), 0, 0
     for ev in pension:
-        key = (ev["firm_name"], ev["event_name"], ev.get("start_date"))
-        old = by_key.get(key)
+        old = db.find_existing(idx, ev)
         if old is not None and old.get("content_hash") == content_hash(ev):
             continue                               # 미변경 → 재검증 불필요
         n_chk += 1
@@ -464,6 +457,9 @@ def main():
 
     events, failed = asyncio.run(collect())
     pension = classify_all(events)
+    for ev in pension:
+        # 안정 소스 ID(상세 URL 의 증권사 고유 파라미터) — DB 매칭/캐시의 1차 키
+        ev["source_event_id"] = source_event_id(ev)
     existing = db.fetch_all_events() if db.enabled() else []
     enrich_structured(pension, existing)  # Gemini 표준 구조화(미변경 건은 DB 캐시 재사용)
     # 신규/변경 건은 실제 상세 페이지에서 재구조화·덮어쓰기로 재검증(잘못된 데이터 적재 방지).
@@ -493,7 +489,7 @@ def main():
         _write_summary(len(pension), by_firm, failed, diff=None)
         return
 
-    if len(failed) >= 6:
+    if len(failed) >= len(SCRAPERS):
         print("[중단] 전 증권사 수집 실패 — DB 동기화 생략")
         _write_summary(0, by_firm, failed, diff=None, note="전 증권사 수집 실패")
         sys.exit(1)

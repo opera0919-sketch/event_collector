@@ -7,8 +7,9 @@ import os
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36")
 
+# 키움증권은 WAF(eversafe) 상시 차단으로 수집 대상에서 제외 (2026-07 결정)
 FIRMS = [
-    "미래에셋증권", "한국투자증권", "삼성증권", "키움증권", "KB증권", "NH투자증권",
+    "미래에셋증권", "한국투자증권", "삼성증권", "KB증권", "NH투자증권",
 ]
 
 # 연금 이벤트 판별 키워드 (youtube_pension_db.py 의 PENSION_KEYWORDS 보강)

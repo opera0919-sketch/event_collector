@@ -9,7 +9,7 @@ import datetime as dt
 
 import requests
 
-from .config import SUPABASE_URL, SUPABASE_KEY
+from .config import SUPABASE_URL, SUPABASE_KEY, FIRMS
 
 MISSED_LIMIT = 2  # 연속 미노출 N회 → 종료 처리
 
@@ -93,6 +93,28 @@ def fetch_all_events():
         return []
 
 
+def build_index(existing: list) -> dict:
+    """기존 이벤트 매칭 인덱스. source_event_id(불변) 우선, 자연키 폴백."""
+    idx = {}
+    for e in existing or []:
+        sid = e.get("source_event_id")
+        if sid:
+            idx[("sid", e["firm_name"], sid)] = e
+        idx[(e["firm_name"], e["event_name"], e.get("start_date"))] = e
+    return idx
+
+
+def find_existing(idx: dict, ev: dict):
+    """수집 이벤트와 같은 DB 행 찾기. 자연키(이벤트명/기간)는 정규화가 흔들리면
+    바뀌므로 상세 URL 의 고유 ID 매칭을 우선한다 (중복/허위 신규 방지)."""
+    sid = ev.get("source_event_id")
+    if sid:
+        old = idx.get(("sid", ev["firm_name"], sid))
+        if old is not None:
+            return old
+    return idx.get((ev["firm_name"], ev["event_name"], ev.get("start_date")))
+
+
 def sync(scraped: list, firms_failed: list, trigger_type: str):
     """수집 결과를 DB와 동기화하고 변동 내역을 반환한다.
 
@@ -102,32 +124,35 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
     today = dt.date.today().isoformat()
     now = dt.datetime.now(dt.timezone.utc).isoformat()
     existing = fetch_all_events() if enabled() else []
-    by_key = {(e["firm_name"], e["event_name"], e.get("start_date")): e for e in existing}
-    scraped_keys = set()
+    idx = build_index(existing)
+    matched_ids = set()
     failed_set = set(firms_failed)
 
     # ── 1단계: 변동 판정(순수 계산) + DB 쓰기는 건별 안전 실행 ──────
     new_events, changed = [], []
     for ev in scraped:
-        key = (ev["firm_name"], ev["event_name"], ev.get("start_date"))
-        scraped_keys.add(key)
         ev["status"] = "종료" if (ev.get("end_date") and ev["end_date"] < today) else "진행중"
-        old = by_key.get(key)
+        old = find_existing(idx, ev)
         if old is None:
             new_events.append(ev)
             if enabled():
                 row = {k: ev.get(k) for k in (
                     "firm_name", "event_name", "status", "start_date", "end_date",
                     "acct_pension", "acct_irp", "acct_dc", "acct_etc",
-                    "conditions", "benefits", "remarks", "event_url", "content_hash")}
+                    "conditions", "benefits", "remarks", "event_url", "content_hash",
+                    "source_event_id")}
                 row["last_seen_at"] = now
                 created = _safe(_post, "pension_events", row)
                 ev["id"] = created[0]["id"] if created else None
         else:
+            matched_ids.add(old["id"])
             ev["id"] = old["id"]
             updates = {"last_seen_at": now, "missed_count": 0, "status": ev["status"]}
+            if ev.get("source_event_id") and not old.get("source_event_id"):
+                updates["source_event_id"] = ev["source_event_id"]
             if old.get("content_hash") != ev.get("content_hash"):
-                for f in ("end_date", "start_date", "conditions", "benefits", "acct_etc"):
+                # event_name/start_date 도 갱신 대상 — sid 매칭이면 자연키가 바뀌었을 수 있음
+                for f in ("event_name", "end_date", "start_date", "conditions", "benefits", "acct_etc"):
                     if (old.get(f) or None) != (ev.get(f) or None):
                         changed.append((ev, f, old.get(f), ev.get(f)))
                         updates[f] = ev.get(f)
@@ -137,16 +162,19 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
             if enabled():
                 _safe(_patch, "pension_events", {"id": f"eq.{old['id']}"}, updates)
 
-    # 목록 미노출 처리 (수집 실패한 증권사는 건드리지 않음 → 오판 방지)
+    # 목록 미노출/만기 처리. 종료일 경과는 수집 성공 여부와 무관한 사실이므로
+    # 실패 증권사 건이라도 즉시 종료 처리한다 (미만기 건만 오판 방지를 위해 유지).
     closed = []
-    for key, old in by_key.items():
-        if key in scraped_keys or old["status"] == "종료":
+    for old in existing:
+        if old["id"] in matched_ids or old["status"] == "종료":
             continue
-        if old["firm_name"] in failed_set:
+        expired = bool(old.get("end_date") and old["end_date"] < today)
+        if not expired and old["firm_name"] in failed_set:
             continue
         missed = (old.get("missed_count") or 0) + 1
-        if missed >= MISSED_LIMIT or (old.get("end_date") and old["end_date"] < today):
+        if expired or missed >= MISSED_LIMIT:
             closed.append(old)
+            old["status"] = "종료"
             if enabled():
                 _safe(_patch, "pension_events", {"id": f"eq.{old['id']}"},
                       {"status": "종료", "closed_at": now, "missed_count": missed})
@@ -154,6 +182,13 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
             _safe(_patch, "pension_events", {"id": f"eq.{old['id']}"}, {"missed_count": missed})
 
     active = [e for e in scraped if e["status"] == "진행중"]
+    # 수집 실패 증권사의 기존 진행중(미만기) 건은 리포트에서 사라지지 않도록 유지
+    # 노출한다 (최종 확인일을 함께 표기 → "직전 데이터 유지" 문구와 동작 일치).
+    for old in existing:
+        if (old["firm_name"] in failed_set and old["status"] == "진행중"
+                and old["id"] not in matched_ids):
+            old["stale_seen"] = (old.get("last_seen_at") or "")[:10] or None
+            active.append(old)
     result = {"new": new_events, "closed": closed, "changed": changed,
               "active": active, "run_id": None}
 
@@ -161,7 +196,7 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
     if enabled():
         run = _safe(_post, "monitoring_runs", {
             "trigger_type": trigger_type,
-            "firms_ok": 6 - len(firms_failed),
+            "firms_ok": len(FIRMS) - len(firms_failed),
             "firms_failed": len(firms_failed),
             "events_active": len(active),
             "events_new": len(new_events),
