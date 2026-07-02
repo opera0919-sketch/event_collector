@@ -153,6 +153,26 @@ def extract_details(detail_text: str) -> dict:
     return out
 
 
+# 증권사별 상세 URL 의 고유 식별자 파라미터 (KB seq, NH mNo, 미래에셋 cs_ecis_id,
+# 삼성 MenuSeqNo, 한투 num). 자연키(이벤트명/기간)는 정규화 결과라 실행마다 흔들릴
+# 수 있어, 이 불변 ID 를 DB 매칭의 1차 키로 쓴다.
+_SID_PARAMS = ("seq", "mNo", "cs_ecis_id", "MenuSeqNo", "num")
+
+
+def source_event_id(ev: dict):
+    """이벤트 상세 URL 에서 증권사 측 고유 ID 추출. 목록 URL 폴백 등 ID 가 없는
+    경우 None (그 경우 자연키 매칭으로 폴백)."""
+    if ev.get("_detail_id"):
+        return str(ev["_detail_id"])
+    from urllib.parse import urlparse, parse_qs
+    qs = parse_qs(urlparse(ev.get("event_url") or "").query)
+    for p in _SID_PARAMS:
+        v = qs.get(p)
+        if v and v[0]:
+            return v[0]
+    return None
+
+
 def content_hash(ev: dict) -> str:
     basis = "|".join(str(ev.get(k) or "") for k in (
         "firm_name", "event_name", "start_date", "end_date",

@@ -4,6 +4,8 @@
 import datetime as dt
 import io
 
+from .config import FIRMS
+
 # 메일 첨부 xlsx 의 열 구성 (pension_events 테이블)
 _XLSX_COLS = [
     ("firm_name", "증권사"), ("event_name", "이벤트명"), ("status", "상태"),
@@ -68,7 +70,8 @@ def build_report(diff: dict, firms_failed: list) -> str:
         "",
     ]
     if firms_failed:
-        lines += [f"⚠️ 수집 실패: {', '.join(firms_failed)} (재시도 예정, 직전 데이터 유지)", ""]
+        lines += [f"⚠️ 수집 실패: {', '.join(firms_failed)} — 직전 수집분을 아래 표에 유지 "
+                  f"(⚠ 최종확인일 표기)", ""]
 
     lines.append("## 직전 대비 주요 변동")
     if not (diff["new"] or diff["closed"] or diff["changed"]):
@@ -106,6 +109,8 @@ def build_report(diff: dict, firms_failed: list) -> str:
         name = ev["event_name"][:40].replace("|", "/")
         url = ev.get("event_url") or ""
         name_cell = f"[{name}]({url})" if url.startswith("http") else name
+        if ev.get("stale_seen"):
+            name_cell += f" ⚠(최종확인 {ev['stale_seen']})"
         lines.append(
             f"| {ev['firm_name']} | {name_cell} | {_fmt_period(ev)} "
             f"| {_b(ev.get('acct_pension'))} | {_b(ev.get('acct_irp'))} "
@@ -120,8 +125,7 @@ def build_report(diff: dict, firms_failed: list) -> str:
     irp_n = sum(1 for e in active if e.get("acct_irp"))
     ps_n = sum(1 for e in active if e.get("acct_pension"))
     most = max(by_firm.items(), key=lambda kv: len(kv[1]))[0] if by_firm else None
-    none_firms = [f for f in ("미래에셋증권", "한국투자증권", "삼성증권", "키움증권", "KB증권", "NH투자증권")
-                  if f not in by_firm and f not in firms_failed]
+    none_firms = [f for f in FIRMS if f not in by_firm and f not in firms_failed]
     if most:
         lines.append(f"- 진행중 이벤트 최다 증권사: {most} ({len(by_firm[most])}건)")
     lines.append(f"- 대상계좌 분포: 연금저축 {ps_n}건 / IRP {irp_n}건")
