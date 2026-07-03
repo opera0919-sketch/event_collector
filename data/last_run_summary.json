@@ -1,19 +1,18 @@
 {
- "run_at": "2026-07-02T00:01:53.568490+00:00",
- "trigger": "weekly",
- "active": 17,
+ "run_at": "2026-07-03T15:54:02.760258+00:00",
+ "trigger": "manual",
+ "active": 23,
  "by_firm": {
   "미래에셋증권": 5,
   "삼성증권": 4,
   "KB증권": 6,
-  "NH투자증권": 4
+  "NH투자증권": 5
  },
  "firms_failed": [
-  "키움증권",
   "한국투자증권"
  ],
  "new": 1,
- "closed": 9,
- "changed": 0,
+ "closed": 0,
+ "changed": 7,
  "note": ""
 }
