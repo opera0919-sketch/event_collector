@@ -168,6 +168,19 @@ def test_sync_v2():
     assert "새 혜택 → 상품권 2만원" in md
     print("OK report render")
 
+    # 회귀: 신규 INSERT 시 NOT NULL boolean 컬럼(needs_review 등)이 null 로 나가
+    # 23502 로 조용히 실패하던 버그 (2026-07-03 실측) — 반드시 bool 로 강제돼야 함
+    calls["post"].clear()
+    new_ev = {"firm_name": "NH투자증권", "event_name": "신규 이벤트", "source_event_id": "9999",
+              "start_date": f"{year}-07-01", "end_date": f"{year}-09-30",
+              "benefits": "b → r", "conditions": None}   # needs_review/acct_* 미설정(None)
+    new_ev["content_hash"] = content_hash(new_ev)
+    db.sync([new_ev], firms_failed=[], trigger_type="manual")
+    row = next(p[1] for p in calls["post"] if p[0] == "pension_events")
+    for f in ("acct_pension", "acct_irp", "acct_dc", "needs_review"):
+        assert row[f] is False, (f, row[f])
+    print("OK insert bool 강제 (needs_review null 회귀 방지)")
+
 
 def test_source_event_id():
     assert source_event_id({"event_url": "https://x/go.able?linkcd=a&seq=10009676&idt=1"}) == "10009676"

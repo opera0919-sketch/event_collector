@@ -181,6 +181,9 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
             new_events.append(ev)
             if enabled():
                 row = {k: ev.get(k) for k in _MASTER_COLS}
+                # NOT NULL boolean 컬럼은 None 전송 시 23502 로 INSERT 전체가 실패 → 강제 bool
+                for f in ("acct_pension", "acct_irp", "acct_dc", "needs_review"):
+                    row[f] = bool(row.get(f))
                 row["last_seen_at"] = now
                 created = _safe(_post, "pension_events", row)
                 ev["id"] = created[0]["id"] if created else None

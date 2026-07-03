@@ -296,5 +296,7 @@ def normalize_events(pension, existing):
 
         reconcile_period(ev, res)
         apply_accounts(ev, res)
+        # DB NOT NULL 컬럼 — 플래그 미발생 시에도 명시적 False 로 적재 (null 금지)
+        ev["needs_review"] = bool(ev.get("needs_review"))
 
     print(f"[정규화] Gemini {n_call}건 호출, 캐시 재사용 {n_cache}건")
