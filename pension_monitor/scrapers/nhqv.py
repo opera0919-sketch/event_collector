@@ -63,8 +63,10 @@ def _to_iso(d):
     return f"{d[0:4]}-{d[4:6]}-{d[6:8]}"
 
 
-def _content_image(mcontent, mfiles):
-    """상세 본문(mContent) HTML 의 첫 콘텐츠 이미지 → OCR 대상. 없으면 배너 파일."""
+def _content_images(mcontent, mfiles, limit=3):
+    """상세 본문(mContent) HTML 의 콘텐츠 이미지 최대 limit 장 → OCR 대상.
+    다단 배너가 여러 이미지로 쪼개져 있어 전부 넘겨야 잘림 없이 읽힌다."""
+    out = []
     if mcontent:
         soup = BeautifulSoup(mcontent, "html.parser")
         for img in soup.find_all("img"):
@@ -72,11 +74,21 @@ def _content_image(mcontent, mfiles):
             if src and not re.search(r"(logo|icon|btn|bullet|sprite|blank|dot|arrow)", src, re.I):
                 if src.startswith("//"):
                     src = "https:" + src
-                return src if src.startswith("http") else None
-    for name in mfiles:
-        if name:
-            return _FILE_BASE.format(name=name)
-    return None
+                if src.startswith("http"):
+                    out.append(src)
+                if len(out) >= limit:
+                    return out
+    if not out:
+        for name in mfiles:
+            if name:
+                out.append(_FILE_BASE.format(name=name))
+                break
+    return out
+
+
+def _content_image(mcontent, mfiles):
+    imgs = _content_images(mcontent, mfiles, limit=1)
+    return imgs[0] if imgs else None
 
 
 def _fetch_json(retries=3):
@@ -121,7 +133,7 @@ async def scrape(browser=None):
                 tag.decompose()
             detail_text = soup.get_text("\n", strip=True)
         summary = (it.get("mSummary") or it.get("mAlt") or "").strip()
-        image_url = _content_image(mcontent, [it.get("mFile2"), it.get("mFile1")])
+        image_urls = _content_images(mcontent, [it.get("mFile2"), it.get("mFile1")])
         events.append({
             "firm_name": "NH투자증권",
             "event_name": name[:120],
@@ -130,7 +142,7 @@ async def scrape(browser=None):
             "event_url": EVENT_VIEW.format(mno=mno),
             "raw_text": " ".join((name + " " + summary).split())[:300],
             "_detail_text": detail_text[:8000] if detail_text else "",
-            "_image_url": image_url,
+            "_image_urls": image_urls,
             "_benefits_hint": summary[:200] or None,
         })
     return events

@@ -1,0 +1,190 @@
+# -*- coding: utf-8 -*-
+"""오프라인 검증 — Gemini/증권사 사이트 실호출 없이 v2 정규화·동기화 로직을 검사.
+
+실행: python tests/test_offline.py
+(API 소진 0회 정책: vision 은 가짜 응답으로 대체, db 쓰기는 기록만 한다)
+"""
+
+import datetime as dt
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+os.environ.pop("GEMINI_API_KEY", None)  # 실호출 원천 차단
+
+from pension_monitor import db, normalize, report
+from pension_monitor.classify import content_hash, detect_accounts, source_event_id
+
+
+def test_clean_rows_junk_and_grounding():
+    res = {
+        "benefits": [
+            {"condition": "IRP 순입금 1백만원 이상", "reward": "신세계 모바일상품권 2만원",
+             "method": "전원", "limit_count": 0},
+            {"condition": "참여 시", "reward": "No benefits information found",
+             "method": "기타", "limit_count": 0},                      # EN 정크 → 제거
+            {"condition": "가입 시", "reward": "혜택 내용 없음", "method": "기타",
+             "limit_count": 0},                                        # KR 정크 → 제거
+            {"condition": "이벤트 참여", "reward": "즐거운 투자 경험", "method": "전원",
+             "limit_count": 0},                                        # 실질 토큰 없음 → 제거
+        ],
+        "conditions": [
+            {"label": "대상", "value": "IRP 계좌 보유 고객"},
+            {"label": "기타", "value": "명시되어 있지 않음"},           # 정크 → 제거
+        ],
+    }
+    src = "이벤트 안내: IRP 순입금 1백만원 이상 시 신세계 모바일상품권 2만원 지급"
+    b, c, grounded = normalize.clean_rows(res, source_text=src)
+    assert len(b) == 1 and b[0]["benefit_text"] == "신세계 모바일상품권 2만원", b
+    assert grounded, "원문에 있는 수치는 근거 일치여야 함"
+    assert len(c) == 1 and c[0]["label"] == "대상", c
+    # 근거 불일치: 원문에 없는 금액
+    res2 = {"benefits": [{"condition": "순입금 5천만원 이상", "reward": "상품권 99만원",
+                          "method": "전원", "limit_count": 0}], "conditions": []}
+    b2, _, grounded2 = normalize.clean_rows(res2, source_text=src)
+    assert len(b2) == 1 and not grounded2, "원문에 없는 수치는 근거 불일치"
+    print("OK clean_rows (정크 한/영 차단, 실질 토큰, 근거 대조)")
+
+
+def test_render():
+    rows = [
+        {"tier_no": 1, "condition_text": "순입금 1백만원 이상", "benefit_text": "상품권 1만원",
+         "award_method": "전원", "award_limit": None, "source": "llm-text"},
+        {"tier_no": 2, "condition_text": "디폴트옵션 지정", "benefit_text": "아메리카노 1잔",
+         "award_method": "추첨", "award_limit": 3000, "source": "llm-text"},
+    ]
+    md = normalize.render_benefits(rows)
+    assert md == "순입금 1백만원 이상 → 상품권 1만원 (전원)\n디폴트옵션 지정 → 아메리카노 1잔 (추첨 3,000명)", md
+    cond = normalize.render_conditions([{"ord": 1, "label": "대상", "value_text": "IRP 보유", "source": "x"},
+                                        {"ord": 2, "label": "기타", "value_text": "신청 필수", "source": "x"}])
+    assert cond == "대상: IRP 보유\n신청 필수", cond
+    print("OK render (캐노니컬 텍스트)")
+
+
+def test_reconcile_period():
+    year = dt.date.today().year
+    # 1) 신뢰 목록(미래에셋) → list 유지, LLM 불일치는 검토 플래그만
+    ev = {"firm_name": "미래에셋증권", "start_date": f"{year}-07-01", "end_date": f"{year}-09-30"}
+    normalize.reconcile_period(ev, {"period_start": f"{year}-07-01", "period_end": f"{year}-10-31"})
+    assert ev["date_source"] == "list" and ev["end_date"] == f"{year}-09-30"
+    assert ev.get("needs_review") and "기간 불일치" in ev["review_reason"]
+    # 2) KB(목록 불신) + 상세 본문 '기간' → detail
+    ev = {"firm_name": "KB증권", "start_date": f"{year}-06-30", "end_date": f"{year}-07-01",
+          "_detail_text": f"이벤트 기간 : {year}.04.01 ~ {year}.12.31 어쩌고"}
+    normalize.reconcile_period(ev, {})
+    assert (ev["start_date"], ev["end_date"], ev["date_source"]) == (f"{year}-04-01", f"{year}-12-31", "detail"), ev
+    # 3) 상세도 없으면 LLM (유효 범위 내)
+    ev = {"firm_name": "KB증권", "start_date": None, "end_date": None, "_detail_text": ""}
+    normalize.reconcile_period(ev, {"period_start": f"{year}-05-01", "period_end": f"{year}-08-31"})
+    assert ev["date_source"] == "llm" and ev["start_date"] == f"{year}-05-01"
+    # 4) 어떤 출처로도 확신 없음 + 의심 목록 날짜 → 비우고 검토 플래그
+    ev = {"firm_name": "KB증권", "start_date": "2024-10-25", "end_date": "2024-10-25", "_detail_text": ""}
+    normalize.reconcile_period(ev, {})
+    assert ev["start_date"] is None and ev["end_date"] is None
+    assert ev.get("needs_review") and "기간 미확인" in ev["review_reason"]
+    print("OK reconcile_period (신뢰원 규칙: list > detail > llm > null+검토)")
+
+
+def test_accounts_conservative():
+    acct = detect_accounts("연금 이벤트 대박")           # '연금' 단독 → 추정 금지
+    assert not any([acct["acct_pension"], acct["acct_irp"], acct["acct_dc"]])
+    acct = detect_accounts("퇴직연금 이벤트")            # 통칭 유지 (의미상 동치)
+    assert acct["acct_irp"] and acct["acct_dc"]
+    ev = {"firm_name": "X", "event_name": "e", "acct_pension": False, "acct_irp": False,
+          "acct_dc": False, "acct_etc": None}
+    normalize.apply_accounts(ev, {})
+    assert ev.get("needs_review") and "대상계좌 미확인" in ev["review_reason"]
+    print("OK accounts (보수 판정 + 미확인 플래그)")
+
+
+def test_normalize_no_regression_and_cache():
+    year = dt.date.today().year
+    old = {"id": 7, "firm_name": "NH투자증권", "event_name": "IRP 이벤트",
+           "start_date": f"{year}-05-01", "end_date": f"{year}-08-31",
+           "source_event_id": "1000", "needs_review": False,
+           "benefits": "순입금 1백만원 이상 → 상품권 1만원 (전원)",
+           "conditions": "대상: IRP", "acct_irp": True, "extract_method": "text"}
+    # 캐시 적중 (같은 sid + 같은 종료일 + 캐노니컬 양호) — vision 미설정이라 호출 자체가 없어야 함
+    ev = {"firm_name": "NH투자증권", "event_name": "IRP 이벤트(개칭)",
+          "source_event_id": "1000", "start_date": f"{year}-05-01", "end_date": f"{year}-08-31",
+          "acct_pension": False, "acct_irp": False, "acct_dc": False, "acct_etc": None,
+          "benefits": None, "conditions": None, "_detail_text": "본문" * 100}
+    normalize.normalize_events([ev], [old])
+    assert ev["benefits"] == old["benefits"] and ev["acct_irp"] is True
+    assert not ev.get("rows_fresh")
+    # 무회귀: 추출 불가(신규 아님) → 기존 값 유지 대신, 기존도 없으면 hint 폴백 + 검토
+    ev2 = {"firm_name": "KB증권", "event_name": "새 이벤트", "source_event_id": "999",
+           "start_date": None, "end_date": None, "acct_pension": True, "acct_irp": False,
+           "acct_dc": False, "acct_etc": None, "benefits": None, "conditions": None,
+           "_detail_text": "", "_benefits_hint": "순입금하면 상품권"}
+    normalize.normalize_events([ev2], [])
+    assert ev2["benefits"] == "순입금하면 상품권" and ev2["extract_method"] == "hint"
+    assert ev2.get("needs_review") and "목록 요약 폴백" in ev2["review_reason"]
+    print("OK normalize (캐시 재사용·무회귀·hint 폴백 검토 플래그)")
+
+
+def test_sync_v2():
+    year = dt.date.today().year
+    today = dt.date.today().isoformat()
+    calls = {"patch": [], "post": [], "delete": []}
+    db.fetch_all_events = lambda: existing
+    db.enabled = lambda: True
+    db._patch = lambda path, params, payload: calls["patch"].append((path, params, payload))
+    db._post = lambda path, payload, prefer=None: (calls["post"].append((path, payload)), [{"id": 99}])[1]
+    db._delete = lambda path, params: calls["delete"].append((path, params))
+
+    existing = [
+        {"id": 1, "firm_name": "NH투자증권", "event_name": "IRP 이벤트",
+         "source_event_id": "1000", "start_date": f"{year}-05-01", "end_date": f"{year}-08-31",
+         "status": "진행중", "missed_count": 0, "benefits": "옛 혜택 → 상품권 (전원)",
+         "conditions": None, "content_hash": "old", "last_seen_at": f"{year}-06-30T00:00:00+00:00"},
+        {"id": 2, "firm_name": "한국투자증권", "event_name": "만기 이벤트",
+         "source_event_id": "2", "start_date": f"{year}-04-01", "end_date": "2020-06-30",
+         "status": "진행중", "missed_count": 0, "content_hash": "x",
+         "last_seen_at": f"{year}-06-29T00:00:00+00:00"},
+    ]
+    ev = {"firm_name": "NH투자증권", "event_name": "IRP 이벤트", "source_event_id": "1000",
+          "start_date": f"{year}-05-01", "end_date": f"{year}-08-31", "status": None,
+          "benefits": "새 혜택 → 상품권 2만원 (전원)", "conditions": "대상: IRP",
+          "rows_fresh": True,
+          "benefit_rows": [{"tier_no": 1, "condition_text": "새 혜택", "benefit_text": "상품권 2만원",
+                            "award_method": "전원", "award_limit": None, "source": "llm-text"}],
+          "condition_rows": [{"ord": 1, "label": "대상", "value_text": "IRP", "source": "llm-text"}],
+          "needs_review": False, "review_reason": None, "extract_method": "text",
+          "date_source": "list", "last_verified_at": "now"}
+    ev["content_hash"] = content_hash(ev)
+    diff = db.sync([ev], firms_failed=["한국투자증권"], trigger_type="manual")
+    # 자식 테이블 교체 확인
+    assert any(p[0] == "event_benefits" for p in calls["delete"]), calls["delete"]
+    assert any(p[0] == "event_benefits" and p[1][0]["event_id"] == 1 for p in calls["post"])
+    # 콘텐츠 변경은 rows_fresh 라서 '변경' 기록됨
+    assert any(f == "benefits" for _, f, _, _ in diff["changed"])
+    # 실패 증권사라도 만기(2020) 건은 종료
+    assert [e["id"] for e in diff["closed"]] == [2]
+    print("OK db.sync v2 (자식 교체, 신선 변경 기록, 만기 스윕):",
+          {k: len(v) for k, v in diff.items() if isinstance(v, list)})
+
+    md = report.build_report(diff, ["한국투자증권"])
+    assert "새 혜택 → 상품권 2만원" in md
+    print("OK report render")
+
+
+def test_source_event_id():
+    assert source_event_id({"event_url": "https://x/go.able?linkcd=a&seq=10009676&idt=1"}) == "10009676"
+    assert source_event_id({"event_url": "https://m.nhsec.com/customer/event/eventView?mNo=971"}) == "971"
+    assert source_event_id({"event_url": "https://x/v01.do?cs_ecis_id=202603005&mod=S"}) == "202603005"
+    assert source_event_id({"event_url": "https://x/noticeEvent.do?cmd=eventView&MenuSeqNo=3808"}) == "3808"
+    assert source_event_id({"event_url": "https://x/Event.jsp?num=6711", "_detail_id": "6711"}) == "6711"
+    assert source_event_id({"event_url": "https://x/mki7000/r01.do"}) is None
+    print("OK source_event_id")
+
+
+if __name__ == "__main__":
+    test_clean_rows_junk_and_grounding()
+    test_render()
+    test_reconcile_period()
+    test_accounts_conservative()
+    test_normalize_no_regression_and_cache()
+    test_sync_v2()
+    test_source_event_id()
+    print("\n전체 오프라인 검증 통과 (외부 API 호출 0회)")
