@@ -262,9 +262,12 @@ def normalize_events(pension, existing):
             n_call += 1
             res = vision.extract_from_text(text, hint=ev["event_name"])
             b_rows, c_rows, grounded = clean_rows(res, source_text=text, source_kind="llm-text")
-        # 2) 실패/빈약 시 상세 이미지 OCR (최대 3장 1요청)
+        # 2) 실패/빈약 시 상세 이미지 OCR (최대 3장 1요청).
+        #    이미지 URL 확보가 불가능했던 건은 렌더링 스크린샷으로 폴백 (KB 이미지 공지 등)
         if not b_rows and _may_call():
             imgs = _resolve_banner_images(ev)
+            if not imgs and ev.get("_screenshot_b64"):
+                imgs = [{"b64": ev["_screenshot_b64"], "mime": "image/jpeg"}]
             if imgs:
                 if n_call:
                     time.sleep(PACE_SEC)

@@ -182,6 +182,16 @@ def test_sync_v2():
     print("OK insert bool 강제 (needs_review null 회귀 방지)")
 
 
+def test_vision_image_parts():
+    from pension_monitor import vision
+    # 스크린샷(b64 dict) → inline part 직결 (네트워크 불필요)
+    p = vision._image_part({"b64": "QUJD", "mime": "image/jpeg"})
+    assert p == {"inline_data": {"mime_type": "image/jpeg", "data": "QUJD"}}, p
+    assert vision._image_part({"b64": ""}) is None
+    assert vision._image_part("not-a-url") is None
+    print("OK vision._image_part (스크린샷 b64 / URL 분기)")
+
+
 def test_source_event_id():
     assert source_event_id({"event_url": "https://x/go.able?linkcd=a&seq=10009676&idt=1"}) == "10009676"
     assert source_event_id({"event_url": "https://m.nhsec.com/customer/event/eventView?mNo=971"}) == "971"
@@ -199,5 +209,6 @@ if __name__ == "__main__":
     test_accounts_conservative()
     test_normalize_no_regression_and_cache()
     test_sync_v2()
+    test_vision_image_parts()
     test_source_event_id()
     print("\n전체 오프라인 검증 통과 (외부 API 호출 0회)")

@@ -180,18 +180,31 @@ def _run(parts, label: str) -> dict:
         return {}
 
 
+def _image_part(item, referer=""):
+    """이미지 항목 → Gemini inline part. 항목은 URL 문자열 또는
+    {'b64': <base64>, 'mime': ...}(렌더링 스크린샷 등 URL 재요청이 불가능한 경우)."""
+    if isinstance(item, dict) and item.get("b64"):
+        return {"inline_data": {"mime_type": item.get("mime", "image/jpeg"),
+                                "data": item["b64"]}}
+    if isinstance(item, str) and item.startswith("http"):
+        b64, media = fetch_image_b64(item, referer)
+        if b64:
+            return {"inline_data": {"mime_type": media, "data": b64}}
+    return None
+
+
 def extract(image_urls, referer: str = "", hint: str = "") -> dict:
     """상세 이미지(1~MAX_IMAGES장)에서 구조화 추출. 실패/미설정 시 빈 dict.
     다단 배너는 여러 장을 한 요청에 넣어야 잘림 없이 읽힌다."""
     if not enabled() or _BLOCKED:
         return {}
-    if isinstance(image_urls, str):
+    if isinstance(image_urls, (str, dict)):
         image_urls = [image_urls]
     parts = []
-    for url in (image_urls or [])[:MAX_IMAGES]:
-        b64, media = fetch_image_b64(url, referer)
-        if b64:
-            parts.append({"inline_data": {"mime_type": media, "data": b64}})
+    for item in (image_urls or [])[:MAX_IMAGES]:
+        p = _image_part(item, referer)
+        if p:
+            parts.append(p)
     if not parts:
         return {}
     parts.append({"text": _PROMPT_IMG + (f"\n참고(이벤트명): {hint}" if hint else "")})

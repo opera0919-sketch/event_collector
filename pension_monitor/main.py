@@ -190,6 +190,16 @@ async def enrich_details(browser, pension_events):
                         srcs = await page.evaluate(JS_CONTENT_IMGS)
                         if srcs:
                             ev["_image_urls"] = srcs
+                        elif len(detail_text) < 400:
+                            # 최후 분기: 이미지 URL 추적 불가(iframe/지연로드/세션 URL)면
+                            # 렌더링된 화면 자체를 스크린샷 → OCR 대상 (KB 이미지 공지 등)
+                            import base64 as _b64
+                            shot = await page.screenshot(full_page=True, type="jpeg",
+                                                         quality=70)
+                            if 10_000 < len(shot) <= 6_500_000:
+                                ev["_screenshot_b64"] = _b64.b64encode(shot).decode("ascii")
+                                print(f"[상세] {ev['firm_name']} {ev['event_name'][:24]}: "
+                                      f"스크린샷 OCR 폴백 ({len(shot) // 1024}KB)")
                 finally:
                     await page.close()
             fetched += 1
