@@ -87,6 +87,28 @@ def _split_lines(text: str):
     return out
 
 
+# eligibility 본문에 섞인 '…제외' 절 추출 (§7-1 확정: exclusions 로 분리·복사.
+# eligibility 원문은 §3.1 결정대로 수정하지 않는다)
+_EXCL_PAREN_RE = re.compile(r"\(([^()]*제외[^()]*)\)")
+
+
+def _exclusion_clauses(text: str):
+    out = []
+    # 괄호 안: '/' 로 절 분할 후 '제외'를 포함한 절만 (혼합 괄호에서 비제외 절 배제)
+    for m in _EXCL_PAREN_RE.finditer(text):
+        for seg in m.group(1).split("/"):
+            seg = seg.strip(" .")
+            if "제외" in seg and len(seg) >= 4:
+                out.append(seg)
+    # 괄호 밖: 구분자·문장 경계로 분할 후 '제외'로 끝나는 절만
+    plain = _EXCL_PAREN_RE.sub(" ", text)
+    for seg in re.split(r"[,/;·]|\.\s", plain):
+        seg = seg.strip(" .")
+        if seg.endswith("제외") and len(seg) >= 4:
+            out.append(seg)
+    return out
+
+
 def _label_value(line: str):
     """'라벨: 값' → (라벨, 값). 라벨 없으면 (None, 원문)."""
     m = re.match(r"^\s*([^:：]{1,12})\s*[:：]\s*(.*)$", line)
@@ -146,6 +168,11 @@ def parse_conditions(text: str) -> dict:
         elif any(x in text for x in ("SMS", "PUSH", "필수")):
             out["marketing_consent_required"] = True
     out["eligibility"] = "; ".join(elig) or None
+    # §7-1: eligibility 내 '…제외' 절을 exclusions 로 분리 (라벨 명시분 뒤에 추가, 중복 제거)
+    if out["eligibility"]:
+        for clause in _exclusion_clauses(out["eligibility"]):
+            if clause not in excl:
+                excl.append(clause)
     out["exclusions"] = "; ".join(excl) or None
     out["cond_notes"] = "\n".join(notes) or None
     return out
