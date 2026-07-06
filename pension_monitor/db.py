@@ -136,6 +136,18 @@ def fetch_all_events():
         return []
 
 
+def fetch_children(table: str) -> list:
+    """자식 테이블(event_benefits/event_conditions) 전건 조회 — xlsx 첨부의 상세
+    시트용. 조회 실패는 조용히 빈 목록으로 무시(리포트/메일은 항상 계속 진행)."""
+    if not enabled():
+        return []
+    try:
+        return _get(table, {"select": "*", "limit": "10000"})
+    except Exception as e:
+        print(f"[db] {table} 조회 실패(무시): {type(e).__name__}")
+        return []
+
+
 def build_index(existing: list) -> dict:
     """기존 이벤트 매칭 인덱스. source_event_id(불변) 우선, 자연키 폴백."""
     idx = {}

@@ -189,7 +189,9 @@ def test_sync_v2():
 
     md = report.build_report(diff, ["한국투자증권"])
     assert "새 혜택 → 상품권 2만원" in md
-    print("OK report render")
+    assert "데이터 신뢰도" in md and "전건 정상" in md   # ev 는 needs_review=False
+    assert "| ✅ |" in md                                # v2 표의 '확인' 컬럼
+    print("OK report render (v2: 데이터 신뢰도 롤업 + 확인 컬럼)")
 
     # 회귀: 신규 INSERT 시 NOT NULL boolean 컬럼(needs_review 등)이 null 로 나가
     # 23502 로 조용히 실패하던 버그 (2026-07-03 실측) — 반드시 bool 로 강제돼야 함
@@ -203,6 +205,78 @@ def test_sync_v2():
     for f in ("acct_pension", "acct_irp", "acct_dc", "needs_review"):
         assert row[f] is False, (f, row[f])
     print("OK insert bool 강제 (needs_review null 회귀 방지)")
+
+
+def test_review_reason_cleared_on_success():
+    """실전 재현(id=39, 2026-07-06): needs_review=False 인데 review_reason 이
+    이전 값으로 남아있어, 새 xlsx '검토사유' 컬럼에 낡은 사유가 그대로 노출됐다.
+    성공 추출(_apply_success)과 캐시 재사용(_reuse_cached, old 가 검토 불필요인
+    경우) 모두 review_reason 을 None 으로 정리해야 한다."""
+    # 1) 신선 추출 성공 경로 — vision 이 오프라인이라 정규화 파이프라인을 거치지
+    #    않고 _apply_success 를 직접 검증 (test_typed_condition_columns 와 동일 방식)
+    ev = {"firm_name": "KB증권", "event_name": "e", "review_reason": "낡은 사유(이전 실행)"}
+    b = [{"tier_no": 1, "condition_text": "가입 시", "benefit_text": "수수료 평생 무료",
+          "award_method": "전원", "award_limit": None, "source": "llm-text"}]
+    normalize._apply_success(ev, b, [], grounded=True, method="ocr")
+    assert ev["review_reason"] is None, ev["review_reason"]
+
+    # 2) 캐시 재사용 경로 — old 가 검토 불필요(needs_review=False)인데 review_reason
+    #    이 남아있는 레코드를 재사용할 때도 ev 에 그 사유를 물려주면 안 됨
+    year = dt.date.today().year
+    old = {"id": 39, "firm_name": "KB증권", "event_name": "IRP 무료 수수료 혜택 이벤트",
+           "source_event_id": "10007688", "start_date": f"{year}-01-01", "end_date": f"{year}-12-31",
+           "needs_review": False, "review_reason": "혜택 미확인(본문/이미지 추출 실패) — 원문 확인 필요",
+           "benefits": "가입 시 → 수수료 평생 무료 (전원)", "conditions": None}
+    ev2 = {"firm_name": "KB증권", "event_name": "IRP 무료 수수료 혜택 이벤트",
+           "source_event_id": "10007688", "start_date": f"{year}-01-01", "end_date": f"{year}-12-31",
+           "acct_pension": False, "acct_irp": True, "acct_dc": False, "acct_etc": None,
+           "benefits": None, "conditions": None, "_detail_text": "본문" * 100}
+    normalize.normalize_events([ev2], [old])
+    assert ev2["benefits"] == old["benefits"]     # 캐시 재사용 확인
+    assert ev2.get("review_reason") is None, ev2.get("review_reason")
+    print("OK review_reason 정리 (성공 추출·캐시 재사용 모두 낡은 사유 잔존 방지)")
+
+
+def test_report_review_rollup_and_xlsx_sheets():
+    """v2 리포트/xlsx 가 검증 메타·조건 타입드 컬럼·자식 테이블을 실제로 노출하는지."""
+    year = dt.date.today().year
+    active_ok = {"firm_name": "NH투자증권", "event_name": "정상 이벤트", "id": 1,
+                 "start_date": f"{year}-05-01", "end_date": f"{year}-08-31", "status": "진행중",
+                 "acct_pension": True, "acct_irp": False, "acct_dc": False, "acct_etc": None,
+                 "benefits": "조건 → 리워드 (전원)", "needs_review": False,
+                 "extract_method": "text", "annual_cap_krw": 30000, "apply_required": True}
+    active_review = {"firm_name": "KB증권", "event_name": "검토 이벤트", "id": 2,
+                      "start_date": None, "end_date": None, "status": "진행중",
+                      "acct_pension": False, "acct_irp": True, "acct_dc": False, "acct_etc": None,
+                      "benefits": None, "remarks": "기간 미확인(목록 날짜 게시일 오인 의심)",
+                      "needs_review": True, "review_reason": "기간 미확인(목록 날짜 게시일 오인 의심)",
+                      "extract_method": "none"}
+    diff = {"new": [], "closed": [], "changed": [], "active": [active_ok, active_review]}
+    md = report.build_report(diff, [])
+    assert "검토 필요 1건 (기간 미확인 1건)" in md, md
+    assert "연간 혜택한도 명시 이벤트: 1건" in md
+    assert "신청 필수 이벤트: 1건" in md
+    assert "| ⚠ |" in md and "| ✅ |" in md
+    assert "「검토 이벤트」 — 기간 미확인" in md
+
+    xlsx = report.build_xlsx(
+        [active_ok, active_review],
+        benefit_rows=[{"event_id": 1, "tier_no": 1, "condition_text": "조건",
+                       "benefit_text": "리워드", "award_method": "전원",
+                       "award_limit": None, "source": "llm-text"}],
+        condition_rows=[{"event_id": 1, "ord": 1, "label": "대상",
+                         "value_text": "IRP 보유", "source": "llm-text"}])
+    from openpyxl import load_workbook
+    wb = load_workbook(io_bytes(xlsx))
+    assert wb.sheetnames == ["이벤트 요약", "혜택 상세", "참여조건 상세"], wb.sheetnames
+    assert wb["혜택 상세"].cell(row=2, column=1).value == "NH투자증권"   # event_id 조인 확인
+    assert wb["참여조건 상세"].cell(row=2, column=4).value == "대상"
+    print("OK report v2 (신뢰도 롤업·검토 사유 버킷·인사이트·xlsx 3시트+자식조인)")
+
+
+def io_bytes(b):
+    import io
+    return io.BytesIO(b)
 
 
 def test_typed_condition_columns():
@@ -253,7 +327,9 @@ if __name__ == "__main__":
     test_accounts_conservative()
     test_normalize_no_regression_and_cache()
     test_normalize_rejects_junk_reused_from_old()
+    test_review_reason_cleared_on_success()
     test_sync_v2()
+    test_report_review_rollup_and_xlsx_sheets()
     test_typed_condition_columns()
     test_vision_image_parts()
     test_source_event_id()
