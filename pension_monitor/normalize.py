@@ -204,12 +204,29 @@ def _resolve_banner_images(ev):
         return []
 
 
+# 조건 타입드 컬럼 (docs/pipeline_mapping.md) — 신규 수집분이 직접 채운다
+TYPED_COND_FIELDS = ("eligibility", "exclusions", "apply_required",
+                     "marketing_consent_required", "annual_cap_krw",
+                     "hold_condition", "cond_notes")
+
+
 def _apply_success(ev, b_rows, c_rows, grounded, method):
-    ev["benefit_rows"], ev["condition_rows"] = b_rows, c_rows
+    ev["benefit_rows"] = b_rows
     ev["rows_fresh"] = True
     ev["benefits"] = render_benefits(b_rows)
-    if c_rows:
-        ev["conditions"] = render_conditions(c_rows)
+    # 타입드 조건 컬럼: 백필과 동일 파서를 캐노니컬 라벨 텍스트에 적용 (규칙 이원화 방지).
+    # '기간' 라벨 행은 start/end 컬럼과 중복이므로 conditions/자식 행에서 제외
+    # (기간 판정은 reconcile_period 가 담당 — pipeline_mapping.md §3).
+    from src.backfill_conditions import parse_conditions
+    typed = parse_conditions(render_conditions(c_rows))
+    for f in TYPED_COND_FIELDS:
+        ev[f] = typed[f]
+    kept = [r for r in c_rows if r["label"] != "기간"]
+    for i, r in enumerate(kept, 1):
+        r["ord"] = i
+    ev["condition_rows"] = kept
+    if kept:
+        ev["conditions"] = render_conditions(kept)
     ev["extract_method"] = method
     ev["last_verified_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
     ev["remarks"] = None

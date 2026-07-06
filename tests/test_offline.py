@@ -182,6 +182,27 @@ def test_sync_v2():
     print("OK insert bool 강제 (needs_review null 회귀 방지)")
 
 
+def test_typed_condition_columns():
+    """_apply_success 가 조건 라벨 행 → 타입드 컬럼을 채우고 '기간' 행을 제외하는지."""
+    ev = {"firm_name": "NH투자증권", "event_name": "e"}
+    b = [{"tier_no": 1, "condition_text": "순입금 1백만원 이상", "benefit_text": "상품권 1만원",
+          "award_method": "전원", "award_limit": None, "source": "llm-text"}]
+    c = [{"ord": 1, "label": "대상", "value_text": "DC 최초 입금 가입자 (법인고객 제외)", "source": "llm-text"},
+         {"ord": 2, "label": "기간", "value_text": "2026.07.01 ~ 2026.09.30", "source": "llm-text"},
+         {"ord": 3, "label": "신청", "value_text": "별도 신청 없이 자동 참여", "source": "llm-text"},
+         {"ord": 4, "label": "한도", "value_text": "퇴직연금 특별이익 제공한도(연간 누적 3만원) 내", "source": "llm-text"}]
+    normalize._apply_success(ev, b, c, grounded=True, method="text")
+    assert ev["eligibility"] == "DC 최초 입금 가입자 (법인고객 제외)"
+    assert ev["exclusions"] == "법인고객 제외"          # §7-1: 제외 절 분리
+    assert ev["apply_required"] is False
+    assert ev["annual_cap_krw"] == 30000
+    # '기간' 라벨은 conditions/자식 행에서 제외 (start/end 컬럼과 중복 금지)
+    assert all(r["label"] != "기간" for r in ev["condition_rows"])
+    assert "기간" not in ev["conditions"]
+    assert [r["ord"] for r in ev["condition_rows"]] == [1, 2, 3]
+    print("OK typed condition columns (파이프라인 연결 + 기간 중복 배제)")
+
+
 def test_vision_image_parts():
     from pension_monitor import vision
     # 스크린샷(b64 dict) → inline part 직결 (네트워크 불필요)
@@ -209,6 +230,7 @@ if __name__ == "__main__":
     test_accounts_conservative()
     test_normalize_no_regression_and_cache()
     test_sync_v2()
+    test_typed_condition_columns()
     test_vision_image_parts()
     test_source_event_id()
     print("\n전체 오프라인 검증 통과 (외부 API 호출 0회)")

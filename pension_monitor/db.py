@@ -67,6 +67,12 @@ def _delete(path, params):
     return None
 
 
+# 조건 타입드 컬럼 (docs/pipeline_mapping.md) — 신선한 추출 성공 건만 갱신 (무회귀)
+_TYPED_COND_COLS = (
+    "eligibility", "exclusions", "apply_required", "marketing_consent_required",
+    "annual_cap_krw", "hold_condition", "cond_notes",
+)
+
 # 마스터 upsert 대상 컬럼 (자식 테이블/내부 키 제외)
 _MASTER_COLS = (
     "firm_name", "event_name", "status", "start_date", "end_date",
@@ -74,7 +80,7 @@ _MASTER_COLS = (
     "conditions", "benefits", "remarks", "event_url", "content_hash",
     "source_event_id", "image_url", "extract_method", "date_source",
     "needs_review", "review_reason", "last_verified_at",
-)
+) + _TYPED_COND_COLS
 _COND_COLS = ("ord", "label", "value_text", "source")
 _BEN_COLS = ("tier_no", "condition_text", "benefit_text", "award_method", "award_limit", "source")
 
@@ -208,6 +214,12 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
             for f in _META_FIELDS:
                 if f in ev and (old.get(f) or None) != (ev.get(f) or None):
                     updates[f] = ev.get(f)
+            # 타입드 조건 컬럼: 이번 실행에서 실제 재추출된 경우에만 갱신
+            # (캐시/실패 건이 기존 값을 null 로 덮지 않도록 — 무회귀)
+            if ev.get("rows_fresh"):
+                for f in _TYPED_COND_COLS:
+                    if old.get(f) != ev.get(f):    # False 도 유의미 값 — or-coalesce 금지
+                        updates[f] = ev.get(f)
             if ev.get("last_verified_at"):
                 updates["last_verified_at"] = ev["last_verified_at"]
             if old.get("content_hash") != ev.get("content_hash"):
