@@ -29,11 +29,13 @@ TEXT_MIN = 200           # 이 길이 이상이면 본문 텍스트로 구조화
 # 목록의 기간 표기를 신뢰하는 증권사 (KB 는 게시일(idt) 혼입 이력 → 불신)
 TRUSTED_LIST_DATES = {"미래에셋증권", "NH투자증권", "한국투자증권", "삼성증권"}
 
-# G1: 무의미 응답 패턴 (한/영)
+# G1: 무의미 응답 패턴 (한/영). 실전(2026-07-05~06)에서 구코드가 "혜택 없음
+# (자료 없음)" 류를 재오염시켰는데 당시 패턴에 없어 통과된 사례가 있어 보강.
 JUNK_RE = re.compile(
     r"(no\s+(benefits?|conditions?|informations?)|information\s+(found|available)"
     r"|not\s+(found|specified|mentioned|provided)|unknown|n/?a\b"
-    r"|없습니다|내용\s*없음|정보\s*없음|정보가\s*없|명시되|확인\s*필요|알\s*수\s*없|해당\s*없)", re.I)
+    r"|없습니다|내용\s*없음|정보\s*없음|정보가\s*없|명시되|확인\s*필요|알\s*수\s*없|해당\s*없"
+    r"|혜택\s*없음|자료\s*없음|제공\s*내용\s*없음)", re.I)
 # 리워드 실질 토큰 — 하나도 없으면 혜택으로 인정하지 않음
 SUBSTANCE_RE = re.compile(
     r"[\d만천백십억,\.]+\s*원|\d+(\.\d+)?\s*%|무료|우대|면제|할인|상품권|쿠폰|포인트"
@@ -98,6 +100,18 @@ def clean_rows(res, source_text=None, source_kind="llm-text"):
         out_c.append({"ord": len(out_c) + 1, "label": label,
                       "value_text": val, "source": source_kind})
     return out_b, out_c, grounded_all
+
+
+def _is_trustworthy(text, require_substance=True):
+    """캐시 재사용/무회귀 폴백 대상 값이 실제로 신뢰할 만한지 재검사.
+
+    G3(무회귀)는 'DB의 기존 값은 이미 검증됐다'고 가정하지만, 이 파이프라인
+    바깥(구코드·수동편집 등)에서 값이 다시 쓰였을 수 있다. '좋아 보이는 값을
+    영구 신뢰'하는 구멍을 막기 위해 재사용 직전에도 G1/게이트를 다시 적용한다."""
+    t = (text or "").strip()
+    if not t or JUNK_RE.search(t):
+        return False
+    return bool(SUBSTANCE_RE.search(t)) if require_substance else True
 
 
 def render_benefits(rows):
@@ -259,11 +273,11 @@ def normalize_events(pension, existing):
     for ev in pension:
         old = db.find_existing(idx, ev)
         res = {}
-        # 캐시: 같은 이벤트 + 같은 종료일 + 기존 캐노니컬 양호(검토 플래그 없음) → 재호출 생략
+        # 캐시: 같은 이벤트 + 같은 종료일 + 기존 캐노니컬 양호(검토 플래그 없음) → 재호출 생략.
+        # _is_trustworthy 로 재검사 — old.benefits 가 그럴싸해 보여도 정크면 캐시 불인정.
         if (old and old.get("end_date") == ev.get("end_date")
-                and (old.get("benefits") or "").strip()
-                and ("\n" in old["benefits"] or "→" in old["benefits"])
-                and not old.get("needs_review")):
+                and not old.get("needs_review")
+                and _is_trustworthy(old.get("benefits"))):
             _reuse_cached(ev, old)
             n_cache += 1
             reconcile_period(ev, res)
@@ -299,18 +313,22 @@ def normalize_events(pension, existing):
             method = "text" if b_rows[0]["source"] == "llm-text" else "ocr"
             _apply_success(ev, b_rows, c_rows, grounded, method)
         else:
-            # G3 무회귀: 기존 양호 값 유지 > 목록 요약 폴백 > 미확인 표기
-            if old and (old.get("benefits") or "").strip():
+            # G3 무회귀: 기존 양호 값 유지 > 목록 요약 폴백 > 미확인 표기.
+            # 세 갈래 모두 _is_trustworthy 로 재검사 — '비어있지 않음'만으로
+            # 신뢰하면 파이프라인 밖(구코드·수동편집)에서 재유입된 정크를
+            # 계속 '양호한 기존값'으로 오인해 영구 전파하게 된다(실전 재현 사례).
+            if old and _is_trustworthy(old.get("benefits")):
                 _reuse_cached(ev, old)
                 if old.get("needs_review"):
                     _flag(ev, old.get("review_reason") or "재검증 실패 — 원문 확인 필요")
-            elif (ev.get("benefits") or "").strip():
+            elif _is_trustworthy(ev.get("benefits")):
                 ev["extract_method"] = "heuristic"   # Gemini 미설정/실패 시 휴리스틱 유지
-            elif ev.get("_benefits_hint"):
+            elif _is_trustworthy(ev.get("_benefits_hint"), require_substance=False):
                 ev["benefits"] = ev["_benefits_hint"]
                 ev["extract_method"] = "hint"
                 _flag(ev, "목록 요약 폴백(상세 추출 실패) — 원문 확인 필요")
             else:
+                ev["benefits"] = None
                 ev["extract_method"] = "none"
                 _flag(ev, "혜택 미확인(본문/이미지 추출 실패) — 원문 확인 필요")
 

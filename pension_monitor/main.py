@@ -181,8 +181,13 @@ async def enrich_details(browser, pension_events):
                         need_img = False
             except Exception:
                 detail_text = ""
-            # 정적 텍스트가 빈약하면(JS 렌더) 브라우저로 텍스트+이미지 확보 (KB 상세 등)
-            if len(detail_text) < 200:
+            # 정적 텍스트가 빈약하거나(JS 렌더), 이미지가 여전히 없으면 브라우저로
+            # 재확보한다. 실전(7/6)에서 KB 이미지 공지 건이 static fetch 에서
+            # 200자 넘는 메뉴/네비 텍스트만 얻고 실제 콘텐츠(이미지)는 JS 렌더
+            # 전용이라, 길이만 보고 렌더 자체를 건너뛰어 스크린샷 폴백이 발동하지
+            # 못한 문제가 있었다 — need_img 인 동안은 짧은 '충분해 보이는' 텍스트도
+            # 신뢰하지 않고 렌더를 한 번 더 시도한다(상한 2500자로 비용 제어).
+            if len(detail_text) < 200 or (need_img and len(detail_text) < 2500):
                 page = await load_page(browser, url, wait_ms=4000, retries=2)
                 try:
                     detail_text = await page.inner_text("body")
