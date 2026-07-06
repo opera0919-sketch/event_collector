@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
-"""이미지 배너 이벤트 인식 (Google Gemini 무료 티어).
+"""이벤트 상세(텍스트/이미지)의 Gemini 구조화 추출 — v2.
 
-국내 증권사 이벤트는 대부분 이미지 배너로 게시되어 텍스트 추출이 불가능하다.
-배너 이미지를 다운로드해 Gemini 비전으로 참여조건/혜택/대상계좌를 추출한다.
+정확성 원칙:
+  - 응답은 자유 문자열이 아니라 **구조화 배열**(혜택 티어/조건 라벨)로 받는다
+    → 취약한 문자열 재파싱 제거, DB 자식 테이블(event_benefits/conditions)에 직결.
+  - 자료에 없는 내용은 추측하지 않도록 evidence_missing 플래그를 스키마에 강제.
+  - 다단 배너 잘림이 OCR 저정확도의 주원인 → 상세 이미지 최대 3장을 한 요청에 전달.
+  - 산출물 검증(정크/근거 대조)은 normalize.py 의 게이트가 담당.
 
 비용:
   - GEMINI_API_KEY(Google AI Studio 무료 키) 없으면 전체 no-op
-  - 무료 티어(gemini-2.5-flash): 10 RPM / 1,500 RPD → 주 1회 수십 건이면 충분
-  - main 에서 '신규/변경 + 혜택 빈 건'에만 호출 + DB 캐시로 1회만 인식
+  - 기본 모델 gemini-2.5-flash (VISION_MODEL 로 재정의 가능). 무료 티어 RPM/RPD
+    보호는 호출측 예산 상한 + 6.5s 페이싱 + 아래 429 연속 차단이 담당.
 """
 
 import base64
@@ -20,57 +24,70 @@ import requests
 from .config import UA
 
 API_KEY = os.environ.get("GEMINI_API_KEY") or ""
-# flash-lite: 무료 일일 한도가 높고 저렴해 일일 파이프라인에 적합(스키마 기반 추출 품질 충분).
-# 최대 완성도가 필요하면 VISION_MODEL=gemini-2.5-flash 로 덮어쓸 수 있음.
-MODEL = os.environ.get("VISION_MODEL", "gemini-2.5-flash-lite")
+# 정확성 우선: flash-lite 대비 OCR/추출 품질이 높은 gemini-2.5-flash 를 기본으로.
+MODEL = os.environ.get("VISION_MODEL", "gemini-2.5-flash")
 ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+
+MAX_IMAGES = 3  # 한 요청에 전달할 상세 이미지 상한 (다단 배너 커버, 호출 수는 1회)
 
 # Gemini responseSchema = OpenAPI 서브셋 (additionalProperties 미지원 → 넣지 않음)
 _SCHEMA = {
     "type": "object",
     "properties": {
-        "benefits": {"type": "string", "description": (
-            "혜택을 '한 줄에 하나씩' 표준 형식으로 정리. 각 줄 형식: '조건 → 리워드 (지급방식·인원)'. "
-            "줄 구분은 줄바꿈(\\n). 금액 구간/조건이 여러 개면 모두 빠짐없이 각 줄로 나열(요약·대표값 금지). "
-            "리워드는 상품명+금액을 그대로, 지급방식은 (전원)/(선착순 N명)/(추첨 N명)로 표기. "
-            "광고 문구·인사말·면책/유의사항은 제외(혜택만). "
-            "예:\\n'IRP 순입금 1백만~3백만원 → 신세계 모바일상품권 2만원 (전원)\\n"
-            "IRP 순입금 3백만원 이상 → 신세계 모바일상품권 3만원 (전원)'")},
-        "conditions": {"type": "string", "description": (
-            "참여조건을 '한 줄에 하나씩' 라벨 형식으로 정리(줄바꿈 구분). 해당하는 항목만: "
-            "'대상: ...', '기간: ...', '신청: ...'(신청필수/마케팅동의 등), '유지조건: ...', '한도: ...'. "
-            "광고 문구·중복 설명 제외, 핵심 요건만 간결히.")},
+        "is_pension": {"type": "boolean",
+                       "description": "연금(연금저축/IRP/DC/퇴직연금) 관련 이벤트면 true"},
+        "evidence_missing": {"type": "boolean", "description": (
+            "자료에 혜택/조건 정보가 실제로 없어 추출이 불가능하면 true. "
+            "true 인 경우 benefits/conditions 는 빈 배열로 두고 절대 추측하지 않는다.")},
         "period_start": {"type": "string", "description": (
-            "이벤트 시작일을 YYYY-MM-DD로. 자료의 '기간/이벤트기간' 표기 기준(접수/추첨/지급일 아님). "
-            "연도가 없으면 빈 문자열, 상시/무기한이면 빈 문자열.")},
+            "이벤트 시작일 YYYY-MM-DD. '기간/이벤트기간' 표기 기준(접수·추첨·지급일 아님). "
+            "자료에 없거나 상시/무기한이면 빈 문자열. 추측 금지.")},
         "period_end": {"type": "string", "description": (
-            "이벤트 종료일을 YYYY-MM-DD로. '기간' 표기의 마지막 날짜. 상시/무기한이면 빈 문자열.")},
+            "이벤트 종료일 YYYY-MM-DD. '기간' 표기의 마지막 날짜. 없으면 빈 문자열. 추측 금지.")},
+        "benefits": {"type": "array", "description": (
+            "표/단계로 제시된 모든 조건→리워드 조합을 하나도 빠짐없이 각각 한 항목으로 "
+            "(임의 요약·대표값 금지). 광고 문구·유의사항 제외."),
+            "items": {"type": "object", "properties": {
+                "condition": {"type": "string", "description":
+                              "충족 조건, 자료 표기 그대로 간결히 (예: 'IRP 순입금 1백만원 이상 ~ 3백만원 미만')"},
+                "reward": {"type": "string", "description":
+                           "리워드 상품명+금액, 자료 표기 그대로 (예: '신세계 모바일상품권 2만원')"},
+                "method": {"type": "string", "enum": ["전원", "선착순", "추첨", "기타"],
+                           "description": "지급 방식"},
+                "limit_count": {"type": "integer", "description":
+                                "선착순/추첨 인원 수. 명시 없으면 0"},
+            }, "required": ["condition", "reward", "method", "limit_count"]}},
+        "conditions": {"type": "array", "description":
+                       "참여조건을 라벨별 한 항목씩. 핵심 요건만, 광고 문구 제외.",
+            "items": {"type": "object", "properties": {
+                "label": {"type": "string",
+                          "enum": ["대상", "기간", "신청", "유지조건", "한도", "기타"]},
+                "value": {"type": "string"},
+            }, "required": ["label", "value"]}},
         "acct_pension": {"type": "boolean", "description": "연금저축 계좌 대상이면 true"},
         "acct_irp": {"type": "boolean", "description": "IRP 계좌 대상이면 true"},
         "acct_dc": {"type": "boolean", "description": "DC(확정기여) 퇴직연금 대상이면 true"},
         "acct_etc": {"type": "string", "description": "기타 대상계좌(ISA 등). 없으면 빈 문자열"},
-        "is_pension": {"type": "boolean", "description": "연금(연금저축/IRP/DC/퇴직연금) 관련이면 true"},
     },
-    "required": ["benefits", "conditions", "period_start", "period_end",
-                 "acct_pension", "acct_irp", "acct_dc", "acct_etc", "is_pension"],
+    "required": ["is_pension", "evidence_missing", "period_start", "period_end",
+                 "benefits", "conditions",
+                 "acct_pension", "acct_irp", "acct_dc", "acct_etc"],
 }
 
-# 텍스트·이미지 공통 추출 규칙 (형식 통일의 핵심)
 _RULES = (
-    "연금 이벤트의 참여조건과 혜택, 대상계좌를 표준 형식으로 정확히 추출하라.\n"
-    "- 혜택: 표/단계로 제시된 '모든 금액조건과 리워드'를 하나도 빠짐없이, 한 줄에 하나씩 "
-    "'조건 → 리워드 (지급방식·인원)' 형식으로. 입금/거래/이전/계좌개설 등 조건별 리워드가 다르면 각 조합을 "
-    "모두 별도 줄로(임의 요약·대표값 금지). 지급방식(전원/선착순/추첨)과 인원·한도 수치 포함.\n"
-    "- 조건: '대상/기간/신청/유지조건/한도' 라벨로 한 줄씩, 핵심 요건만.\n"
-    "- 기간(period_start/period_end): 이벤트 '기간' 표기의 시작·종료일을 YYYY-MM-DD로. "
-    "접수일·추첨일·지급일이 아닌 이벤트 진행 기간 기준. 상시/무기한이면 빈 값.\n"
-    "- 광고 문구·인사말·면책/유의사항은 제외한다.\n"
-    "- 자료에 없는 내용은 추측하지 말고 빈 값으로 둔다."
+    "국내 증권사 연금 이벤트의 참여조건과 혜택, 대상계좌, 기간을 스키마에 맞춰 정확히 추출하라.\n"
+    "- 혜택(benefits): 금액 구간/조건별 리워드가 다르면 각 조합을 모두 별도 항목으로. "
+    "요약하거나 대표값만 남기지 말 것. 조건과 리워드는 자료 표기(금액·상품명)를 그대로 옮길 것.\n"
+    "- 조건(conditions): 대상/기간/신청(신청필수·마케팅동의 등)/유지조건/한도 라벨로 핵심 요건만.\n"
+    "- 기간: 이벤트 '기간' 표기 기준. 접수일·추첨일·지급일을 기간으로 쓰지 말 것.\n"
+    "- 자료에 없는 내용은 절대 추측하지 말 것. 정보가 없으면 evidence_missing=true 로 두고 "
+    "해당 필드는 빈 값/빈 배열로 남길 것. '정보 없음' 같은 문구를 값으로 넣지 말 것.\n"
+    "- 광고 문구·인사말·면책/유의사항은 제외."
 )
-_PROMPT = "이 이미지는 국내 증권사의 이벤트 상세 페이지다. 한국어로 적힌 내용을 읽고 " + _RULES
-_PROMPT_TEXT = (
-    "아래는 국내 증권사 이벤트 상세 페이지의 본문 텍스트다(네비게이션 등 무관한 내용이 섞여 있을 수 있으니 "
-    "이벤트 본문만 사용). " + _RULES)
+_PROMPT_IMG = ("다음 이미지는 한 이벤트의 상세 페이지 배너다(여러 장이면 위→아래 순서로 "
+               "이어지는 하나의 페이지). 한국어 내용을 읽고 " + _RULES)
+_PROMPT_TEXT = ("아래는 이벤트 상세 페이지의 본문 텍스트다(네비게이션 등 무관한 내용이 "
+                "섞여 있을 수 있으니 이벤트 본문만 사용). " + _RULES)
 
 
 def enabled() -> bool:
@@ -89,9 +106,7 @@ def _media_type(url: str) -> str:
 
 
 def fetch_image_b64(url: str, referer: str = "", retries: int = 3) -> tuple:
-    """이미지 다운로드 → (base64, media_type). 실패 시 (None, None).
-    한투(koreainvestment) 등 일부 이미지 서버의 간헐 SSL/타임아웃에 대비해 재시도."""
-    import time
+    """이미지 다운로드 → (base64, media_type). 실패 시 (None, None)."""
     headers = {"User-Agent": UA}
     if referer:
         headers["Referer"] = referer
@@ -100,7 +115,7 @@ def fetch_image_b64(url: str, referer: str = "", retries: int = 3) -> tuple:
         try:
             r = requests.get(url, headers=headers, timeout=20)
             r.raise_for_status()
-            if len(r.content) > 7_000_000:   # 과대 이미지 방지 (~7MB, Gemini inline 한도 고려)
+            if len(r.content) > 7_000_000:   # 과대 이미지 방지 (~7MB, inline 한도 고려)
                 return None, None
             return base64.standard_b64encode(r.content).decode("ascii"), _media_type(url)
         except Exception as e:
@@ -119,8 +134,8 @@ def _generate(parts, schema=None, retries=2):
     url = ENDPOINT.format(model=MODEL)
     headers = {"x-goog-api-key": API_KEY, "content-type": "application/json"}
     for attempt in range(retries + 1):
-        r = requests.post(url, headers=headers, data=json.dumps(body), timeout=60)
-        # 429(RPM 초과)·5xx(일시 과부하/503) → 대기 후 재시도
+        r = requests.post(url, headers=headers, data=json.dumps(body), timeout=90)
+        # 429(RPM 초과)·5xx(일시 과부하) → 대기 후 재시도
         if r.status_code in (429, 500, 502, 503, 529) and attempt < retries:
             time.sleep(10 * (attempt + 1))
             continue
@@ -135,7 +150,6 @@ def _generate(parts, schema=None, retries=2):
 
 
 # 일일 쿼터 소진(429)이 '연속으로' 확인될 때만 이후 호출을 건너뛴다.
-# (단발 RPM 블립 1회로 런 전체 Gemini 가 막히지 않도록 — 연속 실패 임계값 사용)
 _BLOCKED = False
 _consec_429 = 0
 _BLOCK_AFTER = 3
@@ -150,8 +164,10 @@ def _run(parts, label: str) -> dict:
     try:
         text = _generate(parts, schema=_SCHEMA)
         parsed = json.loads(text)
-        _consec_429 = 0                       # 성공 → 연속 카운터 리셋
-        print(f"[vision] {label} 성공 → benefits={str(parsed.get('benefits','')).replace(chr(10),' ')[:40]}")
+        _consec_429 = 0
+        n_b = len(parsed.get("benefits") or [])
+        print(f"[vision] {label} 성공 → 혜택 {n_b}행"
+              f"{' (evidence_missing)' if parsed.get('evidence_missing') else ''}")
         return parsed
     except Exception as e:
         msg = str(e)
@@ -159,28 +175,44 @@ def _run(parts, label: str) -> dict:
             _consec_429 += 1
             if _consec_429 >= _BLOCK_AFTER and not _BLOCKED:
                 _BLOCKED = True
-                print(f"[vision] 429 {_consec_429}회 연속 → 일일 쿼터 소진 판단, 이후 호출 건너뜀(휴리스틱 폴백)")
+                print(f"[vision] 429 {_consec_429}회 연속 → 일일 쿼터 소진 판단, 이후 호출 건너뜀")
         print(f"[vision] {label} 실패: {type(e).__name__}: {msg[:120]}")
         return {}
 
 
-def extract(image_url: str, referer: str = "", hint: str = "") -> dict:
-    """배너 이미지에서 이벤트 정보를 표준 형식으로 추출. 실패/미설정 시 빈 dict."""
+def _image_part(item, referer=""):
+    """이미지 항목 → Gemini inline part. 항목은 URL 문자열 또는
+    {'b64': <base64>, 'mime': ...}(렌더링 스크린샷 등 URL 재요청이 불가능한 경우)."""
+    if isinstance(item, dict) and item.get("b64"):
+        return {"inline_data": {"mime_type": item.get("mime", "image/jpeg"),
+                                "data": item["b64"]}}
+    if isinstance(item, str) and item.startswith("http"):
+        b64, media = fetch_image_b64(item, referer)
+        if b64:
+            return {"inline_data": {"mime_type": media, "data": b64}}
+    return None
+
+
+def extract(image_urls, referer: str = "", hint: str = "") -> dict:
+    """상세 이미지(1~MAX_IMAGES장)에서 구조화 추출. 실패/미설정 시 빈 dict.
+    다단 배너는 여러 장을 한 요청에 넣어야 잘림 없이 읽힌다."""
     if not enabled() or _BLOCKED:
         return {}
-    b64, media = fetch_image_b64(image_url, referer)
-    if not b64:
+    if isinstance(image_urls, (str, dict)):
+        image_urls = [image_urls]
+    parts = []
+    for item in (image_urls or [])[:MAX_IMAGES]:
+        p = _image_part(item, referer)
+        if p:
+            parts.append(p)
+    if not parts:
         return {}
-    parts = [
-        {"inline_data": {"mime_type": media, "data": b64}},
-        {"text": _PROMPT + (f"\n참고(이벤트명): {hint}" if hint else "")},
-    ]
-    return _run(parts, f"OCR {image_url[:50]}")
+    parts.append({"text": _PROMPT_IMG + (f"\n참고(이벤트명): {hint}" if hint else "")})
+    return _run(parts, f"OCR {len(parts) - 1}장 {hint[:24]}")
 
 
 def extract_from_text(detail_text: str, hint: str = "") -> dict:
-    """상세 페이지 본문 텍스트에서 이벤트 정보를 (이미지와) 동일 표준 형식으로 추출.
-    형식 통일의 핵심 — 텍스트 기반 증권사(한투/삼성/KB)도 이미지 기반과 같은 구조로 정규화."""
+    """상세 본문 텍스트에서 (이미지와) 동일 스키마로 구조화 추출."""
     if not enabled() or _BLOCKED:
         return {}
     text = (detail_text or "").strip()

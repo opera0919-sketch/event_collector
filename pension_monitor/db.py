@@ -9,7 +9,7 @@ import datetime as dt
 
 import requests
 
-from .config import SUPABASE_URL, SUPABASE_KEY
+from .config import SUPABASE_URL, SUPABASE_KEY, FIRMS
 
 MISSED_LIMIT = 2  # 연속 미노출 N회 → 종료 처리
 
@@ -58,6 +58,49 @@ def _patch(path, params, payload):
     return r.json() if r.text else None
 
 
+def _delete(path, params):
+    r = requests.delete(f"{SUPABASE_URL}/rest/v1/{path}", headers=_headers("return=minimal"),
+                        params=params, timeout=30)
+    if not r.ok:
+        print(f"[db] DELETE {path} {r.status_code}: {r.text[:300]}")
+    r.raise_for_status()
+    return None
+
+
+# 조건 타입드 컬럼 (docs/pipeline_mapping.md) — 신선한 추출 성공 건만 갱신 (무회귀)
+_TYPED_COND_COLS = (
+    "eligibility", "exclusions", "apply_required", "marketing_consent_required",
+    "annual_cap_krw", "hold_condition", "cond_notes",
+)
+
+# 마스터 upsert 대상 컬럼 (자식 테이블/내부 키 제외)
+_MASTER_COLS = (
+    "firm_name", "event_name", "status", "start_date", "end_date",
+    "acct_pension", "acct_irp", "acct_dc", "acct_etc",
+    "conditions", "benefits", "remarks", "event_url", "content_hash",
+    "source_event_id", "image_url", "extract_method", "date_source",
+    "needs_review", "review_reason", "last_verified_at",
+) + _TYPED_COND_COLS
+_COND_COLS = ("ord", "label", "value_text", "source")
+_BEN_COLS = ("tier_no", "condition_text", "benefit_text", "award_method", "award_limit", "source")
+
+
+def replace_children(event_id, condition_rows, benefit_rows):
+    """이벤트의 조건/혜택 자식 행 교체 (신선한 추출 성공 건만 — 무회귀 원칙)."""
+    if not (enabled() and event_id):
+        return
+    if benefit_rows:
+        _safe(_delete, "event_benefits", {"event_id": f"eq.{event_id}"})
+        _safe(_post, "event_benefits",
+              [{**{k: r.get(k) for k in _BEN_COLS}, "event_id": event_id}
+               for r in benefit_rows], prefer="return=minimal")
+    if condition_rows:
+        _safe(_delete, "event_conditions", {"event_id": f"eq.{event_id}"})
+        _safe(_post, "event_conditions",
+              [{**{k: r.get(k) for k in _COND_COLS}, "event_id": event_id}
+               for r in condition_rows], prefer="return=minimal")
+
+
 def _safe(fn, *a, **k):
     """DB 쓰기 1건을 안전 실행 — 실패해도 파이프라인(리포트/메일)은 계속."""
     try:
@@ -93,6 +136,28 @@ def fetch_all_events():
         return []
 
 
+def build_index(existing: list) -> dict:
+    """기존 이벤트 매칭 인덱스. source_event_id(불변) 우선, 자연키 폴백."""
+    idx = {}
+    for e in existing or []:
+        sid = e.get("source_event_id")
+        if sid:
+            idx[("sid", e["firm_name"], sid)] = e
+        idx[(e["firm_name"], e["event_name"], e.get("start_date"))] = e
+    return idx
+
+
+def find_existing(idx: dict, ev: dict):
+    """수집 이벤트와 같은 DB 행 찾기. 자연키(이벤트명/기간)는 정규화가 흔들리면
+    바뀌므로 상세 URL 의 고유 ID 매칭을 우선한다 (중복/허위 신규 방지)."""
+    sid = ev.get("source_event_id")
+    if sid:
+        old = idx.get(("sid", ev["firm_name"], sid))
+        if old is not None:
+            return old
+    return idx.get((ev["firm_name"], ev["event_name"], ev.get("start_date")))
+
+
 def sync(scraped: list, firms_failed: list, trigger_type: str):
     """수집 결과를 DB와 동기화하고 변동 내역을 반환한다.
 
@@ -102,51 +167,85 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
     today = dt.date.today().isoformat()
     now = dt.datetime.now(dt.timezone.utc).isoformat()
     existing = fetch_all_events() if enabled() else []
-    by_key = {(e["firm_name"], e["event_name"], e.get("start_date")): e for e in existing}
-    scraped_keys = set()
+    idx = build_index(existing)
+    matched_ids = set()
     failed_set = set(firms_failed)
 
     # ── 1단계: 변동 판정(순수 계산) + DB 쓰기는 건별 안전 실행 ──────
+    # '변경' 이력 기록 대상: 원천 필드는 항상, 콘텐츠 필드는 이번 실행에서 실제
+    # 재추출된 경우만(rows_fresh) — LLM 표현 요동이 변경 이력을 오염시키지 않게.
+    _RAW_FIELDS = ("event_name", "start_date", "end_date")
+    _CONTENT_FIELDS = ("conditions", "benefits", "acct_etc")
+    _BOOL_FIELDS = ("acct_pension", "acct_irp", "acct_dc")
+    _META_FIELDS = ("image_url", "extract_method", "date_source",
+                    "needs_review", "review_reason", "remarks")
     new_events, changed = [], []
     for ev in scraped:
-        key = (ev["firm_name"], ev["event_name"], ev.get("start_date"))
-        scraped_keys.add(key)
         ev["status"] = "종료" if (ev.get("end_date") and ev["end_date"] < today) else "진행중"
-        old = by_key.get(key)
+        old = find_existing(idx, ev)
         if old is None:
             new_events.append(ev)
             if enabled():
-                row = {k: ev.get(k) for k in (
-                    "firm_name", "event_name", "status", "start_date", "end_date",
-                    "acct_pension", "acct_irp", "acct_dc", "acct_etc",
-                    "conditions", "benefits", "remarks", "event_url", "content_hash")}
+                row = {k: ev.get(k) for k in _MASTER_COLS}
+                # NOT NULL boolean 컬럼은 None 전송 시 23502 로 INSERT 전체가 실패 → 강제 bool
+                for f in ("acct_pension", "acct_irp", "acct_dc", "needs_review"):
+                    row[f] = bool(row.get(f))
                 row["last_seen_at"] = now
                 created = _safe(_post, "pension_events", row)
                 ev["id"] = created[0]["id"] if created else None
         else:
+            matched_ids.add(old["id"])
             ev["id"] = old["id"]
             updates = {"last_seen_at": now, "missed_count": 0, "status": ev["status"]}
-            if old.get("content_hash") != ev.get("content_hash"):
-                for f in ("end_date", "start_date", "conditions", "benefits", "acct_etc"):
-                    if (old.get(f) or None) != (ev.get(f) or None):
+            if ev.get("source_event_id") and not old.get("source_event_id"):
+                updates["source_event_id"] = ev["source_event_id"]
+            for f in _RAW_FIELDS:
+                if (old.get(f) or None) != (ev.get(f) or None):
+                    changed.append((ev, f, old.get(f), ev.get(f)))
+                    updates[f] = ev.get(f)
+            for f in _CONTENT_FIELDS:
+                if (old.get(f) or None) != (ev.get(f) or None):
+                    updates[f] = ev.get(f)
+                    if ev.get("rows_fresh"):
                         changed.append((ev, f, old.get(f), ev.get(f)))
+            for f in _BOOL_FIELDS:
+                if bool(old.get(f)) != bool(ev.get(f)):
+                    updates[f] = bool(ev.get(f))
+            for f in _META_FIELDS:
+                if f in ev and (old.get(f) or None) != (ev.get(f) or None):
+                    updates[f] = ev.get(f)
+            # 타입드 조건 컬럼: 이번 실행에서 실제 재추출된 경우에만 갱신
+            # (캐시/실패 건이 기존 값을 null 로 덮지 않도록 — 무회귀)
+            if ev.get("rows_fresh"):
+                for f in _TYPED_COND_COLS:
+                    if old.get(f) != ev.get(f):    # False 도 유의미 값 — or-coalesce 금지
                         updates[f] = ev.get(f)
+            if ev.get("last_verified_at"):
+                updates["last_verified_at"] = ev["last_verified_at"]
+            if old.get("content_hash") != ev.get("content_hash"):
                 updates["content_hash"] = ev.get("content_hash")
             if old["status"] == "진행중" and ev["status"] == "종료":
                 updates["closed_at"] = now
             if enabled():
                 _safe(_patch, "pension_events", {"id": f"eq.{old['id']}"}, updates)
+        # 자식 테이블(조건/혜택 행): 신선한 추출 성공 건만 교체 (무회귀)
+        if ev.get("rows_fresh") and ev.get("id"):
+            replace_children(ev["id"], ev.get("condition_rows") or [],
+                             ev.get("benefit_rows") or [])
 
-    # 목록 미노출 처리 (수집 실패한 증권사는 건드리지 않음 → 오판 방지)
+    # 목록 미노출/만기 처리. 종료일 경과는 수집 성공 여부와 무관한 사실이므로
+    # 실패 증권사 건이라도 즉시 종료 처리한다 (미만기 건만 오판 방지를 위해 유지).
     closed = []
-    for key, old in by_key.items():
-        if key in scraped_keys or old["status"] == "종료":
+    for old in existing:
+        if old["id"] in matched_ids or old["status"] == "종료":
             continue
-        if old["firm_name"] in failed_set:
+        expired = bool(old.get("end_date") and old["end_date"] < today)
+        if not expired and old["firm_name"] in failed_set:
             continue
         missed = (old.get("missed_count") or 0) + 1
-        if missed >= MISSED_LIMIT or (old.get("end_date") and old["end_date"] < today):
+        if expired or missed >= MISSED_LIMIT:
             closed.append(old)
+            old["status"] = "종료"
             if enabled():
                 _safe(_patch, "pension_events", {"id": f"eq.{old['id']}"},
                       {"status": "종료", "closed_at": now, "missed_count": missed})
@@ -154,6 +253,13 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
             _safe(_patch, "pension_events", {"id": f"eq.{old['id']}"}, {"missed_count": missed})
 
     active = [e for e in scraped if e["status"] == "진행중"]
+    # 수집 실패 증권사의 기존 진행중(미만기) 건은 리포트에서 사라지지 않도록 유지
+    # 노출한다 (최종 확인일을 함께 표기 → "직전 데이터 유지" 문구와 동작 일치).
+    for old in existing:
+        if (old["firm_name"] in failed_set and old["status"] == "진행중"
+                and old["id"] not in matched_ids):
+            old["stale_seen"] = (old.get("last_seen_at") or "")[:10] or None
+            active.append(old)
     result = {"new": new_events, "closed": closed, "changed": changed,
               "active": active, "run_id": None}
 
@@ -161,7 +267,8 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
     if enabled():
         run = _safe(_post, "monitoring_runs", {
             "trigger_type": trigger_type,
-            "firms_ok": 6 - len(firms_failed),
+            "firms_ok": len(FIRMS) - len(firms_failed),
+            "failed_firms": ", ".join(firms_failed) or None,   # 증권사별 실패 이력 추적
             "firms_failed": len(firms_failed),
             "events_active": len(active),
             "events_new": len(new_events),

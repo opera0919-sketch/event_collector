@@ -1,15 +1,11 @@
 name: pension-events
 
+# 주의: 정기(schedule) 실행은 기본 브랜치(main) 코드로 돈다.
+# 파이프라인 개선 PR 은 main 에 머지돼야 정기 실행에 반영된다 (REDESIGN.md §7).
 on:
   schedule:
     - cron: '30 22 * * 0-4'   # 월~금 07:30 KST (= 일~목 22:30 UTC)
   workflow_dispatch:
-  push:
-    branches:
-      - claude/pension-event-monitoring-8lfq26
-    paths:
-      - 'pension_monitor/**'
-      - '.github/workflows/pension-events.yml'
 
 permissions:
   contents: write

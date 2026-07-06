@@ -1,0 +1,22 @@
+name: tests
+
+# 오프라인 검증 스위트 — 외부 API(증권사/Gemini/DB) 호출 없음 → PR/푸시마다 무부담 실행
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install deps
+        run: pip install requests beautifulsoup4 openpyxl
+      - name: Run offline test suite
+        run: python tests/test_offline.py
