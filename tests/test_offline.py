@@ -123,6 +123,29 @@ def test_normalize_no_regression_and_cache():
     print("OK normalize (캐시 재사용·무회귀·hint 폴백 검토 플래그)")
 
 
+def test_normalize_rejects_junk_reused_from_old():
+    """실전 재현(2026-07-06, 한투 id=43): 파이프라인 밖(구코드)에서 DB의 old.benefits
+    가 '혜택 없음 (자료 없음)' 같은 정크로 재오염된 뒤, 오늘 실행의 신선 추출도
+    실패하면 G3(무회귀)가 '비어있지 않다'는 이유만으로 그 정크를 영구 재사용했다.
+    _is_trustworthy 재검사로 이 경로가 차단되고 정상적으로 미확인 처리돼야 한다."""
+    year = dt.date.today().year
+    old = {"id": 43, "firm_name": "한국투자증권", "event_name": "퇴직연금 DC 신규 입금 이벤트",
+           "start_date": f"{year}-07-01", "end_date": f"{year}-09-30",
+           "source_event_id": "6730", "needs_review": True,
+           "review_reason": "정크 정화(v2): 혜택 무의미 응답 제거",
+           "benefits": "퇴직연금 DC 신규 입금 → 혜택 없음 (자료 없음)",   # 구코드 재오염분
+           "conditions": None, "extract_method": None}
+    ev = {"firm_name": "한국투자증권", "event_name": "퇴직연금 DC 신규 입금 이벤트",
+          "source_event_id": "6730", "start_date": f"{year}-07-01", "end_date": f"{year}-09-30",
+          "acct_pension": False, "acct_irp": False, "acct_dc": True, "acct_etc": None,
+          "benefits": None, "conditions": None, "_detail_text": ""}   # 오늘도 추출 실패
+    normalize.normalize_events([ev], [old])
+    assert ev["benefits"] is None, ev["benefits"]           # 정크가 재사용되면 안 됨
+    assert ev["extract_method"] == "none"
+    assert "혜택 미확인" in ev["review_reason"]
+    print("OK normalize (구코드 재오염 정크의 무회귀 재사용 차단)")
+
+
 def test_sync_v2():
     year = dt.date.today().year
     today = dt.date.today().isoformat()
@@ -229,6 +252,7 @@ if __name__ == "__main__":
     test_reconcile_period()
     test_accounts_conservative()
     test_normalize_no_regression_and_cache()
+    test_normalize_rejects_junk_reused_from_old()
     test_sync_v2()
     test_typed_condition_columns()
     test_vision_image_parts()
