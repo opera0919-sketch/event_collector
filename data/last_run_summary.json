@@ -1,6 +1,6 @@
 {
- "run_at": "2026-07-06T06:23:51.182260+00:00",
- "trigger": "manual",
+ "run_at": "2026-07-06T23:40:50.306500+00:00",
+ "trigger": "weekly",
  "active": 23,
  "by_firm": {
   "미래에셋증권": 5,
@@ -12,6 +12,6 @@
  "firms_failed": [],
  "new": 0,
  "closed": 0,
- "changed": 2,
+ "changed": 9,
  "note": ""
 }
