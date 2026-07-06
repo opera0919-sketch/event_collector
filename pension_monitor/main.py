@@ -300,8 +300,18 @@ def main():
                f"(신규 {len(diff['new'])}, 종료 {len(diff['closed'])})")
     attachments = []
     try:
-        table_rows = db.fetch_all_events() if db.enabled() else pension
-        xlsx = report_mod.build_xlsx(table_rows)
+        if db.enabled():
+            table_rows = db.fetch_all_events()
+            benefit_rows = db.fetch_children("event_benefits")
+            condition_rows = db.fetch_children("event_conditions")
+        else:
+            # DB 미설정 폴백: 이번 실행분에서 신선 추출된 이벤트만 자식 행 보유
+            table_rows = pension
+            benefit_rows = [{**r, "firm_name": ev["firm_name"], "event_name": ev["event_name"]}
+                            for ev in pension for r in (ev.get("benefit_rows") or [])]
+            condition_rows = [{**r, "firm_name": ev["firm_name"], "event_name": ev["event_name"]}
+                              for ev in pension for r in (ev.get("condition_rows") or [])]
+        xlsx = report_mod.build_xlsx(table_rows, benefit_rows, condition_rows)
         attachments = [(f"pension_events_{today}.xlsx", xlsx,
                         "vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
     except Exception as e:

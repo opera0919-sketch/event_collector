@@ -244,6 +244,7 @@ def _apply_success(ev, b_rows, c_rows, grounded, method):
     ev["extract_method"] = method
     ev["last_verified_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
     ev["remarks"] = None
+    ev["review_reason"] = None   # 성공 추출은 이전 검토 사유를 해소 — 안 지우면 xlsx에 낡은 사유가 남는다
     if not grounded:
         _flag(ev, "근거 불일치(추출 수치가 원문과 대조 실패)")
 
@@ -253,6 +254,9 @@ def _reuse_cached(ev, old):
     ev["conditions"] = old.get("conditions") or ev.get("conditions")
     ev["extract_method"] = old.get("extract_method")
     ev["remarks"] = None
+    # old 의 검토 사유를 기본값으로 물려받되, 호출부에서 old.needs_review 가 True 면
+    # 곧이어 _flag() 가 다시 채운다 — False 인 경우 낡은 사유가 안 남도록 여기서 비운다.
+    ev["review_reason"] = None
     for k in ("acct_pension", "acct_irp", "acct_dc"):
         if old.get(k):
             ev[k] = True
