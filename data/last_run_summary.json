@@ -1,5 +1,5 @@
 {
- "run_at": "2026-07-06T23:40:50.306500+00:00",
+ "run_at": "2026-07-07T23:32:11.258540+00:00",
  "trigger": "weekly",
  "active": 23,
  "by_firm": {
@@ -12,6 +12,6 @@
  "firms_failed": [],
  "new": 0,
  "closed": 0,
- "changed": 9,
+ "changed": 6,
  "note": ""
 }
