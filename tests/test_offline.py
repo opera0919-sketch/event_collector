@@ -12,8 +12,11 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ.pop("GEMINI_API_KEY", None)  # 실호출 원천 차단
 
-from pension_monitor import db, normalize, report
-from pension_monitor.classify import content_hash, detect_accounts, source_event_id
+from pension_monitor import db, normalize, report, vision
+from pension_monitor.classify import (
+    content_hash, detect_accounts, source_event_id, source_content_hash,
+    clip_detail, weekday_conflicts, infer_end_from_hold,
+)
 
 
 def test_clean_rows_junk_and_grounding():
@@ -320,7 +323,264 @@ def test_source_event_id():
     print("OK source_event_id")
 
 
+def test_clip_detail_preserves_tail():
+    """P0-3: 상단 네비가 길어도 하단 유의사항(배수·제외재원) 꼬리는 절단 후에도 보존."""
+    head = "메뉴\n" + ("본문내용가나다 " * 2000)          # 예산 초과할 만큼 긴 머리
+    tail = "※ 유의사항\n타사이전 시 실적 1.5배 인정\n퇴직금은 제외됩니다"
+    clipped = clip_detail(head + "\n" + tail, limit=8000)
+    assert len(clipped) <= 8000
+    assert "1.5배" in clipped and "제외됩니다" in clipped, "꼬리 소실"
+    # 예산 내면 그대로
+    assert clip_detail("짧은 본문") == "짧은 본문"
+    print("OK clip_detail (유의사항 꼬리 보존)")
+
+
+def test_weekday_conflicts_g6():
+    """G6: 본문 'YYYY.MM.DD(요일)' 표기와 실제 요일 불일치 탐지 (E6 시즌 기간 오추출)."""
+    # 2026-06-30 은 화요일 → (수) 표기는 불일치
+    bad = weekday_conflicts("이벤트 종료일 2026. 06. 30(수) 까지")
+    assert bad and "2026-06-30" in bad[0], bad
+    assert weekday_conflicts("행사 2026.06.30(화) 마감") == []      # 올바른 요일은 통과
+    assert weekday_conflicts("요일 표기 없음 2026.06.30") == []
+    print("OK weekday_conflicts (G6 요일 정합성)")
+
+
+def test_infer_end_from_hold_g9():
+    """G9: 잔고유지 시작일 - 1일 = 이벤트 종료일 역산 (E5 KB 시즌3 기간 NULL 해결)."""
+    assert infer_end_from_hold("잔고유지기간 2026.10.1 ~ 2026.10.31", 2026) == "2026-09-30"
+    assert infer_end_from_hold("유지 기간 10월 1일부터", 2026) == "2026-09-30"
+    assert infer_end_from_hold("혜택 안내만 있음", 2026) is None
+    print("OK infer_end_from_hold (G9 잔고유지 역산)")
+
+
+def test_clean_multipliers():
+    """P0-1: 배수 배열 정규화 — scope(인정금액/리워드금액) 분리, 무효 배수 제거."""
+    res = {"multipliers": [
+        {"source_type": "타사이전", "multiplier": 1.5, "scope": "인정금액",
+         "min_threshold_krw": 10000000, "extra_condition": ""},
+        {"source_type": "비대면최초신규", "multiplier": 2, "scope": "리워드금액",
+         "min_threshold_krw": 0, "extra_condition": "WRAP 가입"},
+        {"source_type": "엉뚱", "multiplier": 0, "scope": "x",
+         "min_threshold_krw": "bad", "extra_condition": ""},          # 무효 → 제거
+    ]}
+    rows = normalize.clean_multipliers(res, "llm-text")
+    assert len(rows) == 2, rows
+    assert rows[0]["scope"] == "인정금액" and rows[0]["multiplier"] == 1.5
+    assert rows[0]["min_threshold_krw"] == 10000000
+    assert rows[1]["scope"] == "리워드금액" and rows[1]["source_type"] == "비대면최초신규"
+    print("OK clean_multipliers (배수 scope 분리·무효 제거)")
+
+
+def test_source_content_hash_reextract():
+    """P0-5: 상세 본문/이미지가 바뀌면 해시가 바뀌어 재추출을 유발 (누락 영구화 방지)."""
+    a = source_content_hash({"_detail_text": "본문A", "_image_urls": ["u1"]})
+    b = source_content_hash({"_detail_text": "본문B", "_image_urls": ["u1"]})
+    c = source_content_hash({"_detail_text": "본문A", "_image_urls": ["u2"]})
+    assert a != b and a != c
+    assert a == source_content_hash({"_detail_text": "본문A", "_image_urls": ["u1"]})
+    print("OK source_content_hash (원문 변경 → 재추출 트리거)")
+
+
+def test_normalize_sets_reextract_meta():
+    """P0-5: 정규화가 모든 이벤트에 source_content_hash + 스키마 버전을 부여."""
+    ev = {"firm_name": "KB증권", "event_name": "e", "source_event_id": "1",
+          "start_date": None, "end_date": None, "acct_pension": True, "acct_irp": False,
+          "acct_dc": False, "acct_etc": None, "benefits": None, "conditions": None,
+          "_detail_text": "상세 본문", "_image_urls": ["u1"]}
+    normalize.normalize_events([ev], [])
+    assert ev["extract_schema_version"] == vision.EXTRACT_SCHEMA_VERSION
+    assert ev["source_content_hash"] == source_content_hash(
+        {"_detail_text": "상세 본문", "_image_urls": ["u1"]})
+    print("OK normalize 재추출 메타 부여")
+
+
+def test_cache_invalidation_on_schema_bump():
+    """P0-5: 종료일 동일 + benefits 양호 + needs_review=False 라도, 스키마 버전이
+    낮으면 fast-cache 스킵이 아니라 재추출 경로를 타야 한다 (E3 누락 영구화 차단).
+    vision 미설정이라 재추출은 실패하고 무회귀로 old 를 재사용하지만, 핵심은
+    '캐시로 조용히 넘어가지 않고 재평가 대상이 된다'는 점이다."""
+    year = dt.date.today().year
+    old = {"id": 8, "firm_name": "삼성증권", "event_name": "연금 파워업",
+           "source_event_id": "3808", "start_date": f"{year}-05-01", "end_date": f"{year}-07-31",
+           "needs_review": False, "benefits": "이전 시 → 상품권 1만원 (전원)",
+           "conditions": None, "source_content_hash": "STALE",
+           "extract_schema_version": vision.EXTRACT_SCHEMA_VERSION - 1}
+    ev = {"firm_name": "삼성증권", "event_name": "연금 파워업", "source_event_id": "3808",
+          "start_date": f"{year}-05-01", "end_date": f"{year}-07-31",
+          "acct_pension": True, "acct_irp": False, "acct_dc": False, "acct_etc": None,
+          "benefits": None, "conditions": None, "_detail_text": ""}
+    normalize.normalize_events([ev], [old])
+    # 새 원문 해시/스키마 버전이 ev 에 반영됐고(재평가됨), 무회귀로 old benefits 유지
+    assert ev["extract_schema_version"] == vision.EXTRACT_SCHEMA_VERSION
+    assert ev["source_content_hash"] != old["source_content_hash"]
+    assert ev["benefits"] == old["benefits"]
+    assert not ev.get("rows_fresh")            # fast-cache 였다면 여기 도달 안 함
+    print("OK 캐시 무효화 (스키마 버전 상향 시 재평가)")
+
+
+def test_fast_cache_skips_extraction():
+    """P0-5: 원문 해시 + 스키마 버전이 모두 일치하면 fast-cache 로 추출을 건너뛴다.
+    (vision 을 활성화하고 호출 시 카운트 — 0 이어야 캐시 스킵 확인)."""
+    year = dt.date.today().year
+    det = "본문" * 100
+    ev0 = {"_detail_text": det}
+    old = {"id": 1, "firm_name": "NH투자증권", "event_name": "IRP", "source_event_id": "1",
+           "start_date": f"{year}-05-01", "end_date": f"{year}-08-31", "needs_review": False,
+           "benefits": "순입금 → 상품권 1만원 (전원)", "conditions": "대상: IRP", "acct_irp": True,
+           "source_content_hash": source_content_hash(ev0),
+           "extract_schema_version": vision.EXTRACT_SCHEMA_VERSION}
+    called = {"n": 0}
+    orig_enabled, orig_extract = vision.enabled, vision.extract_from_text
+    vision.enabled = lambda: True
+    vision.blocked = lambda: False
+    vision.extract_from_text = lambda *a, **k: (called.__setitem__("n", called["n"] + 1), {})[1]
+    try:
+        ev = {"firm_name": "NH투자증권", "event_name": "IRP", "source_event_id": "1",
+              "start_date": f"{year}-05-01", "end_date": f"{year}-08-31", "acct_pension": False,
+              "acct_irp": False, "acct_dc": False, "acct_etc": None, "benefits": None,
+              "conditions": None, "_detail_text": det}
+        normalize.normalize_events([ev], [old])
+    finally:
+        vision.enabled, vision.extract_from_text = orig_enabled, orig_extract
+    assert called["n"] == 0, "fast-cache 인데 추출을 호출함"
+    assert ev["benefits"] == old["benefits"] and ev["acct_irp"] is True
+    print("OK fast-cache 스킵 (원문/스키마 일치 시 추출 안 함)")
+
+
+def test_check_coverage_g8():
+    """G8: 이전 유치형인데 원문엔 배수·제외재원이 있으나 추출엔 없으면 검토 표기 (E1/E2)."""
+    ev = {"firm_name": "삼성증권", "event_name": "타사 연금 이전 이벤트",
+          "_detail_text": "타사에서 이전 시 실적 1.5배 인정. 퇴직금은 제외됩니다.",
+          "benefits": "이전 시 → 상품권", "conditions": None}
+    normalize.check_coverage(ev)
+    assert ev.get("needs_review"), "배수/제외재원 누락이 잡혀야 함"
+    assert "배수" in ev["review_reason"] and "제외재원" in ev["review_reason"]
+    # 배수가 실제 추출되면 배수 플래그는 뜨지 않는다
+    ev2 = {"firm_name": "삼성증권", "event_name": "타사 이전 이벤트",
+           "_detail_text": "타사 이전 시 실적 1.5배 인정", "benefits": "이전 → 상품권",
+           "multiplier_rows": [{"multiplier": 1.5}]}
+    normalize.check_coverage(ev2)
+    assert not ev2.get("needs_review")
+    # 이전 유치형이 아니면 검사 스킵
+    ev3 = {"firm_name": "NH투자증권", "event_name": "신규 가입 이벤트",
+           "_detail_text": "신규 가입 시 상품권", "benefits": "x"}
+    normalize.check_coverage(ev3)
+    assert not ev3.get("needs_review")
+    print("OK check_coverage (G8 필수 조항 커버리지)")
+
+
+def test_check_period_collisions_g7():
+    """G7: 같은 증권사에서 이름(시즌)은 다른데 기간이 동일하면 오추출 의심 표기 (E6)."""
+    year = dt.date.today().year
+    evs = [
+        {"firm_name": "KB증권", "event_name": "TDF&ETF 시즌2",
+         "start_date": f"{year}-04-01", "end_date": f"{year}-06-30"},
+        {"firm_name": "KB증권", "event_name": "TDF&ETF 시즌3",
+         "start_date": f"{year}-04-01", "end_date": f"{year}-06-30"},
+    ]
+    normalize.check_period_collisions(evs)
+    assert all(e.get("needs_review") for e in evs)
+    assert "기간 충돌" in evs[0]["review_reason"]
+    # 기간이 다르면 충돌 없음
+    ok = [{"firm_name": "KB증권", "event_name": "A 시즌1", "start_date": f"{year}-01-01",
+           "end_date": f"{year}-02-01"},
+          {"firm_name": "KB증권", "event_name": "A 시즌2", "start_date": f"{year}-03-01",
+           "end_date": f"{year}-04-01"}]
+    normalize.check_period_collisions(ok)
+    assert not any(e.get("needs_review") for e in ok)
+    print("OK check_period_collisions (G7 동일기간 충돌)")
+
+
+def test_apply_success_multipliers_and_meta():
+    """P0-1/P3: _apply_success 가 배수행·stackable·연간횟수 메타를 이벤트에 부착."""
+    ev = {"firm_name": "KB증권", "event_name": "타사 이전 시즌3"}
+    b = [{"tier_no": 1, "condition_text": "이전", "benefit_text": "상품권 2만원",
+          "award_method": "전원", "award_limit": None, "source": "llm-text"}]
+    mult = [{"source_type": "타사이전", "multiplier": 2, "scope": "인정금액",
+             "min_threshold_krw": 0, "extra_condition": "", "source": "llm-text"},
+            {"source_type": "비대면최초신규", "multiplier": 2, "scope": "리워드금액",
+             "min_threshold_krw": 0, "extra_condition": "", "source": "llm-text"}]
+    normalize._apply_success(ev, b, [], grounded=True, method="text",
+                             mult_rows=mult, stackable=True, annual_claim_limit=1)
+    assert ev["multiplier_rows"] == mult and len(ev["multiplier_rows"]) == 2
+    assert ev["stackable"] is True and ev["annual_claim_limit"] == 1
+    assert ev["rows_fresh"]
+    print("OK _apply_success (배수·중복가능·연간횟수 메타)")
+
+
+def test_marketing_consent_label_free_fallback_g10():
+    """G10: 라벨/키워드로 못 잡아도 '개인(신용)정보 선택동의 필수' 원문 스캔으로 보충 (E7)."""
+    from src.backfill_conditions import parse_conditions
+    p = parse_conditions("본 이벤트 참여 시 개인(신용)정보 선택 동의 필수 입니다")
+    assert p["marketing_consent_required"] is True, p
+    # 부정 표현이 있으면 보충하지 않는다 (오탐 방지)
+    p2 = parse_conditions("마케팅 동의 없이 자동 참여 가능")
+    assert p2["marketing_consent_required"] is False
+    print("OK marketing_consent 라벨무관 폴백 (G10)")
+
+
+def test_xlsx_multiplier_sheet():
+    """P3: multiplier_rows 를 넘기면 '배수 상세' 4번째 시트가 생성되고 event_id 로 조인."""
+    ok = {"firm_name": "KB증권", "event_name": "타사 이전 시즌3", "id": 5, "status": "진행중",
+          "acct_pension": True, "acct_irp": False, "acct_dc": False, "acct_etc": None,
+          "benefits": "이전 → 상품권", "needs_review": False, "stackable": True,
+          "annual_claim_limit": 1}
+    xlsx = report.build_xlsx(
+        [ok], benefit_rows=[], condition_rows=[],
+        multiplier_rows=[{"event_id": 5, "source_type": "타사이전", "multiplier": 2,
+                          "scope": "인정금액", "min_threshold_krw": 10000000,
+                          "extra_condition": "", "source": "llm-text"}])
+    from openpyxl import load_workbook
+    wb = load_workbook(io_bytes(xlsx))
+    assert wb.sheetnames == ["이벤트 요약", "혜택 상세", "참여조건 상세", "배수 상세"], wb.sheetnames
+    ws = wb["배수 상세"]
+    assert ws.cell(row=2, column=1).value == "KB증권"       # event_id=5 조인
+    assert ws.cell(row=2, column=4).value == 2               # 배수 값
+    # 하위 호환: multiplier_rows 미전달 시 3시트 유지
+    wb3 = load_workbook(io_bytes(report.build_xlsx([ok], [], [])))
+    assert "배수 상세" not in wb3.sheetnames
+    print("OK xlsx 배수 상세 시트 (P3 자식 조인·하위호환)")
+
+
+def test_excluded_firm_not_auto_closed():
+    """P2-2: 수집 제외 증권사(키움)의 미만기 잔존 건은 '미노출 → 종료'가 아니라
+    needs_review 표기 (E8). 만기 건은 종료하되 close_reason 을 남긴다."""
+    year = dt.date.today().year
+    calls = {"patch": []}
+    db.fetch_all_events = lambda: existing
+    db.enabled = lambda: True
+    db._patch = lambda path, params, payload: calls["patch"].append((params, payload))
+    db._post = lambda path, payload, prefer=None: [{"id": 1}]
+    db._delete = lambda path, params: None
+    existing = [
+        {"id": 30, "firm_name": "키움증권", "event_name": "연금 이벤트(웹검색 잔존)",
+         "start_date": f"{year}-01-01", "end_date": f"{year}-12-31", "status": "진행중",
+         "missed_count": 1, "content_hash": "x", "last_seen_at": f"{year}-06-01T00:00:00+00:00"},
+    ]
+    diff = db.sync([], firms_failed=[], trigger_type="manual")
+    # 미만기 키움 건은 종료되지 않음
+    assert diff["closed"] == [], diff["closed"]
+    # 대신 needs_review + 사유가 기록됨
+    marked = [p for _, p in calls["patch"] if p.get("needs_review")]
+    assert marked and "수집 제외" in marked[0]["review_reason"], calls["patch"]
+    print("OK 수집 제외 증권사 격리 (E8 자동종료 차단)")
+
+
 if __name__ == "__main__":
+    test_clip_detail_preserves_tail()
+    test_weekday_conflicts_g6()
+    test_infer_end_from_hold_g9()
+    test_clean_multipliers()
+    test_source_content_hash_reextract()
+    test_normalize_sets_reextract_meta()
+    test_cache_invalidation_on_schema_bump()
+    test_fast_cache_skips_extraction()
+    test_check_coverage_g8()
+    test_check_period_collisions_g7()
+    test_apply_success_multipliers_and_meta()
+    test_marketing_consent_label_free_fallback_g10()
+    test_xlsx_multiplier_sheet()
+    test_excluded_firm_not_auto_closed()
     test_clean_rows_junk_and_grounding()
     test_render()
     test_reconcile_period()
@@ -334,3 +594,202 @@ if __name__ == "__main__":
     test_vision_image_parts()
     test_source_event_id()
     print("\n전체 오프라인 검증 통과 (외부 API 호출 0회)")
+
+
+# ── 검수 회귀 (B2/B4/B1) ────────────────────────────────────────────
+def test_clip_detail_preserves_tail_on_long_page():
+    """긴 페이지에서도 문서 '끝'의 배수·중복불가 조항이 살아남아야 한다.
+    (구버전: 이른 '※' 때문에 tail 이 본문 전체가 되어 앞에서 재절단 → 조항 유실)"""
+    from pension_monitor.classify import clip_detail
+    body = ("네비게이션\n※ 상단 배너\n" + "본문라인\n" * 3000
+            + "※ 유의사항\n타사이전 1천만원 이상 시 순입금액 1.5배 인정\n중복 지급되지 않습니다\n")
+    out = clip_detail(body, limit=8000)
+    assert len(out) <= 8000
+    assert "1.5배 인정" in out          # 마커 직전 문맥(숫자)까지 보존
+    assert "중복 지급되지 않습니다" in out
+
+
+def test_clip_detail_no_marker_keeps_tail():
+    from pension_monitor.classify import clip_detail
+    out = clip_detail("본문라인\n" * 3000 + "마지막줄\n", limit=8000)
+    assert out.rstrip().endswith("마지막줄")
+
+
+def test_clip_detail_short_text_untouched():
+    from pension_monitor.classify import clip_detail
+    assert clip_detail("짧은본문\n유의사항\n2배 인정\n", limit=8000).endswith("2배 인정")
+
+
+def test_needs_ocr_not_triggered_by_transfer_hint_alone():
+    """'전환'(ISA 연금전환/디폴트옵션 전환)만으로 OCR 을 강제하면 배수 없는
+    이벤트마다 1콜이 낭비되어 STRUCT_BUDGET 이 반토막 난다."""
+    from pension_monitor.normalize import _needs_ocr
+    ev = {"event_name": "연금저축 TDF 셋업"}
+    text = "원리금보장 상품으로 전환 가능. ISA 만기자금 연금전환 시 세액공제."
+    assert _needs_ocr(ev, {"multipliers": []}, [{"source": "llm-text"}], text) is False
+
+
+def test_needs_ocr_triggered_when_text_shows_multiplier_but_result_missing():
+    from pension_monitor.normalize import _needs_ocr
+    ev = {"event_name": "연금저축 파워업"}
+    text = "타사이전 1천만원 이상 시 1.5배 인정"
+    assert _needs_ocr(ev, {"multipliers": []}, [{"source": "llm-text"}], text) is True
+
+
+def test_needs_ocr_when_no_rows():
+    from pension_monitor.normalize import _needs_ocr
+    assert _needs_ocr({"event_name": "x"}, {}, [], "") is True
+
+
+# ── M4 재시도 상한 (review_retry_count / review_retry_key) ──────────────
+def _retry_ev(det, **over):
+    """M4 테스트용 표준 이벤트 (NH=신뢰 목록, 유효 기간 → 부가 플래그 없음)."""
+    year = dt.date.today().year
+    ev = {"firm_name": "NH투자증권", "event_name": "IRP 순입금 응원",
+          "source_event_id": "7777", "start_date": f"{year}-05-01",
+          "end_date": f"{year}-08-31", "acct_pension": False, "acct_irp": True,
+          "acct_dc": False, "acct_etc": None, "benefits": None, "conditions": None,
+          "_detail_text": det}
+    ev.update(over)
+    return ev
+
+
+def _retry_old(det, count, key=None, **over):
+    year = dt.date.today().year
+    old = {"id": 70, "firm_name": "NH투자증권", "event_name": "IRP 순입금 응원",
+           "source_event_id": "7777", "start_date": f"{year}-05-01",
+           "end_date": f"{year}-08-31", "needs_review": True,
+           "review_reason": "제외재원 조항 원문에 존재하나 추출 누락 — 원문 확인 필요",
+           "benefits": "순입금 1백만원 이상 → 상품권 1만원 (전원)", "conditions": None,
+           "acct_irp": True, "extract_method": "text",
+           "review_retry_count": count,
+           "review_retry_key": key if key is not None else
+           f"{source_content_hash({'_detail_text': det})}:{vision.EXTRACT_SCHEMA_VERSION}"}
+    old.update(over)
+    return old
+
+
+def _run_with_vision(evs, olds, fake):
+    """vision 을 켠 채 normalize 실행. 반환: fake 호출 횟수."""
+    called = {"n": 0}
+    def _wrapped(text, hint=""):
+        called["n"] += 1
+        return fake(text, hint)
+    orig = (vision.enabled, vision.blocked, vision.extract_from_text)
+    vision.enabled = lambda: True
+    vision.blocked = lambda: False
+    vision.extract_from_text = _wrapped
+    try:
+        normalize.normalize_events(evs, olds)
+    finally:
+        vision.enabled, vision.blocked, vision.extract_from_text = orig
+    return called["n"]
+
+
+def test_retry_exhausted_skips_llm():
+    """한도 도달: 같은 원문·스키마에 3회 실패 → LLM 스킵 + 플래그·사유·카운터 유지."""
+    det = "본문" * 100
+    old = _retry_old(det, count=normalize.REVIEW_RETRY_LIMIT)
+    ev = _retry_ev(det)
+    n = _run_with_vision([ev], [old], lambda t, h: {})
+    assert n == 0, "한도 도달인데 LLM 이 호출됨"
+    assert ev["benefits"] == old["benefits"]            # 기존 상태 재사용
+    assert ev["needs_review"] is True                    # 플래그는 유지
+    assert ev["review_reason"] == old["review_reason"]   # 사유 승계
+    assert ev["review_retry_count"] == normalize.REVIEW_RETRY_LIMIT
+    print("OK M4 한도 도달 스킵 (LLM 0회 + 플래그 유지)")
+
+
+def test_retry_under_limit_reattempts():
+    """한도 미달(count=2)이면 여전히 재추출을 시도한다."""
+    det = "본문" * 100
+    old = _retry_old(det, count=normalize.REVIEW_RETRY_LIMIT - 1)
+    ev = _retry_ev(det)
+    n = _run_with_vision([ev], [old], lambda t, h: {})
+    assert n == 1, f"한도 미달인데 호출 {n}회"
+    print("OK M4 한도 미달 재시도")
+
+
+def test_retry_count_increments_on_flagged_attempt():
+    """시도했는데 여전히 플래그 → 카운터 +1, 키 스탬프."""
+    det = "본문" * 100
+    old = _retry_old(det, count=1)
+    ev = _retry_ev(det)
+    n = _run_with_vision([ev], [old], lambda t, h: {})   # 추출 실패 → old 재사용 + 플래그
+    assert n == 1
+    assert ev["needs_review"] is True
+    assert ev["review_retry_count"] == 2, ev.get("review_retry_count")
+    assert ev["review_retry_key"] == old["review_retry_key"]
+    print("OK M4 실패 시 카운터 증가")
+
+
+def test_retry_count_resets_on_clean_success():
+    """시도 + 클린 성공 → 카운터 0 리셋."""
+    det = "이벤트 안내: 순입금 1백만원 이상 시 상품권 1만원 지급 " + "본문" * 100
+    old = _retry_old(det, count=2)
+    ev = _retry_ev(det)
+    ok = {"is_pension": True, "evidence_missing": False,
+          "period_start": "", "period_end": "",
+          "benefits": [{"condition": "순입금 1백만원 이상", "reward": "상품권 1만원",
+                        "method": "전원", "limit_count": 0}],
+          "conditions": [{"label": "대상", "value": "IRP 계좌 보유 고객"}],
+          "acct_pension": False, "acct_irp": True, "acct_dc": False, "acct_etc": "",
+          "multipliers": [], "stackable": None, "annual_claim_limit": 0}
+    n = _run_with_vision([ev], [old], lambda t, h: ok)
+    assert n == 1 and ev["needs_review"] is False, ev.get("review_reason")
+    assert ev["review_retry_count"] == 0
+    print("OK M4 성공 시 카운터 리셋")
+
+
+def test_retry_key_mismatch_resets():
+    """키 불일치(원문 변경·스키마 상향) → count=3 이어도 재시도 재개."""
+    det = "본문" * 100
+    old = _retry_old(det, count=normalize.REVIEW_RETRY_LIMIT, key="stalehash:1")
+    ev = _retry_ev(det)
+    n = _run_with_vision([ev], [old], lambda t, h: {})
+    assert n == 1, "키가 다르면(다른 원문에 대한 실패) 재시도가 재개돼야 함"
+    assert ev["review_retry_count"] == 1                 # 새 키 기준 첫 실패
+    assert ev["review_retry_key"].startswith(source_content_hash({"_detail_text": det}))
+    print("OK M4 키 불일치 시 카운터 리셋(재시도 재개)")
+
+
+def test_retry_meta_not_sent_when_no_attempt():
+    """시도 없음(vision 미설정) → ev 에 카운터 미탑재 → db.sync 가 기존 값을 안 건드림."""
+    det = "본문" * 100
+    year = dt.date.today().year
+    calls = {"patch": []}
+    old = _retry_old(det, count=2)
+    existing = [dict(old, status="진행중", missed_count=0, content_hash="x",
+                     last_seen_at=f"{year}-07-01T00:00:00+00:00")]
+    ev = _retry_ev(det)
+    normalize.normalize_events([ev], existing)           # vision 미설정 → 시도 불가
+    assert "review_retry_count" not in ev, "시도 없었는데 카운터가 실림"
+    db.fetch_all_events = lambda: existing
+    db.enabled = lambda: True
+    db._patch = lambda path, params, payload: calls["patch"].append((path, payload))
+    db._post = lambda path, payload, prefer=None: [{"id": 70}]
+    db._delete = lambda path, params: None
+    ev["content_hash"] = content_hash(ev)
+    db.sync([ev], firms_failed=[], trigger_type="manual")
+    for path, payload in calls["patch"]:
+        if path == "pension_events":
+            assert "review_retry_count" not in payload and "review_retry_key" not in payload, payload
+    print("OK M4 미시도 보존 (카운터 미갱신)")
+
+
+if __name__ == "__main__":
+    # 검수(B1~B4) + M4 회귀 — 위 러너 블록 이후에 정의되므로 별도 블록에서 실행
+    # (CI tests.yml 은 pytest 가 아니라 이 파일을 직접 실행한다)
+    test_clip_detail_preserves_tail_on_long_page()
+    test_clip_detail_no_marker_keeps_tail()
+    test_clip_detail_short_text_untouched()
+    test_needs_ocr_not_triggered_by_transfer_hint_alone()
+    test_needs_ocr_triggered_when_text_shows_multiplier_but_result_missing()
+    test_needs_ocr_when_no_rows()
+    test_retry_exhausted_skips_llm()
+    test_retry_under_limit_reattempts()
+    test_retry_count_increments_on_flagged_attempt()
+    test_retry_count_resets_on_clean_success()
+    test_retry_key_mismatch_resets()
+    test_retry_meta_not_sent_when_no_attempt()
+    print("검수(B)/M4 회귀 12종 통과")

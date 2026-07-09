@@ -15,11 +15,12 @@ import asyncio
 import datetime as dt
 import json
 import pathlib
+import re
 import sys
 
 from . import db, mailer, normalize, report as report_mod
 from .classify import (is_pension, detect_accounts, extract_details, content_hash,
-                       source_event_id)
+                       source_event_id, clip_detail)
 from .config import TRIGGER_TYPE
 from .scrapers import SCRAPERS
 from .scrapers.base import load_page
@@ -161,13 +162,14 @@ async def enrich_details(browser, pension_events):
         # 한투: 상세 텍스트 전용 엔드포인트
         if ev["firm_name"] == "한국투자증권" and ev.get("_detail_id"):
             try:
-                ev["_detail_text"] = (fetch_detail_text(ev["_detail_id"]) or "")[:8000]
+                ev["_detail_text"] = clip_detail(fetch_detail_text(ev["_detail_id"]) or "")
                 fetched += 1
             except Exception as e:
                 print(f"[상세실패] 한국투자증권 {ev['event_name'][:24]}: {type(e).__name__}")
             continue
         need_img = not ev.get("_image_urls")
         detail_text = ""
+        soup = None
         try:
             try:
                 soup = BeautifulSoup(fetch_html(url, retries=1), "html.parser")
@@ -207,11 +209,47 @@ async def enrich_details(browser, pension_events):
                                       f"스크린샷 OCR 폴백 ({len(shot) // 1024}KB)")
                 finally:
                     await page.close()
+            # P2-1: 'Bonus Tip 상세예시' 등 배수 계산 예시가 별도 링크에 있는 경우 병합.
+            # 반드시 렌더/스크린샷 분기가 끝난 뒤에 붙인다 — 앞에 붙이면 (1) 길이가
+            # 부풀어 스크린샷 OCR 폴백(len<200 / need_img and len<2500)이 발동하지
+            # 못하고, (2) page.inner_text("body") 가 서브 컨텐츠를 덮어쓴다.
+            if soup is not None:
+                detail_text += _fetch_sub_content(soup, url)
             fetched += 1
         except Exception as e:
             print(f"[상세실패] {ev['firm_name']} {ev['event_name'][:30]}: {type(e).__name__}")
         if detail_text:
-            ev["_detail_text"] = detail_text[:8000]
+            # 앞에서 자르지 않고 '본문 + 유의사항 꼬리(배수·제외재원)'를 보존해 절단
+            ev["_detail_text"] = clip_detail(detail_text)
+
+
+# P2-1: 배수 계산 예시가 담긴 서브 컨텐츠('Bonus Tip 상세예시' 등) 링크 1개 추적
+# '자세히'·'보너스' 는 일반 CTA 링크("자세히보기")에 광범위하게 걸려 무관한
+# 상품소개 페이지 전문이 _detail_text 에 유입된다 (LLM 입력·G2 근거대조·
+# source_content_hash 오염). 배수 예시 전용 문구로만 한정한다.
+_SUB_LINK_RE = re.compile(r"(상세\s*예시|Bonus\s*Tip|계산\s*예시)", re.I)
+
+
+def _fetch_sub_content(soup, base_url) -> str:
+    """상세 페이지의 서브 링크(배수 예시 등) 1개를 따라가 본문에 병합.
+    레이어(모달)로만 뜨는 사이트는 정적 fetch 로 안 잡히므로 best-effort."""
+    from urllib.parse import urljoin
+    from bs4 import BeautifulSoup
+    from .scrapers.static_generic import fetch_html
+    for a in soup.find_all("a", href=True):
+        if not _SUB_LINK_RE.search(a.get_text(" ", strip=True)):
+            continue
+        sub = urljoin(base_url, a["href"])
+        if sub == base_url or not sub.startswith("http"):
+            continue
+        try:
+            s2 = BeautifulSoup(fetch_html(sub, retries=1), "html.parser")
+            for tag in s2(["script", "style"]):
+                tag.decompose()
+            return "\n\n[상세예시]\n" + s2.get_text("\n", strip=True)
+        except Exception:
+            return ""
+    return ""
 
 
 def classify_all(events):
@@ -304,6 +342,7 @@ def main():
             table_rows = db.fetch_all_events()
             benefit_rows = db.fetch_children("event_benefits")
             condition_rows = db.fetch_children("event_conditions")
+            multiplier_rows = db.fetch_children("pension_event_multipliers")
         else:
             # DB 미설정 폴백: 이번 실행분에서 신선 추출된 이벤트만 자식 행 보유
             table_rows = pension
@@ -311,7 +350,9 @@ def main():
                             for ev in pension for r in (ev.get("benefit_rows") or [])]
             condition_rows = [{**r, "firm_name": ev["firm_name"], "event_name": ev["event_name"]}
                               for ev in pension for r in (ev.get("condition_rows") or [])]
-        xlsx = report_mod.build_xlsx(table_rows, benefit_rows, condition_rows)
+            multiplier_rows = [{**r, "firm_name": ev["firm_name"], "event_name": ev["event_name"]}
+                               for ev in pension for r in (ev.get("multiplier_rows") or [])]
+        xlsx = report_mod.build_xlsx(table_rows, benefit_rows, condition_rows, multiplier_rows)
         attachments = [(f"pension_events_{today}.xlsx", xlsx,
                         "vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
     except Exception as e:

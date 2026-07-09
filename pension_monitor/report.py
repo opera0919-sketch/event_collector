@@ -36,6 +36,9 @@ def _prep_row(r):
     out["apply_required_label"] = _tri_label(r.get("apply_required"), "신청필수", "자동적용")
     out["marketing_consent_required_label"] = _tri_label(r.get("marketing_consent_required"), "필요", "불필요")
     out["annual_cap_krw_label"] = _cap_label(r.get("annual_cap_krw"))
+    out["stackable_label"] = _tri_label(r.get("stackable"), "중복가능", "중복불가")
+    acl = r.get("annual_claim_limit")
+    out["annual_claim_limit_label"] = f"{acl}회" if isinstance(acl, int) and acl > 0 else ""
     out["needs_review_label"] = "⚠ 검토" if r.get("needs_review") else ""
     out["last_verified_at"] = (r.get("last_verified_at") or "")[:10]
     return out
@@ -49,8 +52,10 @@ _XLSX_COLS = [
     ("eligibility", "대상"), ("exclusions", "제외대상"),
     ("apply_required_label", "신청"), ("marketing_consent_required_label", "마케팅동의"),
     ("annual_cap_krw_label", "연간한도"), ("hold_condition", "유지조건"),
+    ("stackable_label", "중복수령"), ("annual_claim_limit_label", "연간횟수"),
     ("benefits", "혜택내용"), ("cond_notes", "기타조건"),
     ("needs_review_label", "검토필요"), ("review_reason", "검토사유"),
+    ("review_retry_count", "재시도"),
     ("extract_method_label", "추출방식"), ("last_verified_at", "최종검증"),
     ("event_url", "출처URL"),
 ]
@@ -66,6 +71,13 @@ _BENEFIT_XLSX_COLS = [
 _CONDITION_XLSX_COLS = [
     ("firm_name", "증권사"), ("event_name", "이벤트명"), ("ord", "순번"),
     ("label", "구분"), ("value_text", "내용"), ("source", "출처"),
+]
+
+# 시트 4: 배수(승수) 상세 — pension_event_multipliers 자식 테이블
+_MULTIPLIER_XLSX_COLS = [
+    ("firm_name", "증권사"), ("event_name", "이벤트명"), ("source_type", "재원/자격"),
+    ("multiplier", "배수"), ("scope", "적용대상"), ("min_threshold_krw", "최소금액"),
+    ("extra_condition", "추가요건"), ("source", "출처"),
 ]
 
 _WIDTHS = {"이벤트명": 34, "대상": 44, "제외대상": 34, "유지조건": 34, "혜택내용": 60,
@@ -93,11 +105,12 @@ def _write_sheet(ws, cols, rows):
     ws.freeze_panes = "A2"
 
 
-def build_xlsx(rows: list, benefit_rows: list = None, condition_rows: list = None) -> bytes:
-    """DB 테이블을 xlsx 3시트로 직렬화: 이벤트 요약(마스터) + 혜택 상세(티어)
-    + 참여조건 상세. benefit_rows/condition_rows 는 event_id 로 마스터와
-    조인하거나(DB 조회분), firm_name/event_name 을 이미 담고 있으면(로컬
-    폴백분) 그대로 사용한다."""
+def build_xlsx(rows: list, benefit_rows: list = None, condition_rows: list = None,
+               multiplier_rows: list = None) -> bytes:
+    """DB 테이블을 xlsx 시트로 직렬화: 이벤트 요약(마스터) + 혜택 상세(티어)
+    + 참여조건 상세 (+ multiplier_rows 가 주어지면 배수 상세). benefit_rows/
+    condition_rows/multiplier_rows 는 event_id 로 마스터와 조인하거나(DB 조회분),
+    firm_name/event_name 을 이미 담고 있으면(로컬 폴백분) 그대로 사용한다."""
     from openpyxl import Workbook
     wb = Workbook()
 
@@ -128,6 +141,11 @@ def build_xlsx(rows: list, benefit_rows: list = None, condition_rows: list = Non
 
     ws3 = wb.create_sheet("참여조건 상세")
     _write_sheet(ws3, _CONDITION_XLSX_COLS, _join(condition_rows, _CONDITION_XLSX_COLS))
+
+    # 배수 상세는 데이터가 전달된 경우에만 시트를 추가 (하위 호환: 기존 3시트 유지)
+    if multiplier_rows is not None:
+        ws4 = wb.create_sheet("배수 상세")
+        _write_sheet(ws4, _MULTIPLIER_XLSX_COLS, _join(multiplier_rows, _MULTIPLIER_XLSX_COLS))
 
     buf = io.BytesIO()
     wb.save(buf)

@@ -77,6 +77,9 @@ def _find_cap(text: str):
     return None
 _APPLY_FALSE_RE = re.compile(r"불필요|자동\s*참여|자동참여|없음|없이")
 _MKT_NEG_RE = re.compile(r"동의\s*(불필요|없이|하지\s*않)")
+# G10: 라벨 없이 원문 전문에서 마케팅/개인(신용)정보 동의 필수를 스캔 (KB '선택동의' 등).
+# parse_conditions 가 conditions 행을 못 뽑아도 marketing_consent_required 를 보충한다.
+_MKT_POS_RE = re.compile(r"(마케팅|개인\(?신용\)?정보).{0,20}?(선택\s*)?동의.{0,10}(필수|유지)")
 
 
 def _split_lines(text: str):
@@ -167,6 +170,10 @@ def parse_conditions(text: str) -> dict:
             out["marketing_consent_required"] = False
         elif any(x in text for x in ("SMS", "PUSH", "필수")):
             out["marketing_consent_required"] = True
+    # G10 폴백: 라벨/키워드로 못 잡았고 부정 표현도 없으면 라벨무관 스캔으로 보충
+    if out["marketing_consent_required"] is None and not _MKT_NEG_RE.search(text) \
+            and _MKT_POS_RE.search(text):
+        out["marketing_consent_required"] = True
     out["eligibility"] = "; ".join(elig) or None
     # §7-1: eligibility 내 '…제외' 절을 exclusions 로 분리 (라벨 명시분 뒤에 추가, 중복 제거)
     if out["eligibility"]:
