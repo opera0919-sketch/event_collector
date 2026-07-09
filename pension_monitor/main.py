@@ -169,6 +169,7 @@ async def enrich_details(browser, pension_events):
             continue
         need_img = not ev.get("_image_urls")
         detail_text = ""
+        soup = None
         try:
             try:
                 soup = BeautifulSoup(fetch_html(url, retries=1), "html.parser")
@@ -180,8 +181,6 @@ async def enrich_details(browser, pension_events):
                     if imgs:
                         ev["_image_urls"] = imgs
                         need_img = False
-                # P2-1: 'Bonus Tip 상세예시' 등 배수 계산 예시가 별도 링크에 있는 경우 병합
-                detail_text += _fetch_sub_content(soup, url)
             except Exception:
                 detail_text = ""
             # 정적 텍스트가 빈약하거나(JS 렌더), 이미지가 여전히 없으면 브라우저로
@@ -210,6 +209,12 @@ async def enrich_details(browser, pension_events):
                                       f"스크린샷 OCR 폴백 ({len(shot) // 1024}KB)")
                 finally:
                     await page.close()
+            # P2-1: 'Bonus Tip 상세예시' 등 배수 계산 예시가 별도 링크에 있는 경우 병합.
+            # 반드시 렌더/스크린샷 분기가 끝난 뒤에 붙인다 — 앞에 붙이면 (1) 길이가
+            # 부풀어 스크린샷 OCR 폴백(len<200 / need_img and len<2500)이 발동하지
+            # 못하고, (2) page.inner_text("body") 가 서브 컨텐츠를 덮어쓴다.
+            if soup is not None:
+                detail_text += _fetch_sub_content(soup, url)
             fetched += 1
         except Exception as e:
             print(f"[상세실패] {ev['firm_name']} {ev['event_name'][:30]}: {type(e).__name__}")
@@ -219,7 +224,10 @@ async def enrich_details(browser, pension_events):
 
 
 # P2-1: 배수 계산 예시가 담긴 서브 컨텐츠('Bonus Tip 상세예시' 등) 링크 1개 추적
-_SUB_LINK_RE = re.compile(r"(상세\s*예시|Bonus\s*Tip|보너스|자세히|계산\s*예시)", re.I)
+# '자세히'·'보너스' 는 일반 CTA 링크("자세히보기")에 광범위하게 걸려 무관한
+# 상품소개 페이지 전문이 _detail_text 에 유입된다 (LLM 입력·G2 근거대조·
+# source_content_hash 오염). 배수 예시 전용 문구로만 한정한다.
+_SUB_LINK_RE = re.compile(r"(상세\s*예시|Bonus\s*Tip|계산\s*예시)", re.I)
 
 
 def _fetch_sub_content(soup, base_url) -> str:

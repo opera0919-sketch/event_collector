@@ -103,9 +103,11 @@ def replace_children(event_id, condition_rows, benefit_rows, multiplier_rows=Non
         _safe(_post, "event_conditions",
               [{**{k: r.get(k) for k in _COND_COLS}, "event_id": event_id}
                for r in condition_rows], prefer="return=minimal")
-    # 배수 자식 테이블: 신선 추출 시 항상 교체(빈 배열이면 기존 행 삭제 = 배수 없음 반영)
+    # 배수 자식 테이블: 신선 추출 시 교체(빈 배열이면 기존 행 삭제 = 배수 없음 반영).
+    # 단 source='manual'(수동 입력) 행은 LLM 추출 결과로 덮지 않는다.
     if multiplier_rows is not None:
-        _safe(_delete, "pension_event_multipliers", {"event_id": f"eq.{event_id}"})
+        _safe(_delete, "pension_event_multipliers",
+              {"event_id": f"eq.{event_id}", "source": "neq.manual"})
         if multiplier_rows:
             _safe(_post, "pension_event_multipliers",
                   [{**{k: r.get(k) for k in _MULT_COLS}, "event_id": event_id}
@@ -247,10 +249,14 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
                 updates["last_verified_at"] = ev["last_verified_at"]
             if old.get("content_hash") != ev.get("content_hash"):
                 updates["content_hash"] = ev.get("content_hash")
-            # 재추출 트리거 메타는 산출물과 무관하게 원문/스키마 상태를 따라 항상 동기화
-            for f in ("source_content_hash", "extract_schema_version"):
-                if f in ev and old.get(f) != ev.get(f):
-                    updates[f] = ev.get(f)
+            # 재추출 트리거 메타: 반드시 rows_fresh(실제 재추출 성공) 일 때만 갱신.
+            # 예산 소진·LLM 실패로 추출을 못 한 건에 schema_version 을 찍으면,
+            # 다음 배치에서 cache_ok 가 True 가 되어 '누락의 영구화'가 그대로
+            # 재현된다 (이 패치가 없애려던 바로 그 버그).
+            if ev.get("rows_fresh"):
+                for f in ("source_content_hash", "extract_schema_version"):
+                    if f in ev and old.get(f) != ev.get(f):
+                        updates[f] = ev.get(f)
             if old["status"] == "진행중" and ev["status"] == "종료":
                 updates["closed_at"] = now
             if enabled():
@@ -283,8 +289,8 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
         if expired or missed >= MISSED_LIMIT:
             closed.append(old)
             old["status"] = "종료"
-            reason = "expired" if expired else (
-                "firm_excluded" if old["firm_name"] in EXCLUDED_FIRMS else "missed")
+            # EXCLUDED_FIRMS 의 미만기 건은 위에서 continue 했으므로 여기 도달 불가.
+            reason = "expired" if expired else "missed"
             if enabled():
                 _safe(_patch, "pension_events", {"id": f"eq.{old['id']}"},
                       {"status": "종료", "closed_at": now, "missed_count": missed,

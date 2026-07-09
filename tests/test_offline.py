@@ -594,3 +594,48 @@ if __name__ == "__main__":
     test_vision_image_parts()
     test_source_event_id()
     print("\n전체 오프라인 검증 통과 (외부 API 호출 0회)")
+
+
+# ── 검수 회귀 (B2/B4/B1) ────────────────────────────────────────────
+def test_clip_detail_preserves_tail_on_long_page():
+    """긴 페이지에서도 문서 '끝'의 배수·중복불가 조항이 살아남아야 한다.
+    (구버전: 이른 '※' 때문에 tail 이 본문 전체가 되어 앞에서 재절단 → 조항 유실)"""
+    from pension_monitor.classify import clip_detail
+    body = ("네비게이션\n※ 상단 배너\n" + "본문라인\n" * 3000
+            + "※ 유의사항\n타사이전 1천만원 이상 시 순입금액 1.5배 인정\n중복 지급되지 않습니다\n")
+    out = clip_detail(body, limit=8000)
+    assert len(out) <= 8000
+    assert "1.5배 인정" in out          # 마커 직전 문맥(숫자)까지 보존
+    assert "중복 지급되지 않습니다" in out
+
+
+def test_clip_detail_no_marker_keeps_tail():
+    from pension_monitor.classify import clip_detail
+    out = clip_detail("본문라인\n" * 3000 + "마지막줄\n", limit=8000)
+    assert out.rstrip().endswith("마지막줄")
+
+
+def test_clip_detail_short_text_untouched():
+    from pension_monitor.classify import clip_detail
+    assert clip_detail("짧은본문\n유의사항\n2배 인정\n", limit=8000).endswith("2배 인정")
+
+
+def test_needs_ocr_not_triggered_by_transfer_hint_alone():
+    """'전환'(ISA 연금전환/디폴트옵션 전환)만으로 OCR 을 강제하면 배수 없는
+    이벤트마다 1콜이 낭비되어 STRUCT_BUDGET 이 반토막 난다."""
+    from pension_monitor.normalize import _needs_ocr
+    ev = {"event_name": "연금저축 TDF 셋업"}
+    text = "원리금보장 상품으로 전환 가능. ISA 만기자금 연금전환 시 세액공제."
+    assert _needs_ocr(ev, {"multipliers": []}, [{"source": "llm-text"}], text) is False
+
+
+def test_needs_ocr_triggered_when_text_shows_multiplier_but_result_missing():
+    from pension_monitor.normalize import _needs_ocr
+    ev = {"event_name": "연금저축 파워업"}
+    text = "타사이전 1천만원 이상 시 1.5배 인정"
+    assert _needs_ocr(ev, {"multipliers": []}, [{"source": "llm-text"}], text) is True
+
+
+def test_needs_ocr_when_no_rows():
+    from pension_monitor.normalize import _needs_ocr
+    assert _needs_ocr({"event_name": "x"}, {}, [], "") is True

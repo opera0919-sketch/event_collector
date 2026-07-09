@@ -241,9 +241,12 @@ def reconcile_period(ev, res):
     if not (ps and pe):
         inferred_end = infer_end_from_hold(ev.get("_detail_text", ""), year)
         if inferred_end:
-            ev["end_date"], ev["date_source"] = inferred_end, "hold_inferred"
-            if not ev.get("start_date") or ev["start_date"] > inferred_end:
-                ev["start_date"] = None
+            # 종료일만 추론했을 뿐 시작일 근거는 없다. 목록에서 온 start_date 는
+            # 불신 대상(KB 게시일 혼입)이므로 남기지 않는다 — date_source 는
+            # hold_inferred 인데 start 만 list 출처인 혼종을 만들지 않기 위함.
+            ev["start_date"], ev["end_date"] = None, inferred_end
+            ev["date_source"] = "hold_inferred"
+            _flag(ev, f"종료일 추론(잔고유지기간 역산 → {inferred_end}), 시작일 미확인")
             return
     # → LLM 추출 (양끝 모두 유효할 때만)
     if ps and pe:
@@ -305,17 +308,18 @@ def _resolve_banner_images(ev):
 def _needs_ocr(ev, res, b_rows, text):
     """텍스트 추출 성공 여부와 무관하게 이미지 OCR 이 필요한지 판정 (P0-4).
 
-    기존엔 'b_rows 가 비었을 때'만 OCR 했다. 그러나 티어표가 텍스트로 나오면
-    배수 안내(이미지)는 아예 안 보는 사각이 있었다 — 이전 유치형인데 배수를
-    하나도 못 뽑았거나 본문에 'N배'가 보이는데 결과에 없으면 이미지를 본다."""
+    기존엔 'b_rows 가 비었을 때'만 OCR 했다. 티어표가 텍스트로 나오면 배수
+    안내(이미지)를 아예 안 보는 사각이 있었다.
+
+    단, '이전 유치형(_TRANSFER_HINT)' 단독으로 트리거하면 안 된다 — '전환'이
+    ISA 연금전환·디폴트옵션 전환 등으로 거의 모든 연금 이벤트에 등장해, 배수가
+    실제로 없는 건까지 매번 OCR 1콜을 추가로 태운다(STRUCT_BUDGET 40 기준 처리
+    가능 건수 반토막 → 미처리 건이 schema_version 만 갱신되는 사고로 이어짐).
+    원문에 실제로 'N배' 가 보이는데 구조화 결과에 없을 때만 이미지를 본다.
+    이미지 전용 배수 안내는 텍스트가 빈약해 b_rows 가 비므로 위 분기가 커버한다."""
     if not b_rows:
         return True                                  # 기존 조건 유지
-    if _TRANSFER_HINT.search((ev.get("event_name") or "") + text) \
-            and not (res or {}).get("multipliers"):
-        return True
-    if _MULT_HINT.search(text) and not (res or {}).get("multipliers"):
-        return True
-    return False
+    return bool(_MULT_HINT.search(text)) and not (res or {}).get("multipliers")
 
 
 # 조건 타입드 컬럼 (docs/pipeline_mapping.md) — 신규 수집분이 직접 채운다

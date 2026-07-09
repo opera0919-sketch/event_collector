@@ -122,8 +122,10 @@ def _is_boiler(line: str) -> bool:
     return any(b in line for b in _BOILERPLATE)
 
 
-# 유의사항 블록 시작 신호 — 이 앞뒤(배수·제외재원·중복불가 등)는 반드시 보존
-_TAIL_MARKERS = ("유의사항", "Bonus Tip", "보너스", "상세예시", "※", "필수 확인",
+# 유의사항 블록 시작 신호 — 이 뒤(배수·제외재원·중복불가 등)는 반드시 보존.
+# '※' 는 상단 배너/네비에도 흔해 '가장 이른 출현'을 잡으면 본문 전체가 tail 이 되어
+# 절단 방지 효과가 사라진다 → 마커에서 제외하고, 나머지도 rfind(마지막 출현)로 찾는다.
+_TAIL_MARKERS = ("유의사항", "Bonus Tip", "상세예시", "필수 확인",
                  "배수", "배 인정", "중복 지급", "제외됩니다")
 
 
@@ -132,19 +134,26 @@ def clip_detail(text: str, limit: int = 8000) -> str:
 
     삼성 mbw 처럼 상단 네비/메뉴가 길고 배수·제외재원이 하단 유의사항에 있는
     사이트는 앞에서부터 8000자 절단 시 핵심 조항이 통째로 소실된다. 꼬리 신호가
-    나타나는 지점부터 끝까지는 예산 내에서 무조건 확보한다."""
+    나타나는 지점부터 '문서 끝까지'를 예산 내에서 무조건 확보한다."""
     lines = [l for l in (text or "").splitlines() if l.strip() and not _is_boiler(l)]
     body = "\n".join(lines)
     if len(body) <= limit:
         return body
-    # 꼬리 신호가 처음 나타나는 지점부터 끝까지는 무조건 확보
-    idx = min((body.find(m) for m in _TAIL_MARKERS if body.find(m) >= 0), default=-1)
-    if idx < 0:
-        return body[:limit]
+    # 예산 안에 들어오는 '가장 이른' 꼬리 마커에서 문서 끝까지를 통째로 보존한다.
+    # (가장 이른 출현을 무조건 쓰면 tail 이 본문 전체가 되어 재절단되고,
+    #  가장 늦은 출현을 쓰면 '1.5배 인정'처럼 마커 직전 문맥이 잘린다.)
+    floor = len(body) - limit
+    cands = []
+    for m in _TAIL_MARKERS:
+        i = body.find(m, floor)
+        if i >= 0:
+            cands.append(i)
+    idx = min(cands) if cands else floor
+    idx = body.rfind("\n", 0, idx) + 1   # 줄 경계로 스냅 ('1.5배 인정'의 '1.5' 유실 방지)
     tail = body[idx:]
-    if len(tail) >= limit:
-        return tail[:limit]              # 꼬리만으로 예산 초과 → 꼬리 우선
     head_budget = limit - len(tail) - 20
+    if head_budget <= 0:
+        return tail[-limit:]
     return body[:head_budget] + "\n…(중략)…\n" + tail
 
 
