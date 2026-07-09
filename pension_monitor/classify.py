@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
 """연금 이벤트 판별 및 대상계좌/필드 추출 휴리스틱."""
 
+import datetime as dt
 import hashlib
 import re
 
 from .config import (
     PENSION_KEYWORDS, ACCT_PENSION_KW, ACCT_IRP_KW, ACCT_DC_KW, ACCT_ETC_KW,
 )
+
+# 이전 유치형/배수 조항 탐지용 공통 정규식 (normalize 의 OCR 조건·커버리지 게이트와 공유)
+_TRANSFER_HINT = re.compile(r"이전|가져오|수관|전환")
+_MULT_HINT = re.compile(r"\d(?:\.\d)?\s*배")
 
 
 def is_pension(text: str) -> bool:
@@ -117,6 +122,74 @@ def _is_boiler(line: str) -> bool:
     return any(b in line for b in _BOILERPLATE)
 
 
+# 유의사항 블록 시작 신호 — 이 앞뒤(배수·제외재원·중복불가 등)는 반드시 보존
+_TAIL_MARKERS = ("유의사항", "Bonus Tip", "보너스", "상세예시", "※", "필수 확인",
+                 "배수", "배 인정", "중복 지급", "제외됩니다")
+
+
+def clip_detail(text: str, limit: int = 8000) -> str:
+    """앞에서 자르지 말고, 보일러플레이트를 걷어낸 뒤 '본문 + 유의사항 꼬리'를 보존.
+
+    삼성 mbw 처럼 상단 네비/메뉴가 길고 배수·제외재원이 하단 유의사항에 있는
+    사이트는 앞에서부터 8000자 절단 시 핵심 조항이 통째로 소실된다. 꼬리 신호가
+    나타나는 지점부터 끝까지는 예산 내에서 무조건 확보한다."""
+    lines = [l for l in (text or "").splitlines() if l.strip() and not _is_boiler(l)]
+    body = "\n".join(lines)
+    if len(body) <= limit:
+        return body
+    # 꼬리 신호가 처음 나타나는 지점부터 끝까지는 무조건 확보
+    idx = min((body.find(m) for m in _TAIL_MARKERS if body.find(m) >= 0), default=-1)
+    if idx < 0:
+        return body[:limit]
+    tail = body[idx:]
+    if len(tail) >= limit:
+        return tail[:limit]              # 꼬리만으로 예산 초과 → 꼬리 우선
+    head_budget = limit - len(tail) - 20
+    return body[:head_budget] + "\n…(중략)…\n" + tail
+
+
+# ── G6: 요일 정합성 검사 (본문 'YYYY.MM.DD(요일)' 표기의 실제 요일 대조) ─────
+_WD = "월화수목금토일"
+_DATE_WD_RE = re.compile(
+    r"(\d{4})[.\-/년]\s*(\d{1,2})[.\-/월]\s*(\d{1,2})\s*[일]?\s*\(([월화수목금토일])\)")
+
+
+def weekday_conflicts(text: str) -> list:
+    """본문의 'YYYY.MM.DD(요일)' 표기 중 실제 요일과 불일치하는 항목 목록.
+    원문 오타일 수도 있으나 시즌 기간 오추출(예: 시즌3이 시즌2 기간을 그대로
+    물려받음)을 비용 0 으로 잡아내는 신호다."""
+    bad = []
+    for y, m, d, wd in _DATE_WD_RE.findall(text or ""):
+        try:
+            actual = _WD[dt.date(int(y), int(m), int(d)).weekday()]
+        except ValueError:
+            continue
+        if actual != wd:
+            bad.append(f"{y}-{int(m):02d}-{int(d):02d}({wd}≠{actual})")
+    return bad
+
+
+# ── G9: 잔고유지기간 역산으로 종료일 폴백 ───────────────────────────────
+# 업계 관행: 잔고유지 시작일 = 이벤트 종료 다음날 (KB 시즌2 종료 6/30 → 유지 7/1).
+_HOLD_RE = re.compile(
+    r"(?:잔고\s*유지|유지)\s*기간[^0-9]{0,10}"
+    r"(?:(\d{2,4})[.\-/년]\s*)?(\d{1,2})[.\-/월]\s*(\d{1,2})")
+
+
+def infer_end_from_hold(text, year_hint):
+    """잔고유지 시작일 - 1일 = 이벤트 종료일 로 역산. 실패 시 None."""
+    m = _HOLD_RE.search(" ".join((text or "").split()))
+    if not m:
+        return None
+    y = int(m.group(1) or year_hint)
+    y = 2000 + y if y < 100 else y
+    try:
+        hold_start = dt.date(y, int(m.group(2)), int(m.group(3)))
+    except ValueError:
+        return None
+    return (hold_start - dt.timedelta(days=1)).isoformat()
+
+
 def extract_details(detail_text: str) -> dict:
     """상세 페이지 본문에서 참여조건/혜택 휴리스틱 추출."""
     out = {"conditions": None, "benefits": None, "remarks": None}
@@ -180,4 +253,15 @@ def content_hash(ev: dict) -> str:
     basis = "|".join(str(ev.get(k) or "") for k in (
         "firm_name", "source_event_id", "event_name", "start_date", "end_date",
     ))
+    return hashlib.sha256(basis.encode("utf-8")).hexdigest()[:16]
+
+
+def source_content_hash(ev: dict) -> str:
+    """재추출 트리거 해시 — 상세 본문/이미지(LLM 입력 원문)가 바뀌면 재추출.
+
+    content_hash 는 리포트용(원천 식별자/기간)이라 조항이 바뀌어도 흔들리지
+    않는다. 반면 이 해시는 '무엇을 LLM 에 넣었는가'를 반영하므로, 상세 본문의
+    유의사항/배수 조항이 바뀌면(또는 추출 개선으로 더 많이 읽으면) 캐시가
+    무효화돼 재추출이 일어난다 (누락의 영구화 방지)."""
+    basis = (ev.get("_detail_text") or "") + "|" + "|".join(ev.get("_image_urls") or [])
     return hashlib.sha256(basis.encode("utf-8")).hexdigest()[:16]

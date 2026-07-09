@@ -18,7 +18,10 @@ import re
 import time
 
 from . import db, vision
-from .classify import extract_period, suspicious_dates
+from .classify import (
+    extract_period, suspicious_dates, weekday_conflicts, infer_end_from_hold,
+    source_content_hash, _TRANSFER_HINT, _MULT_HINT,
+)
 
 # ── 예산 (Gemini 무료 티어 보호 — 기존 운영값 유지) ─────────────────
 STRUCT_BUDGET = 40       # 1회 실행 Gemini 호출 상한
@@ -102,6 +105,74 @@ def clean_rows(res, source_text=None, source_kind="llm-text"):
     return out_b, out_c, grounded_all
 
 
+# 배수(승수) 조항 정규화 — enum 밖 값은 '기타'/'인정금액'으로 보수화
+_MULT_SOURCE_TYPES = ("타사이전", "타사ISA만기전환", "당사ISA만기전환", "퇴직금입금",
+                      "개인납입", "비대면최초신규", "기타")
+_MULT_SCOPES = ("인정금액", "리워드금액")
+
+
+def clean_multipliers(res, source_kind="llm-text"):
+    """Gemini multipliers[] → 자식 테이블 적재용 행. 배수 0 이하/무효는 제거."""
+    out = []
+    for m in (res.get("multipliers") or []):
+        try:
+            mult = float(m.get("multiplier") or 0)
+        except (TypeError, ValueError):
+            continue
+        if mult <= 0:
+            continue
+        st = m.get("source_type") if m.get("source_type") in _MULT_SOURCE_TYPES else "기타"
+        scope = m.get("scope") if m.get("scope") in _MULT_SCOPES else "인정금액"
+        try:
+            thr = int(m.get("min_threshold_krw") or 0)
+        except (TypeError, ValueError):
+            thr = 0
+        extra = " ".join(str(m.get("extra_condition") or "").split())
+        out.append({"source_type": st, "multiplier": mult, "scope": scope,
+                    "min_threshold_krw": thr, "extra_condition": extra,
+                    "source": source_kind})
+    return out
+
+
+# G8: 이전 유치형 이벤트가 반드시 담고 있어야 할 조항 (원문엔 있는데 추출엔 없으면 결함)
+_REQUIRED_WHEN_TRANSFER = {
+    "배수": _MULT_HINT,
+    "제외재원": re.compile(r"제외|불인정|인정되지"),
+}
+
+
+def check_coverage(ev):
+    """G8: '이전 유치형인데 배수·제외재원이 원문엔 있으나 추출엔 없다'를 결함으로 표기.
+    → E1/E2(삼성 배수·제외재원 누락)를 첫 배치부터 needs_review 로 노출."""
+    src = ev.get("_detail_text", "") or ""
+    if not _TRANSFER_HINT.search((ev.get("event_name") or "") + src):
+        return
+    blob = " ".join(str(ev.get(k) or "") for k in
+                    ("conditions", "cond_notes", "benefits", "eligibility", "exclusions"))
+    if ev.get("multiplier_rows"):
+        blob += " 배수 " + " ".join(f"{r['multiplier']}배" for r in ev["multiplier_rows"])
+    for label, rx in _REQUIRED_WHEN_TRANSFER.items():
+        if rx.search(src) and not rx.search(blob):
+            _flag(ev, f"{label} 조항 원문에 존재하나 추출 누락 — 원문 확인 필요")
+
+
+def check_period_collisions(events):
+    """G7: 같은 증권사에서 시즌 넘버가 다른데 기간이 동일하면 오추출 의심 → 표기."""
+    import collections
+    buckets = collections.defaultdict(list)
+    for ev in events:
+        if not (ev.get("start_date") and ev.get("end_date")):
+            continue
+        base = re.sub(r"시즌\s*\d+|\bv?\d+차\b", "", ev.get("event_name") or "").strip()
+        buckets[(ev.get("firm_name"), base, ev["start_date"], ev["end_date"])].append(ev)
+    for group in buckets.values():
+        if len(group) > 1:
+            names = {e["event_name"] for e in group}
+            if len(names) > 1:      # 이름은 다른데 기간이 같다
+                for ev in group:
+                    _flag(ev, f"기간 충돌(동일기간 이벤트: {sorted(names)})")
+
+
 def _is_trustworthy(text, require_substance=True):
     """캐시 재사용/무회귀 폴백 대상 값이 실제로 신뢰할 만한지 재검사.
 
@@ -144,6 +215,10 @@ def _valid_iso(s, lo, hi):
 def reconcile_period(ev, res):
     """G4: 기간 신뢰원 규칙. 확신 없으면 비우고 검토 표기 (틀린 날짜 노출 금지)."""
     year = dt.date.today().year
+    # G6: 본문의 'YYYY.MM.DD(요일)' 표기와 실제 요일이 어긋나면 표기 (기간 오추출 신호)
+    bad_wd = weekday_conflicts(ev.get("_detail_text", ""))
+    if bad_wd:
+        _flag(ev, f"요일 불일치 {bad_wd}")
     ps = _valid_iso((res or {}).get("period_start"), year - 2, year + 2)
     pe = _valid_iso((res or {}).get("period_end"), year - 1, year + 2)
     if ps and pe and ps > pe:
@@ -161,6 +236,15 @@ def reconcile_period(ev, res):
     if ds and de and not suspicious_dates(ds, de):
         ev["start_date"], ev["end_date"], ev["date_source"] = ds, de, "detail"
         return
+    # G9: 정규식/LLM 이 기간을 못 줄 때, 잔고유지기간 시작일 - 1일 로 종료일 역산
+    #     (KB 시즌3 등 기간 NULL 방지). 추론값이므로 감사 추적 가능하게 표기만.
+    if not (ps and pe):
+        inferred_end = infer_end_from_hold(ev.get("_detail_text", ""), year)
+        if inferred_end:
+            ev["end_date"], ev["date_source"] = inferred_end, "hold_inferred"
+            if not ev.get("start_date") or ev["start_date"] > inferred_end:
+                ev["start_date"] = None
+            return
     # → LLM 추출 (양끝 모두 유효할 때만)
     if ps and pe:
         ev["start_date"], ev["end_date"], ev["date_source"] = ps, pe, "llm"
@@ -218,14 +302,38 @@ def _resolve_banner_images(ev):
         return []
 
 
+def _needs_ocr(ev, res, b_rows, text):
+    """텍스트 추출 성공 여부와 무관하게 이미지 OCR 이 필요한지 판정 (P0-4).
+
+    기존엔 'b_rows 가 비었을 때'만 OCR 했다. 그러나 티어표가 텍스트로 나오면
+    배수 안내(이미지)는 아예 안 보는 사각이 있었다 — 이전 유치형인데 배수를
+    하나도 못 뽑았거나 본문에 'N배'가 보이는데 결과에 없으면 이미지를 본다."""
+    if not b_rows:
+        return True                                  # 기존 조건 유지
+    if _TRANSFER_HINT.search((ev.get("event_name") or "") + text) \
+            and not (res or {}).get("multipliers"):
+        return True
+    if _MULT_HINT.search(text) and not (res or {}).get("multipliers"):
+        return True
+    return False
+
+
 # 조건 타입드 컬럼 (docs/pipeline_mapping.md) — 신규 수집분이 직접 채운다
 TYPED_COND_FIELDS = ("eligibility", "exclusions", "apply_required",
                      "marketing_consent_required", "annual_cap_krw",
                      "hold_condition", "cond_notes")
+# G10 원문 폴백 대상 — 라벨 없는 원문에서도 정규식으로 구조화되는 필드만.
+# (cond_notes/eligibility 는 라벨 기반이라 원문 폴백 시 전체 텍스트가 유입됨 → 제외)
+_RAW_FALLBACK_FIELDS = ("exclusions", "apply_required",
+                        "marketing_consent_required", "annual_cap_krw", "hold_condition")
 
 
-def _apply_success(ev, b_rows, c_rows, grounded, method):
+def _apply_success(ev, b_rows, c_rows, grounded, method,
+                   mult_rows=None, stackable=None, annual_claim_limit=None):
     ev["benefit_rows"] = b_rows
+    ev["multiplier_rows"] = mult_rows or []
+    ev["stackable"] = stackable
+    ev["annual_claim_limit"] = (annual_claim_limit or None)
     ev["rows_fresh"] = True
     ev["benefits"] = render_benefits(b_rows)
     # 타입드 조건 컬럼: 백필과 동일 파서를 캐노니컬 라벨 텍스트에 적용 (규칙 이원화 방지).
@@ -235,6 +343,16 @@ def _apply_success(ev, b_rows, c_rows, grounded, method):
     typed = parse_conditions(render_conditions(c_rows))
     for f in TYPED_COND_FIELDS:
         ev[f] = typed[f]
+    # G10: LLM 이 conditions 행으로 안 뽑은 타입드 값을 원문에서 직접 재파싱해 보충
+    #      (덮어쓰기 아님 — 라벨 기반 결과가 있으면 그 값 우선). E7(마케팅동의 등)
+    #      영구 NULL 방지. 단, 라벨 기반 필드(cond_notes/eligibility)는 보충 대상에서
+    #      제외한다 — 라벨 없는 원문은 전체가 cond_notes 로 쏟아져 리포트를 오염시키고,
+    #      G8 커버리지 검사(blob 에 원문 키워드가 섞임)를 무력화하기 때문. 정규식으로
+    #      구조화되는 필드만 보충한다.
+    typed_raw = parse_conditions(ev.get("_detail_text", "") or "")
+    for f in _RAW_FALLBACK_FIELDS:
+        if ev[f] is None:
+            ev[f] = typed_raw[f]
     kept = [r for r in c_rows if r["label"] != "기간"]
     for i, r in enumerate(kept, 1):
         r["ord"] = i
@@ -275,20 +393,30 @@ def normalize_events(pension, existing):
                 and time.monotonic() - started <= TIME_BUDGET_SEC)
 
     for ev in pension:
+        # 재추출 트리거 메타: LLM 입력 원문 해시 + 스키마 버전. 캐시 조건이 이 둘을
+        # 비교하므로, 조항이 바뀌거나 스키마를 고치면 자동으로 재추출된다 (누락 영구화 방지).
+        ev["source_content_hash"] = source_content_hash(ev)
+        ev["extract_schema_version"] = vision.EXTRACT_SCHEMA_VERSION
         old = db.find_existing(idx, ev)
         res = {}
-        # 캐시: 같은 이벤트 + 같은 종료일 + 기존 캐노니컬 양호(검토 플래그 없음) → 재호출 생략.
-        # _is_trustworthy 로 재검사 — old.benefits 가 그럴싸해 보여도 정크면 캐시 불인정.
-        if (old and old.get("end_date") == ev.get("end_date")
-                and not old.get("needs_review")
-                and _is_trustworthy(old.get("benefits"))):
+        # 캐시: 같은 이벤트 + 같은 종료일 + 원문/스키마 불변 + 기존 캐노니컬 양호 → 재호출 생략.
+        # source_content_hash/extract_schema_version 불일치면(조항 변경·추출 개선)
+        # 재추출을 유발한다. _is_trustworthy 로 old.benefits 정크 여부도 재검사.
+        cache_ok = (old
+                    and old.get("end_date") == ev.get("end_date")
+                    and old.get("source_content_hash") == ev["source_content_hash"]
+                    and old.get("extract_schema_version") == vision.EXTRACT_SCHEMA_VERSION
+                    and not old.get("needs_review")
+                    and _is_trustworthy(old.get("benefits")))
+        if cache_ok:
             _reuse_cached(ev, old)
             n_cache += 1
             reconcile_period(ev, res)
             apply_accounts(ev, res)
             continue
 
-        b_rows, c_rows, grounded = [], [], True
+        b_rows, c_rows, grounded, mult_rows = [], [], True, []
+        stackable = annual_claim_limit = None
         text = (ev.get("_detail_text") or "").strip()
         # 1) 본문 텍스트 우선 (저비용 + 근거 대조 가능)
         if len(text) >= TEXT_MIN and _may_call():
@@ -297,9 +425,13 @@ def normalize_events(pension, existing):
             n_call += 1
             res = vision.extract_from_text(text, hint=ev["event_name"])
             b_rows, c_rows, grounded = clean_rows(res, source_text=text, source_kind="llm-text")
-        # 2) 실패/빈약 시 상세 이미지 OCR (최대 3장 1요청).
+            mult_rows = clean_multipliers(res, "llm-text")
+            stackable = (res or {}).get("stackable")
+            annual_claim_limit = (res or {}).get("annual_claim_limit")
+        # 2) 이미지 OCR (최대 3장 1요청). 텍스트 실패 시엔 전체 대체, 텍스트 성공이라도
+        #    배수 조항을 못 뽑았으면(이전 유치형/본문 'N배') 배수만 병합한다 (P0-4).
         #    이미지 URL 확보가 불가능했던 건은 렌더링 스크린샷으로 폴백 (KB 이미지 공지 등)
-        if not b_rows and _may_call():
+        if _needs_ocr(ev, res, b_rows, text) and _may_call():
             imgs = _resolve_banner_images(ev)
             if not imgs and ev.get("_screenshot_b64"):
                 imgs = [{"b64": ev["_screenshot_b64"], "mime": "image/jpeg"}]
@@ -310,12 +442,26 @@ def normalize_events(pension, existing):
                 res2 = vision.extract(imgs, referer=ev.get("event_url") or "",
                                       hint=ev["event_name"])
                 b2, c2, _ = clean_rows(res2, source_kind="llm-ocr")
-                if b2:
+                m2 = clean_multipliers(res2, "llm-ocr")
+                if b_rows:
+                    # 텍스트 티어가 더 정확 → b_rows 덮어쓰지 말고 배수/메타만 보충
+                    if m2 and not mult_rows:
+                        mult_rows = m2
+                    if stackable is None:
+                        stackable = (res2 or {}).get("stackable")
+                    if not annual_claim_limit:
+                        annual_claim_limit = (res2 or {}).get("annual_claim_limit")
+                elif b2:
                     res, b_rows, c_rows, grounded = res2, b2, c2, True
+                    mult_rows = m2
+                    stackable = (res2 or {}).get("stackable")
+                    annual_claim_limit = (res2 or {}).get("annual_claim_limit")
 
         if b_rows:
             method = "text" if b_rows[0]["source"] == "llm-text" else "ocr"
-            _apply_success(ev, b_rows, c_rows, grounded, method)
+            _apply_success(ev, b_rows, c_rows, grounded, method,
+                           mult_rows=mult_rows, stackable=stackable,
+                           annual_claim_limit=annual_claim_limit)
         else:
             # G3 무회귀: 기존 양호 값 유지 > 목록 요약 폴백 > 미확인 표기.
             # 세 갈래 모두 _is_trustworthy 로 재검사 — '비어있지 않음'만으로
@@ -338,7 +484,14 @@ def normalize_events(pension, existing):
 
         reconcile_period(ev, res)
         apply_accounts(ev, res)
+        # G8: 이전 유치형인데 배수·제외재원이 원문엔 있으나 추출엔 없으면 검토 표기
+        check_coverage(ev)
         # DB NOT NULL 컬럼 — 플래그 미발생 시에도 명시적 False 로 적재 (null 금지)
+        ev["needs_review"] = bool(ev.get("needs_review"))
+
+    # G7: 동일 증권사 시즌 간 기간 충돌 (이름 다른데 기간 동일) 일괄 검사
+    check_period_collisions(pension)
+    for ev in pension:
         ev["needs_review"] = bool(ev.get("needs_review"))
 
     print(f"[정규화] Gemini {n_call}건 호출, 캐시 재사용 {n_cache}건")

@@ -30,6 +30,11 @@ ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:gene
 
 MAX_IMAGES = 3  # 한 요청에 전달할 상세 이미지 상한 (다단 배너 커버, 호출 수는 1회)
 
+# 스키마/프롬프트 버전 — 이 값을 올리면 캐시가 무효화돼 전건이 재추출된다
+# (normalize.py 캐시 조건이 old.extract_schema_version 와 비교). 스키마·_RULES 를
+# 바꿀 때마다 +1. v3: multipliers[]/stackable/annual_claim_limit 신설 + 제외 규칙 정정.
+EXTRACT_SCHEMA_VERSION = 3
+
 # Gemini responseSchema = OpenAPI 서브셋 (additionalProperties 미지원 → 넣지 않음)
 _SCHEMA = {
     "type": "object",
@@ -68,10 +73,38 @@ _SCHEMA = {
         "acct_irp": {"type": "boolean", "description": "IRP 계좌 대상이면 true"},
         "acct_dc": {"type": "boolean", "description": "DC(확정기여) 퇴직연금 대상이면 true"},
         "acct_etc": {"type": "string", "description": "기타 대상계좌(ISA 등). 없으면 빈 문자열"},
+        "multipliers": {"type": "array", "description": (
+            "순입금/실적 인정 배수(승수) 조항. 'N배 인정', 'N배로 인정', '실적 N배', "
+            "'혜택 N배', '지급조건 금액을 N배로' 등. 배수가 없으면 빈 배열. "
+            "'Bonus Tip', '유의사항', '※' 하위에 있어도 반드시 추출할 것."),
+            "items": {"type": "object", "properties": {
+                "source_type": {"type": "string", "enum": [
+                    "타사이전", "타사ISA만기전환", "당사ISA만기전환", "퇴직금입금",
+                    "개인납입", "비대면최초신규", "기타"],
+                    "description": "배수가 적용되는 재원/자격"},
+                "multiplier": {"type": "number",
+                               "description": "배수 값 (1.5, 2, 3 등)"},
+                "scope": {"type": "string", "enum": ["인정금액", "리워드금액"],
+                          "description": (
+                    "'실적/순입금액을 N배 인정' → 인정금액. "
+                    "'혜택을 N배 지급' → 리워드금액. KB 시즌3은 두 종류가 공존함")},
+                "min_threshold_krw": {"type": "integer", "description": (
+                    "배수 적용 최소금액(원). '순수 이전금액 1천만원 이상 시' → 10000000. "
+                    "문턱 없으면 0")},
+                "extra_condition": {"type": "string",
+                                    "description": "추가 요건 (예: 'WRAP 가입', '보험사 이전'). 없으면 빈 문자열"},
+            }, "required": ["source_type", "multiplier", "scope",
+                            "min_threshold_krw", "extra_condition"]}},
+        "stackable": {"type": "boolean", "description": (
+            "이벤트 내 복수 혜택(신규+순입금+순매수 등)을 중복 수령할 수 있으면 true. "
+            "'중복 지급되지 않으며 최대 혜택 1회' 류 문구가 있으면 false")},
+        "annual_claim_limit": {"type": "integer", "description": (
+            "연간 수령 가능 횟수 제한. '연간 총 1회로 제한' → 1. 명시 없으면 0")},
     },
     "required": ["is_pension", "evidence_missing", "period_start", "period_end",
                  "benefits", "conditions",
-                 "acct_pension", "acct_irp", "acct_dc", "acct_etc"],
+                 "acct_pension", "acct_irp", "acct_dc", "acct_etc",
+                 "multipliers", "stackable", "annual_claim_limit"],
 }
 
 _RULES = (
@@ -82,7 +115,14 @@ _RULES = (
     "- 기간: 이벤트 '기간' 표기 기준. 접수일·추첨일·지급일을 기간으로 쓰지 말 것.\n"
     "- 자료에 없는 내용은 절대 추측하지 말 것. 정보가 없으면 evidence_missing=true 로 두고 "
     "해당 필드는 빈 값/빈 배열로 남길 것. '정보 없음' 같은 문구를 값으로 넣지 말 것.\n"
-    "- 광고 문구·인사말·면책/유의사항은 제외."
+    "- 배수(multipliers): 순입금/실적/혜택을 'N배' 인정·지급하는 조항을 하나도 빠짐없이. "
+    "실적을 N배 인정 → scope=인정금액, 혜택을 N배 지급 → scope=리워드금액 으로 구분.\n"
+    "- 인사말·상품 리스크 고지(원금손실·세법개정 등)·수신거부 안내는 제외.\n"
+    "- 다만 아래 항목은 '유의사항'/'Bonus Tip'/'※' 아래에 있어도 반드시 추출한다:\n"
+    "  · 배수(승수) 인정 조항 및 그 최소금액 문턱\n"
+    "  · 순입금 인정 재원의 포함/제외 (개인납입·타사이전·ISA만기전환·퇴직금·당사내이전·재수관)\n"
+    "  · 이벤트 간 중복 지급 가능 여부, 연간 수령 횟수 제한, 개인별 총한도\n"
+    "  · 잔고유지 기간(시작~종료일)"
 )
 _PROMPT_IMG = ("다음 이미지는 한 이벤트의 상세 페이지 배너다(여러 장이면 위→아래 순서로 "
                "이어지는 하나의 페이지). 한국어 내용을 읽고 " + _RULES)
@@ -166,7 +206,9 @@ def _run(parts, label: str) -> dict:
         parsed = json.loads(text)
         _consec_429 = 0
         n_b = len(parsed.get("benefits") or [])
+        n_m = len(parsed.get("multipliers") or [])
         print(f"[vision] {label} 성공 → 혜택 {n_b}행"
+              f"{f', 배수 {n_m}건' if n_m else ''}"
               f"{' (evidence_missing)' if parsed.get('evidence_missing') else ''}")
         return parsed
     except Exception as e:
@@ -218,6 +260,9 @@ def extract_from_text(detail_text: str, hint: str = "") -> dict:
     text = (detail_text or "").strip()
     if len(text) < 60:
         return {}
+    # 본문 절단은 호출측(main.clip_detail)이 '본문+유의사항 꼬리' 보존 방식으로
+    # 이미 수행한다. 여기서 앞에서부터 재절단하면 꼬리(배수·제외재원)가 소실되므로
+    # 이중 절단하지 않는다.
     parts = [{"text": _PROMPT_TEXT + (f"\n참고(이벤트명): {hint}" if hint else "")
-              + "\n\n[상세 본문]\n" + text[:8000]}]
+              + "\n\n[상세 본문]\n" + text}]
     return _run(parts, f"본문구조화 {hint[:24]}")
