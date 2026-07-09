@@ -82,6 +82,7 @@ _MASTER_COLS = (
     "needs_review", "review_reason", "last_verified_at",
     "stackable", "annual_claim_limit", "source_content_hash",
     "extract_schema_version", "close_reason",
+    "review_retry_count", "review_retry_key",
 ) + _TYPED_COND_COLS
 _COND_COLS = ("ord", "label", "value_text", "source")
 _BEN_COLS = ("tier_no", "condition_text", "benefit_text", "award_method", "award_limit", "source")
@@ -215,6 +216,8 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
                 # NOT NULL boolean 컬럼은 None 전송 시 23502 로 INSERT 전체가 실패 → 강제 bool
                 for f in ("acct_pension", "acct_irp", "acct_dc", "needs_review"):
                     row[f] = bool(row.get(f))
+                # 명시적 null 은 DEFAULT 0 을 무시하므로 신규 행은 0 으로 시작 (M4)
+                row["review_retry_count"] = row.get("review_retry_count") or 0
                 row["last_seen_at"] = now
                 created = _safe(_post, "pension_events", row)
                 ev["id"] = created[0]["id"] if created else None
@@ -257,6 +260,12 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
                 for f in ("source_content_hash", "extract_schema_version"):
                     if f in ev and old.get(f) != ev.get(f):
                         updates[f] = ev.get(f)
+            # M4 재시도 카운터: 시도가 있었던 실행에서만 ev 에 실리며(B1 과 달리
+            # rows_fresh 무관 — 실패 시도도 기록해야 카운터가 오른다), 값 변화 시 동기화.
+            # (_META_FIELDS 의 `or None` 코어션은 0 을 뭉개므로 전용 블록으로 처리)
+            for f in ("review_retry_count", "review_retry_key"):
+                if f in ev and old.get(f) != ev.get(f):
+                    updates[f] = ev.get(f)
             if old["status"] == "진행중" and ev["status"] == "종료":
                 updates["closed_at"] = now
             if enabled():

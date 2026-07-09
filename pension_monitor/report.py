@@ -55,6 +55,7 @@ _XLSX_COLS = [
     ("stackable_label", "중복수령"), ("annual_claim_limit_label", "연간횟수"),
     ("benefits", "혜택내용"), ("cond_notes", "기타조건"),
     ("needs_review_label", "검토필요"), ("review_reason", "검토사유"),
+    ("review_retry_count", "재시도"),
     ("extract_method_label", "추출방식"), ("last_verified_at", "최종검증"),
     ("event_url", "출처URL"),
 ]

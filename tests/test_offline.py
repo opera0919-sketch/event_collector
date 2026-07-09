@@ -639,3 +639,157 @@ def test_needs_ocr_triggered_when_text_shows_multiplier_but_result_missing():
 def test_needs_ocr_when_no_rows():
     from pension_monitor.normalize import _needs_ocr
     assert _needs_ocr({"event_name": "x"}, {}, [], "") is True
+
+
+# ── M4 재시도 상한 (review_retry_count / review_retry_key) ──────────────
+def _retry_ev(det, **over):
+    """M4 테스트용 표준 이벤트 (NH=신뢰 목록, 유효 기간 → 부가 플래그 없음)."""
+    year = dt.date.today().year
+    ev = {"firm_name": "NH투자증권", "event_name": "IRP 순입금 응원",
+          "source_event_id": "7777", "start_date": f"{year}-05-01",
+          "end_date": f"{year}-08-31", "acct_pension": False, "acct_irp": True,
+          "acct_dc": False, "acct_etc": None, "benefits": None, "conditions": None,
+          "_detail_text": det}
+    ev.update(over)
+    return ev
+
+
+def _retry_old(det, count, key=None, **over):
+    year = dt.date.today().year
+    old = {"id": 70, "firm_name": "NH투자증권", "event_name": "IRP 순입금 응원",
+           "source_event_id": "7777", "start_date": f"{year}-05-01",
+           "end_date": f"{year}-08-31", "needs_review": True,
+           "review_reason": "제외재원 조항 원문에 존재하나 추출 누락 — 원문 확인 필요",
+           "benefits": "순입금 1백만원 이상 → 상품권 1만원 (전원)", "conditions": None,
+           "acct_irp": True, "extract_method": "text",
+           "review_retry_count": count,
+           "review_retry_key": key if key is not None else
+           f"{source_content_hash({'_detail_text': det})}:{vision.EXTRACT_SCHEMA_VERSION}"}
+    old.update(over)
+    return old
+
+
+def _run_with_vision(evs, olds, fake):
+    """vision 을 켠 채 normalize 실행. 반환: fake 호출 횟수."""
+    called = {"n": 0}
+    def _wrapped(text, hint=""):
+        called["n"] += 1
+        return fake(text, hint)
+    orig = (vision.enabled, vision.blocked, vision.extract_from_text)
+    vision.enabled = lambda: True
+    vision.blocked = lambda: False
+    vision.extract_from_text = _wrapped
+    try:
+        normalize.normalize_events(evs, olds)
+    finally:
+        vision.enabled, vision.blocked, vision.extract_from_text = orig
+    return called["n"]
+
+
+def test_retry_exhausted_skips_llm():
+    """한도 도달: 같은 원문·스키마에 3회 실패 → LLM 스킵 + 플래그·사유·카운터 유지."""
+    det = "본문" * 100
+    old = _retry_old(det, count=normalize.REVIEW_RETRY_LIMIT)
+    ev = _retry_ev(det)
+    n = _run_with_vision([ev], [old], lambda t, h: {})
+    assert n == 0, "한도 도달인데 LLM 이 호출됨"
+    assert ev["benefits"] == old["benefits"]            # 기존 상태 재사용
+    assert ev["needs_review"] is True                    # 플래그는 유지
+    assert ev["review_reason"] == old["review_reason"]   # 사유 승계
+    assert ev["review_retry_count"] == normalize.REVIEW_RETRY_LIMIT
+    print("OK M4 한도 도달 스킵 (LLM 0회 + 플래그 유지)")
+
+
+def test_retry_under_limit_reattempts():
+    """한도 미달(count=2)이면 여전히 재추출을 시도한다."""
+    det = "본문" * 100
+    old = _retry_old(det, count=normalize.REVIEW_RETRY_LIMIT - 1)
+    ev = _retry_ev(det)
+    n = _run_with_vision([ev], [old], lambda t, h: {})
+    assert n == 1, f"한도 미달인데 호출 {n}회"
+    print("OK M4 한도 미달 재시도")
+
+
+def test_retry_count_increments_on_flagged_attempt():
+    """시도했는데 여전히 플래그 → 카운터 +1, 키 스탬프."""
+    det = "본문" * 100
+    old = _retry_old(det, count=1)
+    ev = _retry_ev(det)
+    n = _run_with_vision([ev], [old], lambda t, h: {})   # 추출 실패 → old 재사용 + 플래그
+    assert n == 1
+    assert ev["needs_review"] is True
+    assert ev["review_retry_count"] == 2, ev.get("review_retry_count")
+    assert ev["review_retry_key"] == old["review_retry_key"]
+    print("OK M4 실패 시 카운터 증가")
+
+
+def test_retry_count_resets_on_clean_success():
+    """시도 + 클린 성공 → 카운터 0 리셋."""
+    det = "이벤트 안내: 순입금 1백만원 이상 시 상품권 1만원 지급 " + "본문" * 100
+    old = _retry_old(det, count=2)
+    ev = _retry_ev(det)
+    ok = {"is_pension": True, "evidence_missing": False,
+          "period_start": "", "period_end": "",
+          "benefits": [{"condition": "순입금 1백만원 이상", "reward": "상품권 1만원",
+                        "method": "전원", "limit_count": 0}],
+          "conditions": [{"label": "대상", "value": "IRP 계좌 보유 고객"}],
+          "acct_pension": False, "acct_irp": True, "acct_dc": False, "acct_etc": "",
+          "multipliers": [], "stackable": None, "annual_claim_limit": 0}
+    n = _run_with_vision([ev], [old], lambda t, h: ok)
+    assert n == 1 and ev["needs_review"] is False, ev.get("review_reason")
+    assert ev["review_retry_count"] == 0
+    print("OK M4 성공 시 카운터 리셋")
+
+
+def test_retry_key_mismatch_resets():
+    """키 불일치(원문 변경·스키마 상향) → count=3 이어도 재시도 재개."""
+    det = "본문" * 100
+    old = _retry_old(det, count=normalize.REVIEW_RETRY_LIMIT, key="stalehash:1")
+    ev = _retry_ev(det)
+    n = _run_with_vision([ev], [old], lambda t, h: {})
+    assert n == 1, "키가 다르면(다른 원문에 대한 실패) 재시도가 재개돼야 함"
+    assert ev["review_retry_count"] == 1                 # 새 키 기준 첫 실패
+    assert ev["review_retry_key"].startswith(source_content_hash({"_detail_text": det}))
+    print("OK M4 키 불일치 시 카운터 리셋(재시도 재개)")
+
+
+def test_retry_meta_not_sent_when_no_attempt():
+    """시도 없음(vision 미설정) → ev 에 카운터 미탑재 → db.sync 가 기존 값을 안 건드림."""
+    det = "본문" * 100
+    year = dt.date.today().year
+    calls = {"patch": []}
+    old = _retry_old(det, count=2)
+    existing = [dict(old, status="진행중", missed_count=0, content_hash="x",
+                     last_seen_at=f"{year}-07-01T00:00:00+00:00")]
+    ev = _retry_ev(det)
+    normalize.normalize_events([ev], existing)           # vision 미설정 → 시도 불가
+    assert "review_retry_count" not in ev, "시도 없었는데 카운터가 실림"
+    db.fetch_all_events = lambda: existing
+    db.enabled = lambda: True
+    db._patch = lambda path, params, payload: calls["patch"].append((path, payload))
+    db._post = lambda path, payload, prefer=None: [{"id": 70}]
+    db._delete = lambda path, params: None
+    ev["content_hash"] = content_hash(ev)
+    db.sync([ev], firms_failed=[], trigger_type="manual")
+    for path, payload in calls["patch"]:
+        if path == "pension_events":
+            assert "review_retry_count" not in payload and "review_retry_key" not in payload, payload
+    print("OK M4 미시도 보존 (카운터 미갱신)")
+
+
+if __name__ == "__main__":
+    # 검수(B1~B4) + M4 회귀 — 위 러너 블록 이후에 정의되므로 별도 블록에서 실행
+    # (CI tests.yml 은 pytest 가 아니라 이 파일을 직접 실행한다)
+    test_clip_detail_preserves_tail_on_long_page()
+    test_clip_detail_no_marker_keeps_tail()
+    test_clip_detail_short_text_untouched()
+    test_needs_ocr_not_triggered_by_transfer_hint_alone()
+    test_needs_ocr_triggered_when_text_shows_multiplier_but_result_missing()
+    test_needs_ocr_when_no_rows()
+    test_retry_exhausted_skips_llm()
+    test_retry_under_limit_reattempts()
+    test_retry_count_increments_on_flagged_attempt()
+    test_retry_count_resets_on_clean_success()
+    test_retry_key_mismatch_resets()
+    test_retry_meta_not_sent_when_no_attempt()
+    print("검수(B)/M4 회귀 12종 통과")

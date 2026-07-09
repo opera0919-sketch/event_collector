@@ -28,6 +28,10 @@ STRUCT_BUDGET = 40       # 1회 실행 Gemini 호출 상한
 TIME_BUDGET_SEC = 360    # 구조화 전체 시간 예산(초)
 PACE_SEC = 6.5           # 10 RPM 준수 간격
 TEXT_MIN = 200           # 이 길이 이상이면 본문 텍스트로 구조화, 미만이면 이미지 OCR
+# M4: 같은 원문·스키마(review_retry_key)에 대해 이 횟수 초과 재추출 금지.
+# needs_review 플래그가 재발성(원문 오타·LLM 반복 실패)이면 매 배치 예산만
+# 잠식하므로, 한도 도달 시 캐시를 허용하되 플래그는 유지한다.
+REVIEW_RETRY_LIMIT = 3
 
 # 목록의 기간 표기를 신뢰하는 증권사 (KB 는 게시일(idt) 혼입 이력 → 불신)
 TRUSTED_LIST_DATES = {"미래에셋증권", "NH투자증권", "한국투자증권", "삼성증권"}
@@ -390,7 +394,7 @@ def normalize_events(pension, existing):
     """전 이벤트 정규화 오케스트레이션. Gemini 미설정 시 휴리스틱 값 유지 + 기간 규칙만 적용."""
     idx = db.build_index(existing)
     started = time.monotonic()
-    n_call, n_cache = 0, 0
+    n_call, n_cache, n_retry_skip = 0, 0, 0
 
     def _may_call():
         return (vision.enabled() and not vision.blocked() and n_call < STRUCT_BUDGET
@@ -403,6 +407,12 @@ def normalize_events(pension, existing):
         ev["extract_schema_version"] = vision.EXTRACT_SCHEMA_VERSION
         old = db.find_existing(idx, ev)
         res = {}
+        # M4: 재시도 카운터의 대상 식별자. old 의 카운터는 같은 키(같은 원문·스키마)에
+        # 대한 실패일 때만 유효 — 키가 다르면(원문 변경·스키마 상향) 0으로 간주해
+        # 재시도를 재개한다.
+        retry_key = f"{ev['source_content_hash']}:{vision.EXTRACT_SCHEMA_VERSION}"
+        old_retries = ((old.get("review_retry_count") or 0)
+                       if (old and old.get("review_retry_key") == retry_key) else 0)
         # 캐시: 같은 이벤트 + 같은 종료일 + 원문/스키마 불변 + 기존 캐노니컬 양호 → 재호출 생략.
         # source_content_hash/extract_schema_version 불일치면(조항 변경·추출 개선)
         # 재추출을 유발한다. _is_trustworthy 로 old.benefits 정크 여부도 재검사.
@@ -418,15 +428,37 @@ def normalize_events(pension, existing):
             reconcile_period(ev, res)
             apply_accounts(ev, res)
             continue
+        # M4: 재발성 플래그(needs_review)로 캐시가 영영 미스인 이벤트의 재시도 상한.
+        # 같은 원문·스키마에 대해 한도만큼 실패했으면 LLM 을 건너뛰고 기존 상태를
+        # 재사용하되, 플래그와 사유는 유지한다 (리포트 '검토 필요' 노출 지속).
+        retry_exhausted = (old
+                           and old.get("needs_review")
+                           and old.get("end_date") == ev.get("end_date")
+                           and old_retries >= REVIEW_RETRY_LIMIT)
+        if retry_exhausted:
+            if _is_trustworthy(old.get("benefits")):
+                _reuse_cached(ev, old)
+            else:               # 혜택 미확인 류 — 재사용할 값이 없어도 LLM 은 스킵
+                ev["benefits"] = None
+                ev["extract_method"] = old.get("extract_method") or "none"
+            ev["review_retry_count"], ev["review_retry_key"] = old_retries, retry_key
+            _flag(ev, old.get("review_reason") or "재검증 실패 — 원문 확인 필요")
+            n_retry_skip += 1
+            reconcile_period(ev, res)
+            apply_accounts(ev, res)
+            ev["needs_review"] = True
+            continue
 
         b_rows, c_rows, grounded, mult_rows = [], [], True, []
         stackable = annual_claim_limit = None
+        attempted = False    # M4: 이번 실행에서 이 이벤트에 LLM 호출이 실제로 있었는가
         text = (ev.get("_detail_text") or "").strip()
         # 1) 본문 텍스트 우선 (저비용 + 근거 대조 가능)
         if len(text) >= TEXT_MIN and _may_call():
             if n_call:
                 time.sleep(PACE_SEC)
             n_call += 1
+            attempted = True
             res = vision.extract_from_text(text, hint=ev["event_name"])
             b_rows, c_rows, grounded = clean_rows(res, source_text=text, source_kind="llm-text")
             mult_rows = clean_multipliers(res, "llm-text")
@@ -443,6 +475,7 @@ def normalize_events(pension, existing):
                 if n_call:
                     time.sleep(PACE_SEC)
                 n_call += 1
+                attempted = True
                 res2 = vision.extract(imgs, referer=ev.get("event_url") or "",
                                       hint=ev["event_name"])
                 b2, c2, _ = clean_rows(res2, source_kind="llm-ocr")
@@ -492,10 +525,26 @@ def normalize_events(pension, existing):
         check_coverage(ev)
         # DB NOT NULL 컬럼 — 플래그 미발생 시에도 명시적 False 로 적재 (null 금지)
         ev["needs_review"] = bool(ev.get("needs_review"))
+        # M4: 시도 여부를 임시 키로 이월 — 카운터 확정은 G7 이후에 해야 한다
+        # (G7 이 루프 밖에서 플래그를 추가하므로 여기서 확정하면 누락).
+        # 시도가 없었으면(예산 소진·vision 미설정) 카운터/키를 싣지 않아 db.sync 가
+        # 기존 값을 건드리지 않는다 (B1 과 동일한 '미처리 건 보존' 원칙).
+        if attempted:
+            ev["_retry_attempted"] = True
+            ev["_old_retries"] = old_retries
+            ev["_retry_key"] = retry_key
 
     # G7: 동일 증권사 시즌 간 기간 충돌 (이름 다른데 기간 동일) 일괄 검사
     check_period_collisions(pension)
+    # M4: 재시도 카운터 확정 — 시도했고 최종 클린이면 0 리셋, 여전히 플래그면 +1
     for ev in pension:
+        if ev.pop("_retry_attempted", False):
+            ev["review_retry_count"] = (0 if not ev.get("needs_review")
+                                        else ev.get("_old_retries", 0) + 1)
+            ev["review_retry_key"] = ev.get("_retry_key")
+        ev.pop("_old_retries", None)
+        ev.pop("_retry_key", None)
         ev["needs_review"] = bool(ev.get("needs_review"))
 
-    print(f"[정규화] Gemini {n_call}건 호출, 캐시 재사용 {n_cache}건")
+    print(f"[정규화] Gemini {n_call}건 호출, 캐시 재사용 {n_cache}건, "
+          f"재시도한도 스킵 {n_retry_skip}건")
