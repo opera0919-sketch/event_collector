@@ -1,133 +1,9 @@
 {
- "collected_at": "2026-07-15T23:34:55.399714+00:00",
- "firms_failed": [],
+ "collected_at": "2026-07-16T23:24:52.782501+00:00",
+ "firms_failed": [
+  "미래에셋증권"
+ ],
  "events": [
-  {
-   "firm_name": "미래에셋증권",
-   "event_name": "「투자하는 연금」 2026년 개인연금 입금 이벤트",
-   "start_date": "2026-07-01",
-   "end_date": "2026-09-30",
-   "event_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202606010&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
-   "raw_text": "「투자하는 연금」 2026년 개인연금 입금 이벤트 「투자하는 연금」 2026년 개인연금 입금 이벤트",
-   "acct_pension": true,
-   "acct_irp": false,
-   "acct_dc": false,
-   "acct_etc": null,
-   "conditions": "대상: 개인연금 계좌 보유고객\n신청: 이벤트 신청 필수 (분기별 1회 가능)\n유지조건: 사은품 지급시까지 이벤트 조건 유지 고객에 한함\n한도: 퇴직금 입금, 퇴직연금 특별이익 제공한도(연간 누적 3만원)에 따라 사은품이 지급되며, 당사에서 제공하는 모든 퇴직연금관련 이벤트 사은품 및 판촉물 금액도 제공한도에 포함됩니다.\n타사 연금 가져오기 또는 ISA 연금 전환 (두 조건 모두 해당 시 합산, 둘 중 하나만 해당해도 인정, 당사 ISA 만기전환 포함, 신규 입금 제외, 타사 이전 금액에 포함된 퇴직 재원 제외)\n퇴직금 입금 (타사 이전 금액에 포함된 퇴직 재원도 포함)\n본 이벤트는 분기별로 이벤트 신청이 가능하고, 분기별 입금액을 합산하여 분기 종료 후 2개월 이내 지급합니다. (이벤트 신청한 분기와 동일한 분기에 입금이 완료되어야 합니다.)",
-   "benefits": "타사 연금 가져오기 or ISA 연금 전환 순입금액 6백만원 이상~1천만원 미만 → 롯데 모바일 상품권 2만원 (전원)\n타사 연금 가져오기 or ISA 연금 전환 순입금액 1천만원 이상~3천만원 미만 → 롯데 모바일 상품권 4만원 (전원)\n타사 연금 가져오기 or ISA 연금 전환 순입금액 3천만원 이상~5천만원 미만 → 롯데 모바일 상품권 6만원 (전원)\n타사 연금 가져오기 or ISA 연금 전환 순입금액 5천만원 이상~1억원 미만 → 롯데 모바일 상품권 15만원 (전원)\n타사 연금 가져오기 or ISA 연금 전환 순입금액 1억원 이상~2억원 미만 → 롯데 모바일 상품권 30만원 (전원)\n타사 연금 가져오기 or ISA 연금 전환 순입금액 2억원 이상~3억원 미만 → 롯데 모바일 상품권 60만원 (전원)\n타사 연금 가져오기 or ISA 연금 전환 순입금액 3억원 이상 → 롯데 모바일 상품권 100만원 (전원)\n퇴직금 입금액 1천만원 이상~3천만원 미만 → 롯데 모바일 상품권 1만원 (전원)\n퇴직금 입금액 3천만원 이상 → 롯데 모바일 상품권 3만원 (전원)",
-   "remarks": "기간 불일치(목록 2026-09-30 vs 상세 2026-12-31) — 목록 우선 적용",
-   "source_event_id": "202606010",
-   "source_content_hash": "5f410d339ea84bb2",
-   "extract_schema_version": 3,
-   "extract_method": "ocr",
-   "review_reason": "기간 불일치(목록 2026-09-30 vs 상세 2026-12-31) — 목록 우선 적용",
-   "review_retry_count": 3,
-   "review_retry_key": "5f410d339ea84bb2:3",
-   "needs_review": true,
-   "date_source": "list",
-   "image_url": "https://securities.miraeasset.com/public/mw/event/202606010/1782866968297.jpg",
-   "content_hash": "1c336f5ce2fb0009"
-  },
-  {
-   "firm_name": "미래에셋증권",
-   "event_name": "「투자하는 연금」2026년 IRP 입금 이벤트",
-   "start_date": "2026-07-01",
-   "end_date": "2026-09-30",
-   "event_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202606012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
-   "raw_text": "「투자하는 연금」2026년 IRP 입금 이벤트 「투자하는 연금」2026년 IRP 입금 이벤트",
-   "acct_pension": false,
-   "acct_irp": true,
-   "acct_dc": false,
-   "acct_etc": null,
-   "conditions": "대상: IRP 계좌 보유 고객\n신청: 이벤트 신청 필수 (분기별 1회 가능)\n유지조건: 사은품 지급시까지 이벤트 조건 유지 고객에 한함\n한도: 퇴직연금 특별이익 제공한도 연간 누적 3만원\n입금 유형: 타사 연금 수관 or 퇴직금 입금 or ISA 만기전환 입금 (셋 중 하나만 해당해도 인정). 순입금액 산정: 입금액(타사연금수관+퇴직금+ISA만기전환) - 출금액. 제외 입금 유형: 위 입금 유형 외 신규 입금 금액 제외, 당사내 이전 제외, 2025~2026년 타사 이전 후 당사로 재수관한 경우 제외. 포함 입금 유형: 당사 ISA 만기전환 금액 포함, 당사 퇴직연금 중 DB만 인정 (DC, 기업형 IRP 제외), 현금 이전과 실물 이전 모두 포함.",
-   "benefits": "IRP 순입금 금액 1천만원 이상~3천만원 미만 → 롯데 모바일 상품권 1만원 (전원)\nIRP 순입금 금액 3천만원 이상~ → 롯데 모바일 상품권 3만원 (전원)",
-   "remarks": "기간 불일치(목록 2026-09-30 vs 상세 2026-12-31) — 목록 우선 적용",
-   "source_event_id": "202606012",
-   "source_content_hash": "231d0a32e293313b",
-   "extract_schema_version": 3,
-   "extract_method": "ocr",
-   "review_reason": "기간 불일치(목록 2026-09-30 vs 상세 2026-12-31) — 목록 우선 적용",
-   "review_retry_count": 3,
-   "review_retry_key": "231d0a32e293313b:3",
-   "needs_review": true,
-   "date_source": "list",
-   "image_url": "https://securities.miraeasset.com/public/mw/event/202606012/1782813414044.jpg",
-   "content_hash": "6a5336491477d286"
-  },
-  {
-   "firm_name": "미래에셋증권",
-   "event_name": "「투자하는 연금」2026년 퇴직연금 DC 이벤트",
-   "start_date": "2026-07-01",
-   "end_date": "2026-09-30",
-   "event_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202606011&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
-   "raw_text": "「투자하는 연금」2026년 퇴직연금 DC 이벤트 「투자하는 연금」2026년 퇴직연금 DC 이벤트",
-   "acct_pension": false,
-   "acct_irp": false,
-   "acct_dc": true,
-   "acct_etc": null,
-   "conditions": "대상: 퇴직연금 DC 최초 입금 가입자\n신청: 이벤트 신청 필수, 디폴트옵션 지정 필수\n유지조건: 사은품 지급시까지 이벤트 조건 유지\n한도: 퇴직연금 특별이익 제공한도 연간 누적 3만원\n최초 입금일 기준\nDC 부담금 납입내역이 없는 가입자 제외\n순입금 = 최초 입금한 분기의 입금액 - 최초 입금한 분기의 출금액\n소속회사가 디폴트옵션을 퇴직연금 DC 규약에 반영한 경우 디폴트옵션 지정 가능\n각 분기별로 혜택 지급 대상자 산출\n이벤트를 신청한 분기와 동일한 분기에 최초 입금 완료 및 디폴트옵션 지정 필수\n이벤트 참여 신청 및 개인정보 수집/이용에 동의한 개인고객 (법인 및 당사 임직원 제외)\n계좌 해지고객 제외, 출금 및 이전 시 기준금액에서 차감\n본 이벤트 수혜자는 2026년 추가적으로 진행될 퇴직연금 이벤트 참여 및 경품 수혜시 제한이 있을 수 있음",
-   "benefits": "미래에셋증권DC 순입금 1원 이상 최초 입금 완료시 → 롯데모바일 교환권 3만원 (전원)\n미래에셋증권DC 순입금 1원 이상 최초 입금 완료시 → 네이버페이 포인트 3만원 (전원)\n미래에셋증권DC 순입금 1원 이상 최초 입금 완료시 → BBQ 치킨 세트 3만원 상당 (전원)",
-   "remarks": "기간 불일치(목록 2026-09-30 vs 상세 2026-12-31) — 목록 우선 적용",
-   "source_event_id": "202606011",
-   "source_content_hash": "c5f605ad50e94b7c",
-   "extract_schema_version": 3,
-   "extract_method": "ocr",
-   "review_reason": "기간 불일치(목록 2026-09-30 vs 상세 2026-12-31) — 목록 우선 적용",
-   "review_retry_count": 3,
-   "review_retry_key": "c5f605ad50e94b7c:3",
-   "needs_review": true,
-   "date_source": "list",
-   "image_url": "https://securities.miraeasset.com/public/mw/event/202606011/1782814621496.jpg",
-   "content_hash": "2c81446447a02662"
-  },
-  {
-   "firm_name": "미래에셋증권",
-   "event_name": "우리 아이 부자 만들기, 미래로 떠나는 90일 투자 여행 이벤트",
-   "start_date": "2026-03-30",
-   "end_date": "2026-07-31",
-   "event_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202603005&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
-   "raw_text": "우리 아이 부자 만들기, 미래로 떠나는 90일 투자 여행 이벤트 이벤트명: 우리 아이 부자 만들기, 미래로 떠나는 90일 투자 여행 기간: 2026. 03.30 ~ 07.31 (실적 집계기간 10월 31일까지, 추후 일정 변경 가능) 대상: 미성년 자녀 고객 (만19세미만) 프로모션 상세 투자종목 : 국내주식 모으기 가능한 전종목 * 해외주식 모으기는 이벤트 대상 아님 대상계좌 주식 모으기 가능한 계좌(주식, 개인연금) *IRP, DC 제외 조건 1. 조건 : 이벤트 신청 후 3개월 동안 국내주식 모으기 90만원 매수 체결 달성 2",
-   "acct_pension": true,
-   "acct_irp": true,
-   "acct_dc": true,
-   "acct_etc": null,
-   "conditions": "대상: 미성년 자녀 고객 (만19세미만)\n신청: 자녀 계정으로 이벤트 신청 필수\n신청: 적립식 자동주문서비스 신청필수\n신청: 투자성향 적합\n신청: 주식거래용 계좌 보유\n신청: 국내소수점(금액주문) 거래신청\n신청: 적립식 자동주문 신청\n유지조건: 이벤트 대상계좌 상태가 ‘정상’인 고객에 한하여 혜택을 지급합니다(계좌폐쇄시 지급대상 아님)\n국내주식모으기 챌린지 성공 (90일동안 합산 90만원 이상 투자하기)\n챌린지 : 2026.03.30~10.31\n이벤트 신청 후 90일내 90만원이상 금액이 주식모으기를 통해 매수 체결된 내역이 인정됩니다.",
-   "benefits": "이벤트 신청 후 국내주식모으기 챌린지 성공 → 용돈2만원 (전원)",
-   "remarks": null,
-   "source_event_id": "202603005",
-   "source_content_hash": "30efc37a1ec77130",
-   "extract_schema_version": 3,
-   "extract_method": "text",
-   "review_reason": null,
-   "date_source": "list",
-   "needs_review": false,
-   "image_url": "https://securities.miraeasset.com/public/mw/event/202603005/1774502893727.jpg",
-   "content_hash": "05ea99e70904af8d"
-  },
-  {
-   "firm_name": "미래에셋증권",
-   "event_name": "다이렉트 연금저축계좌 온라인 매매수수료 우대혜택 안내",
-   "start_date": "2026-01-01",
-   "end_date": "2026-12-31",
-   "event_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202601004&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
-   "raw_text": "다이렉트 연금저축계좌 온라인 매매수수료 우대혜택 안내 다이렉트 연금저축계좌 온라인 매매수수료 우대혜택 안내",
-   "acct_pension": true,
-   "acct_irp": false,
-   "acct_dc": false,
-   "acct_etc": null,
-   "conditions": "대상: 다이렉트 연금저축계좌",
-   "benefits": "- → 온라인 매매수수료 우대혜택 (전원)",
-   "remarks": null,
-   "source_event_id": "202601004",
-   "source_content_hash": "5acf2dbe4ba57db0",
-   "extract_schema_version": 3,
-   "extract_method": "text",
-   "review_reason": null,
-   "date_source": "list",
-   "needs_review": false,
-   "image_url": "https://securities.miraeasset.com/public/mw/event/202601004/1-1_Mobile_detail_720[2].jpg",
-   "content_hash": "1ce10c2e061f730c"
-  },
   {
    "firm_name": "한국투자증권",
    "event_name": "퇴직연금 DC 신규 입금 이벤트",
@@ -140,33 +16,33 @@
    "acct_irp": false,
    "acct_dc": true,
    "acct_etc": null,
-   "conditions": "대상: DC 신규 입금 후 디폴트옵션 지정 고객 (선택 마케팅 동의 필수), 법인 및 당사 임직원(계열사 포함) 계좌는 대상에서 제외\n유지조건: 경품 지급 시까지 이벤트 조건(잔고 유지, 마케팅 동의 등)을 충족하고, 경품 지급 시까지 계좌 상태가 정상인 고객\n한도: 퇴직연금 프로모션 상품권 지급은 퇴직연금 감독 규정에 따라 연간 누적 인당 3만원 한도 내에서 제공\n'입금액'이란 이벤트 기간 내 입금금액에서 출금금액을 차감한 금액을 의미",
-   "benefits": "DC 신규 입금 후 디폴트옵션 지정 → 네이버페이 3만원 (전원)\nDC 신규 입금 후 디폴트옵션 지정 → 신세계 3만원 (전원)\nDC 신규 입금 후 디폴트옵션 지정 → 배달의민족 3만원 (전원)",
+   "conditions": "대상: DC 신규 입금 후 디폴트옵션 지정 고객 (마케팅 동의 필수, 법인 및 당사 임직원 계좌 제외)\n신청: 조건 충족 시 이벤트 자동 참여\n유지조건: 경품 지급 시까지 이벤트 조건(잔고 유지, 마케팅 동의 등) 충족 및 계좌 상태 정상 유지\n한도: 연간 누적 인당 3만원 한도 (회계연도 기준, 상품권 수령 시점 기준)\n입금액은 이벤트 기간 내 입금금액에서 출금금액을 차감한 순입금액 기준",
+   "benefits": "DC 신규 입금 및 디폴트옵션 지정 → 네이버페이 상품권 3만원 (전원)\nDC 신규 입금 및 디폴트옵션 지정 → 신세계 상품권 3만원 (전원)\nDC 신규 입금 및 디폴트옵션 지정 → 배달의민족 상품권 3만원 (전원)",
    "remarks": null,
    "source_event_id": "6730",
-   "source_content_hash": "549237a712634c86",
+   "source_content_hash": "c1f463780d017c09",
    "extract_schema_version": 3,
    "benefit_rows": [
     {
      "tier_no": 1,
-     "condition_text": "DC 신규 입금 후 디폴트옵션 지정",
-     "benefit_text": "네이버페이 3만원",
+     "condition_text": "DC 신규 입금 및 디폴트옵션 지정",
+     "benefit_text": "네이버페이 상품권 3만원",
      "award_method": "전원",
      "award_limit": null,
      "source": "llm-ocr"
     },
     {
      "tier_no": 2,
-     "condition_text": "DC 신규 입금 후 디폴트옵션 지정",
-     "benefit_text": "신세계 3만원",
+     "condition_text": "DC 신규 입금 및 디폴트옵션 지정",
+     "benefit_text": "신세계 상품권 3만원",
      "award_method": "전원",
      "award_limit": null,
      "source": "llm-ocr"
     },
     {
      "tier_no": 3,
-     "condition_text": "DC 신규 입금 후 디폴트옵션 지정",
-     "benefit_text": "배달의민족 3만원",
+     "condition_text": "DC 신규 입금 및 디폴트옵션 지정",
+     "benefit_text": "배달의민족 상품권 3만원",
      "award_method": "전원",
      "award_limit": null,
      "source": "llm-ocr"
@@ -176,46 +52,52 @@
    "stackable": false,
    "annual_claim_limit": 1,
    "rows_fresh": true,
-   "eligibility": "DC 신규 입금 후 디폴트옵션 지정 고객 (선택 마케팅 동의 필수), 법인 및 당사 임직원(계열사 포함) 계좌는 대상에서 제외",
-   "exclusions": "법인 및 당사 임직원(계열사 포함) 계좌는 대상에서 제외",
-   "apply_required": null,
+   "eligibility": "DC 신규 입금 후 디폴트옵션 지정 고객 (마케팅 동의 필수, 법인 및 당사 임직원 계좌 제외)",
+   "exclusions": "마케팅 동의 필수, 법인 및 당사 임직원 계좌 제외",
+   "apply_required": false,
    "marketing_consent_required": true,
    "annual_cap_krw": 30000,
-   "hold_condition": "경품 지급 시까지 이벤트 조건(잔고 유지, 마케팅 동의 등)을 충족하고, 경품 지급 시까지 계좌 상태가 정상인 고객",
-   "cond_notes": "한도: 퇴직연금 프로모션 상품권 지급은 퇴직연금 감독 규정에 따라 연간 누적 인당 3만원 한도 내에서 제공\n'입금액'이란 이벤트 기간 내 입금금액에서 출금금액을 차감한 금액을 의미",
+   "hold_condition": "경품 지급 시까지 이벤트 조건(잔고 유지, 마케팅 동의 등) 충족 및 계좌 상태 정상 유지",
+   "cond_notes": "한도: 연간 누적 인당 3만원 한도 (회계연도 기준, 상품권 수령 시점 기준)\n입금액은 이벤트 기간 내 입금금액에서 출금금액을 차감한 순입금액 기준",
    "condition_rows": [
     {
      "ord": 1,
      "label": "대상",
-     "value_text": "DC 신규 입금 후 디폴트옵션 지정 고객 (선택 마케팅 동의 필수), 법인 및 당사 임직원(계열사 포함) 계좌는 대상에서 제외",
+     "value_text": "DC 신규 입금 후 디폴트옵션 지정 고객 (마케팅 동의 필수, 법인 및 당사 임직원 계좌 제외)",
      "source": "llm-ocr"
     },
     {
      "ord": 2,
-     "label": "유지조건",
-     "value_text": "경품 지급 시까지 이벤트 조건(잔고 유지, 마케팅 동의 등)을 충족하고, 경품 지급 시까지 계좌 상태가 정상인 고객",
+     "label": "신청",
+     "value_text": "조건 충족 시 이벤트 자동 참여",
      "source": "llm-ocr"
     },
     {
      "ord": 3,
-     "label": "한도",
-     "value_text": "퇴직연금 프로모션 상품권 지급은 퇴직연금 감독 규정에 따라 연간 누적 인당 3만원 한도 내에서 제공",
+     "label": "유지조건",
+     "value_text": "경품 지급 시까지 이벤트 조건(잔고 유지, 마케팅 동의 등) 충족 및 계좌 상태 정상 유지",
      "source": "llm-ocr"
     },
     {
      "ord": 4,
+     "label": "한도",
+     "value_text": "연간 누적 인당 3만원 한도 (회계연도 기준, 상품권 수령 시점 기준)",
+     "source": "llm-ocr"
+    },
+    {
+     "ord": 5,
      "label": "기타",
-     "value_text": "'입금액'이란 이벤트 기간 내 입금금액에서 출금금액을 차감한 금액을 의미",
+     "value_text": "입금액은 이벤트 기간 내 입금금액에서 출금금액을 차감한 순입금액 기준",
      "source": "llm-ocr"
     }
    ],
    "extract_method": "ocr",
-   "last_verified_at": "2026-07-15T23:29:16.378759+00:00",
+   "last_verified_at": "2026-07-16T23:19:38.762109+00:00",
    "review_reason": null,
    "date_source": "list",
    "needs_review": false,
    "review_retry_count": 0,
-   "review_retry_key": "549237a712634c86:3",
+   "review_retry_key": "c1f463780d017c09:3",
    "content_hash": "d4a624d2f867a8d7"
   },
   {
@@ -234,141 +116,14 @@
    "benefits": "신규 계좌 개설 및 10만원 이상 입금 → 투썸플레이스 아메리카노 R 1매 (전원)\nIRP 순입금 10만원 이상 ~ 1백만원 미만 → 모바일 상품권 1만원 (전원)\nIRP 순입금 1백만원 이상 ~ 1천만원 미만 → 모바일 상품권 2만원 (전원)\nIRP 순입금 1천만원 이상 → 모바일 상품권 3만원 (전원)\n개인연금 1천만원 이전 → 신세계상품권 5만원 (전원)\n퇴직금 개인연금으로 10만원 이상 입금 → 모바일 상품권 3만원 (전원)",
    "remarks": null,
    "source_event_id": "6706",
-   "source_content_hash": "ff2846641631742c",
+   "source_content_hash": "459c6a1e3a0a1ca4",
    "extract_schema_version": 3,
-   "benefit_rows": [
-    {
-     "tier_no": 1,
-     "condition_text": "신규 계좌 개설 및 10만원 이상 입금",
-     "benefit_text": "투썸플레이스 아메리카노 R 1매",
-     "award_method": "전원",
-     "award_limit": null,
-     "source": "llm-ocr"
-    },
-    {
-     "tier_no": 2,
-     "condition_text": "IRP 순입금 10만원 이상 ~ 1백만원 미만",
-     "benefit_text": "모바일 상품권 1만원",
-     "award_method": "전원",
-     "award_limit": null,
-     "source": "llm-ocr"
-    },
-    {
-     "tier_no": 3,
-     "condition_text": "IRP 순입금 1백만원 이상 ~ 1천만원 미만",
-     "benefit_text": "모바일 상품권 2만원",
-     "award_method": "전원",
-     "award_limit": null,
-     "source": "llm-ocr"
-    },
-    {
-     "tier_no": 4,
-     "condition_text": "IRP 순입금 1천만원 이상",
-     "benefit_text": "모바일 상품권 3만원",
-     "award_method": "전원",
-     "award_limit": null,
-     "source": "llm-ocr"
-    },
-    {
-     "tier_no": 5,
-     "condition_text": "개인연금 1천만원 이전",
-     "benefit_text": "신세계상품권 5만원",
-     "award_method": "전원",
-     "award_limit": null,
-     "source": "llm-ocr"
-    },
-    {
-     "tier_no": 6,
-     "condition_text": "퇴직금 개인연금으로 10만원 이상 입금",
-     "benefit_text": "모바일 상품권 3만원",
-     "award_method": "전원",
-     "award_limit": null,
-     "source": "llm-ocr"
-    }
-   ],
-   "multiplier_rows": [
-    {
-     "source_type": "개인납입",
-     "multiplier": 10.0,
-     "scope": "인정금액",
-     "min_threshold_krw": 0,
-     "extra_condition": "",
-     "source": "llm-ocr"
-    }
-   ],
-   "stackable": true,
-   "annual_claim_limit": null,
-   "rows_fresh": true,
-   "eligibility": "IRP계좌, 개인연금계좌 보유 고객",
-   "exclusions": null,
-   "apply_required": true,
-   "marketing_consent_required": true,
-   "annual_cap_krw": 30000,
-   "hold_condition": "경품 지급 시까지 계좌 상태 정상 유지",
-   "cond_notes": "한도: 이벤트 1은 고객ID당 1회 지급\n한도: 이벤트 3-1은 최대 150만원\n한도: 퇴직연금 프로모션 상품권은 연간 누적 인당 3만원 한도\n영업점, BanKIS 계좌 신청 가능\n당사 DC → 당사 IRP·ISA 연금전환 입금 실적 제외\n개인연금 이전금액 중 퇴직금 원금은 이벤트 3-2로 인정",
-   "condition_rows": [
-    {
-     "ord": 1,
-     "label": "대상",
-     "value_text": "IRP계좌, 개인연금계좌 보유 고객",
-     "source": "llm-ocr"
-    },
-    {
-     "ord": 2,
-     "label": "신청",
-     "value_text": "이벤트 신청 및 마케팅 동의 필수",
-     "source": "llm-ocr"
-    },
-    {
-     "ord": 3,
-     "label": "유지조건",
-     "value_text": "경품 지급 시까지 계좌 상태 정상 유지",
-     "source": "llm-ocr"
-    },
-    {
-     "ord": 4,
-     "label": "한도",
-     "value_text": "이벤트 1은 고객ID당 1회 지급",
-     "source": "llm-ocr"
-    },
-    {
-     "ord": 5,
-     "label": "한도",
-     "value_text": "이벤트 3-1은 최대 150만원",
-     "source": "llm-ocr"
-    },
-    {
-     "ord": 6,
-     "label": "한도",
-     "value_text": "퇴직연금 프로모션 상품권은 연간 누적 인당 3만원 한도",
-     "source": "llm-ocr"
-    },
-    {
-     "ord": 7,
-     "label": "기타",
-     "value_text": "영업점, BanKIS 계좌 신청 가능",
-     "source": "llm-ocr"
-    },
-    {
-     "ord": 8,
-     "label": "기타",
-     "value_text": "당사 DC → 당사 IRP·ISA 연금전환 입금 실적 제외",
-     "source": "llm-ocr"
-    },
-    {
-     "ord": 9,
-     "label": "기타",
-     "value_text": "개인연금 이전금액 중 퇴직금 원금은 이벤트 3-2로 인정",
-     "source": "llm-ocr"
-    }
-   ],
    "extract_method": "ocr",
-   "last_verified_at": "2026-07-15T23:30:23.284201+00:00",
    "review_reason": null,
    "date_source": "list",
    "needs_review": false,
    "review_retry_count": 0,
-   "review_retry_key": "ff2846641631742c:3",
+   "review_retry_key": "459c6a1e3a0a1ca4:3",
    "content_hash": "937da689a7ee4d8e"
   },
   {
@@ -387,14 +142,12 @@
    "benefits": "개인연금 순입금 1백만원 이상 2천만원 미만 → 상품권 3만원 (전원)\n개인연금 순입금 2천만원 이상 5천만원 미만 → 상품권 15만원 (전원)\n개인연금 순입금 5천만원 이상 8천만원 미만 → 상품권 30만원 (전원)\n개인연금 순입금 8천만원 이상 1억원 미만 → 상품권 45만원 (전원)\n개인연금 순입금 1억원 이상 1.5억원 미만 → 상품권 60만원 (전원)\n개인연금 순입금 1.5억원 이상 2억원 미만 → 상품권 80만원 (전원)\n개인연금 순입금 2억원 이상 → 상품권 110만원 (전원)\nIRP 순입금 8천만원 이상 1억원 미만 → 상품권 3만원 (전원)",
    "remarks": null,
    "source_event_id": "6705",
-   "source_content_hash": "e300256bcd687e9c",
+   "source_content_hash": "676c25d7fee7e6d7",
    "extract_schema_version": 3,
    "extract_method": "ocr",
    "review_reason": null,
    "date_source": "list",
    "needs_review": false,
-   "review_retry_count": 0,
-   "review_retry_key": "e300256bcd687e9c:3",
    "content_hash": "55dce33021137fad"
   },
   {
@@ -413,12 +166,14 @@
    "benefits": "ETF → 0.0042087% (전원)\n상장리츠/상장인프라펀드 → 0.0036396% (전원)\n상장리츠/상장인프라펀드 (한국거래소 수수료 인하기간 25.12.15 ~ 26.2.13) → 0.0031833% 적용 (전원)\n연금저축 펀드담보대출 → 연 3.0% (전원)",
    "remarks": null,
    "source_event_id": "6137",
-   "source_content_hash": "bfa27157aafe223f",
+   "source_content_hash": "13b3efc41bf042ec",
    "extract_schema_version": 3,
    "extract_method": "ocr",
    "review_reason": null,
    "date_source": "list",
    "needs_review": false,
+   "review_retry_count": 0,
+   "review_retry_key": "13b3efc41bf042ec:3",
    "content_hash": "8d19274c89e168dd"
   },
   {
@@ -488,155 +243,12 @@
    "source_event_id": "3812",
    "source_content_hash": "30774781a18c4911",
    "extract_schema_version": 3,
-   "benefit_rows": [
-    {
-     "tier_no": 1,
-     "condition_text": "전환금액 1백만원 이상 ~ 1천만원 미만",
-     "benefit_text": "상품권 3만원",
-     "award_method": "전원",
-     "award_limit": null,
-     "source": "llm-text"
-    },
-    {
-     "tier_no": 2,
-     "condition_text": "전환금액 1천만원 이상 ~ 2천만원 미만",
-     "benefit_text": "상품권 4만원",
-     "award_method": "전원",
-     "award_limit": null,
-     "source": "llm-text"
-    },
-    {
-     "tier_no": 3,
-     "condition_text": "전환금액 2천만원 이상 ~ 5천만원 미만",
-     "benefit_text": "상품권 15만원",
-     "award_method": "전원",
-     "award_limit": null,
-     "source": "llm-text"
-    },
-    {
-     "tier_no": 4,
-     "condition_text": "전환금액 5천만원 이상 ~ 8천만원 미만",
-     "benefit_text": "상품권 30만원",
-     "award_method": "전원",
-     "award_limit": null,
-     "source": "llm-text"
-    },
-    {
-     "tier_no": 5,
-     "condition_text": "전환금액 8천만원 이상 ~ 1억원 미만",
-     "benefit_text": "상품권 45만원",
-     "award_method": "전원",
-     "award_limit": null,
-     "source": "llm-text"
-    },
-    {
-     "tier_no": 6,
-     "condition_text": "전환금액 1억원 이상 ~ 1.5억원 미만",
-     "benefit_text": "상품권 60만원",
-     "award_method": "전원",
-     "award_limit": null,
-     "source": "llm-text"
-    },
-    {
-     "tier_no": 7,
-     "condition_text": "전환금액 1.5억원 이상 ~ 2억원 미만",
-     "benefit_text": "상품권 80만원",
-     "award_method": "전원",
-     "award_limit": null,
-     "source": "llm-text"
-    },
-    {
-     "tier_no": 8,
-     "condition_text": "전환금액 2억원 이상",
-     "benefit_text": "상품권 110만원",
-     "award_method": "전원",
-     "award_limit": null,
-     "source": "llm-text"
-    },
-    {
-     "tier_no": 9,
-     "condition_text": "계좌개설만 해도",
-     "benefit_text": "모바일 상품권 5천원",
-     "award_method": "전원",
-     "award_limit": null,
-     "source": "llm-text"
-    },
-    {
-     "tier_no": 10,
-     "condition_text": "1백만원 이상 ~ 1천만원 미만",
-     "benefit_text": "모바일 상품권 1만원",
-     "award_method": "전원",
-     "award_limit": null,
-     "source": "llm-text"
-    },
-    {
-     "tier_no": 11,
-     "condition_text": "1천만원 이상",
-     "benefit_text": "모바일 상품권 3만원",
-     "award_method": "전원",
-     "award_limit": null,
-     "source": "llm-text"
-    }
-   ],
-   "multiplier_rows": [
-    {
-     "source_type": "타사이전",
-     "multiplier": 2.0,
-     "scope": "인정금액",
-     "min_threshold_krw": 1000000,
-     "extra_condition": "",
-     "source": "llm-text"
-    }
-   ],
-   "stackable": true,
-   "annual_claim_limit": null,
-   "rows_fresh": true,
-   "eligibility": "중개형ISA 만기자금을 연금으로 전환한 고객 (ISA 만기 경과 고객 또는 의무보유기간(3년) 경과 고객)",
-   "exclusions": null,
-   "apply_required": true,
-   "marketing_consent_required": true,
-   "annual_cap_krw": 30000,
-   "hold_condition": "경품지급시까지 잔고 유지 & 정상 계좌 보유 (연금저축, IRP)",
-   "cond_notes": "ISA 만기 자금 100만원 이상을 연금전환 입금 (연금저축, IRP)\n[경품 추가 지급조건] 중개형 ISA 재가입",
-   "condition_rows": [
-    {
-     "ord": 1,
-     "label": "대상",
-     "value_text": "중개형ISA 만기자금을 연금으로 전환한 고객 (ISA 만기 경과 고객 또는 의무보유기간(3년) 경과 고객)",
-     "source": "llm-text"
-    },
-    {
-     "ord": 2,
-     "label": "기타",
-     "value_text": "ISA 만기 자금 100만원 이상을 연금전환 입금 (연금저축, IRP)",
-     "source": "llm-text"
-    },
-    {
-     "ord": 3,
-     "label": "유지조건",
-     "value_text": "경품지급시까지 잔고 유지 & 정상 계좌 보유 (연금저축, IRP)",
-     "source": "llm-text"
-    },
-    {
-     "ord": 4,
-     "label": "신청",
-     "value_text": "이벤트 신청, 마케팅 동의 및 유지 필수",
-     "source": "llm-text"
-    },
-    {
-     "ord": 5,
-     "label": "기타",
-     "value_text": "[경품 추가 지급조건] 중개형 ISA 재가입",
-     "source": "llm-text"
-    }
-   ],
    "extract_method": "text",
-   "last_verified_at": "2026-07-15T23:31:02.842607+00:00",
    "review_reason": "제외재원 조항 원문에 존재하나 추출 누락 — 원문 확인 필요",
-   "date_source": "list",
-   "needs_review": true,
    "review_retry_count": 3,
    "review_retry_key": "30774781a18c4911:3",
+   "needs_review": true,
+   "date_source": "list",
    "image_url": "https://www.samsungpop.com/mbw/images/temp/quick_event_img01.jpg",
    "content_hash": "2ebc1b8ed829a833"
   },
@@ -675,73 +287,246 @@
    "acct_irp": false,
    "acct_dc": false,
    "acct_etc": null,
-   "conditions": "대상: 이벤트 기간 내 최초로 KB증권 연금저축계좌 개설 고객\n대상: 26년 6월 30일 기준 잔고 0원 & 26년 출금 이력 없는 고객 (연금저축 전계좌 기준)\n최초 신규의 경우 이벤트 시작 전 KB증권 연금저축 개설 및 해지 이력 보유 시 제외\nM-able > MY-쿠폰함으로 지급 (11월 넷째주경)\n유효기간 60일, 최소 100만원 이상 주문 시 사용",
-   "benefits": "연금저축계좌 1백만원 이상 순입금시 → 연금저축 ETF 쿠폰 30,000 (전원)",
+   "conditions": "신청: 이벤트 기간 내 이벤트 신청 필수\n신청: 개인(신용)정보 선택동의(편의서비스) 및 마케팅 수신 동의(문자&전화) 필수\n대상: 국내거주 개인고객\n대상: 26년 10월 1일 이전 실적으로 혜택 지급 이력이 없는 고객\n유지조건: 잔고유지기간(2026-10-01~2026-10-31) 동안 연금저축 전계좌 총액 유지 (해지, 매도, 출금, 당사 연금/계좌간 대체, 입금 후 재입금, 직업급여 외 예탁금 이용료/배당금 출금 시 혜택 제외)\n유지조건: 혜택 수령 전 연금저축 전계좌 유지\n순입금(입금-출금) 및 순매수(매수-매도) 기준으로 산정\n이벤트 2 혜택: 롯데, 신세계, 현대백화점 상품권 중 택 1 지급 (11월 넷째주경)\n이벤트 3 혜택: Npay, CU편의점, GS편의점, 다이소, 배달의민족, 올리브영 쿠폰 중 택 1 지급 (11월 넷째주경)\n대상: 이벤트 3 대상: 국내주식형펀드 순매수 고객 (MMF, ETF 등 제외)\n이벤트 3 순매수 금액은 이벤트 기간 내 결제 완료 기준으로 산정",
+   "benefits": "순입금 3백만원 이상 ~ 1천만원 미만 → 백화점 상품권 2만원 (전원)\n순입금 1천만원 이상 ~ 3천만원 미만 → 백화점 상품권 5만원 (전원)\n순입금 3천만원 이상 ~ 5천만원 미만 → 백화점 상품권 7만원 (전원)\n순입금 5천만원 이상 ~ 7천만원 미만 → 백화점 상품권 15만원 (전원)\n순입금 7천만원 이상 ~ 1억원 미만 → 백화점 상품권 20만원 (전원)\n순입금 1억원 이상 ~ 1억 5천만원 미만 → 백화점 상품권 30만원 (전원)\n순입금 1억 5천만원 이상 ~ 2억원 미만 → 백화점 상품권 50만원 (전원)\n순입금 2억원 이상 ~ 3억원 미만 → 백화점 상품권 70만원 (전원)\n순입금 3억원 이상 ~ 5억원 미만 → 백화점 상품권 100만원 (전원)\n순입금 5억원 이상 → 백화점 상품권 150만원 (전원)\n순매수 3백만원 이상 ~ 5백만원 미만 → 쿠폰 1만원 (전원)\n순매수 5백만원 이상 ~ 2천만원 미만 → 쿠폰 2만원 (전원)\n순매수 2천만원 이상 ~ 5천만원 미만 → 쿠폰 3만원 (전원)\n순매수 5천만원 이상 ~ 8천만원 미만 → 쿠폰 5만원 (전원)\n순매수 8천만원 이상 ~ 1억원 미만 → 쿠폰 7만원 (전원)\n순매수 1억원 이상 → 쿠폰 10만원 (전원)",
    "remarks": null,
    "source_event_id": "10010044",
-   "source_content_hash": "19526b9d144b19f8",
+   "source_content_hash": "20dc93165e93d9e1",
    "extract_schema_version": 3,
    "benefit_rows": [
     {
      "tier_no": 1,
-     "condition_text": "연금저축계좌 1백만원 이상 순입금시",
-     "benefit_text": "연금저축 ETF 쿠폰 30,000",
+     "condition_text": "순입금 3백만원 이상 ~ 1천만원 미만",
+     "benefit_text": "백화점 상품권 2만원",
+     "award_method": "전원",
+     "award_limit": null,
+     "source": "llm-ocr"
+    },
+    {
+     "tier_no": 2,
+     "condition_text": "순입금 1천만원 이상 ~ 3천만원 미만",
+     "benefit_text": "백화점 상품권 5만원",
+     "award_method": "전원",
+     "award_limit": null,
+     "source": "llm-ocr"
+    },
+    {
+     "tier_no": 3,
+     "condition_text": "순입금 3천만원 이상 ~ 5천만원 미만",
+     "benefit_text": "백화점 상품권 7만원",
+     "award_method": "전원",
+     "award_limit": null,
+     "source": "llm-ocr"
+    },
+    {
+     "tier_no": 4,
+     "condition_text": "순입금 5천만원 이상 ~ 7천만원 미만",
+     "benefit_text": "백화점 상품권 15만원",
+     "award_method": "전원",
+     "award_limit": null,
+     "source": "llm-ocr"
+    },
+    {
+     "tier_no": 5,
+     "condition_text": "순입금 7천만원 이상 ~ 1억원 미만",
+     "benefit_text": "백화점 상품권 20만원",
+     "award_method": "전원",
+     "award_limit": null,
+     "source": "llm-ocr"
+    },
+    {
+     "tier_no": 6,
+     "condition_text": "순입금 1억원 이상 ~ 1억 5천만원 미만",
+     "benefit_text": "백화점 상품권 30만원",
+     "award_method": "전원",
+     "award_limit": null,
+     "source": "llm-ocr"
+    },
+    {
+     "tier_no": 7,
+     "condition_text": "순입금 1억 5천만원 이상 ~ 2억원 미만",
+     "benefit_text": "백화점 상품권 50만원",
+     "award_method": "전원",
+     "award_limit": null,
+     "source": "llm-ocr"
+    },
+    {
+     "tier_no": 8,
+     "condition_text": "순입금 2억원 이상 ~ 3억원 미만",
+     "benefit_text": "백화점 상품권 70만원",
+     "award_method": "전원",
+     "award_limit": null,
+     "source": "llm-ocr"
+    },
+    {
+     "tier_no": 9,
+     "condition_text": "순입금 3억원 이상 ~ 5억원 미만",
+     "benefit_text": "백화점 상품권 100만원",
+     "award_method": "전원",
+     "award_limit": null,
+     "source": "llm-ocr"
+    },
+    {
+     "tier_no": 10,
+     "condition_text": "순입금 5억원 이상",
+     "benefit_text": "백화점 상품권 150만원",
+     "award_method": "전원",
+     "award_limit": null,
+     "source": "llm-ocr"
+    },
+    {
+     "tier_no": 11,
+     "condition_text": "순매수 3백만원 이상 ~ 5백만원 미만",
+     "benefit_text": "쿠폰 1만원",
+     "award_method": "전원",
+     "award_limit": null,
+     "source": "llm-ocr"
+    },
+    {
+     "tier_no": 12,
+     "condition_text": "순매수 5백만원 이상 ~ 2천만원 미만",
+     "benefit_text": "쿠폰 2만원",
+     "award_method": "전원",
+     "award_limit": null,
+     "source": "llm-ocr"
+    },
+    {
+     "tier_no": 13,
+     "condition_text": "순매수 2천만원 이상 ~ 5천만원 미만",
+     "benefit_text": "쿠폰 3만원",
+     "award_method": "전원",
+     "award_limit": null,
+     "source": "llm-ocr"
+    },
+    {
+     "tier_no": 14,
+     "condition_text": "순매수 5천만원 이상 ~ 8천만원 미만",
+     "benefit_text": "쿠폰 5만원",
+     "award_method": "전원",
+     "award_limit": null,
+     "source": "llm-ocr"
+    },
+    {
+     "tier_no": 15,
+     "condition_text": "순매수 8천만원 이상 ~ 1억원 미만",
+     "benefit_text": "쿠폰 7만원",
+     "award_method": "전원",
+     "award_limit": null,
+     "source": "llm-ocr"
+    },
+    {
+     "tier_no": 16,
+     "condition_text": "순매수 1억원 이상",
+     "benefit_text": "쿠폰 10만원",
      "award_method": "전원",
      "award_limit": null,
      "source": "llm-ocr"
     }
    ],
-   "multiplier_rows": [],
-   "stackable": false,
+   "multiplier_rows": [
+    {
+     "source_type": "타사이전",
+     "multiplier": 2.0,
+     "scope": "인정금액",
+     "min_threshold_krw": 0,
+     "extra_condition": "26년 연금저축 이벤트 중 타사이전 혜택 미지급 고객",
+     "source": "llm-ocr"
+    },
+    {
+     "source_type": "타사ISA만기전환",
+     "multiplier": 2.0,
+     "scope": "인정금액",
+     "min_threshold_krw": 0,
+     "extra_condition": "",
+     "source": "llm-ocr"
+    }
+   ],
+   "stackable": true,
    "annual_claim_limit": null,
    "rows_fresh": true,
-   "eligibility": "이벤트 기간 내 최초로 KB증권 연금저축계좌 개설 고객; 26년 6월 30일 기준 잔고 0원 & 26년 출금 이력 없는 고객 (연금저축 전계좌 기준)",
-   "exclusions": null,
-   "apply_required": null,
-   "marketing_consent_required": null,
+   "eligibility": "국내거주 개인고객; 26년 10월 1일 이전 실적으로 혜택 지급 이력이 없는 고객; 이벤트 3 대상: 국내주식형펀드 순매수 고객 (MMF, ETF 등 제외)",
+   "exclusions": "MMF, ETF 등 제외",
+   "apply_required": true,
+   "marketing_consent_required": true,
    "annual_cap_krw": null,
-   "hold_condition": null,
-   "cond_notes": "최초 신규의 경우 이벤트 시작 전 KB증권 연금저축 개설 및 해지 이력 보유 시 제외\nM-able > MY-쿠폰함으로 지급 (11월 넷째주경)\n유효기간 60일, 최소 100만원 이상 주문 시 사용",
+   "hold_condition": "잔고유지기간(2026-10-01~2026-10-31) 동안 연금저축 전계좌 총액 유지 (해지, 매도, 출금, 당사 연금/계좌간 대체, 입금 후 재입금, 직업급여 외 예탁금 이용료/배당금 출금 시 혜택 제외); 혜택 수령 전 연금저축 전계좌 유지",
+   "cond_notes": "순입금(입금-출금) 및 순매수(매수-매도) 기준으로 산정\n이벤트 2 혜택: 롯데, 신세계, 현대백화점 상품권 중 택 1 지급 (11월 넷째주경)\n이벤트 3 혜택: Npay, CU편의점, GS편의점, 다이소, 배달의민족, 올리브영 쿠폰 중 택 1 지급 (11월 넷째주경)\n이벤트 3 순매수 금액은 이벤트 기간 내 결제 완료 기준으로 산정",
    "condition_rows": [
     {
      "ord": 1,
-     "label": "대상",
-     "value_text": "이벤트 기간 내 최초로 KB증권 연금저축계좌 개설 고객",
+     "label": "신청",
+     "value_text": "이벤트 기간 내 이벤트 신청 필수",
      "source": "llm-ocr"
     },
     {
      "ord": 2,
-     "label": "대상",
-     "value_text": "26년 6월 30일 기준 잔고 0원 & 26년 출금 이력 없는 고객 (연금저축 전계좌 기준)",
+     "label": "신청",
+     "value_text": "개인(신용)정보 선택동의(편의서비스) 및 마케팅 수신 동의(문자&전화) 필수",
      "source": "llm-ocr"
     },
     {
      "ord": 3,
-     "label": "기타",
-     "value_text": "최초 신규의 경우 이벤트 시작 전 KB증권 연금저축 개설 및 해지 이력 보유 시 제외",
+     "label": "대상",
+     "value_text": "국내거주 개인고객",
      "source": "llm-ocr"
     },
     {
      "ord": 4,
-     "label": "기타",
-     "value_text": "M-able > MY-쿠폰함으로 지급 (11월 넷째주경)",
+     "label": "대상",
+     "value_text": "26년 10월 1일 이전 실적으로 혜택 지급 이력이 없는 고객",
      "source": "llm-ocr"
     },
     {
      "ord": 5,
+     "label": "유지조건",
+     "value_text": "잔고유지기간(2026-10-01~2026-10-31) 동안 연금저축 전계좌 총액 유지 (해지, 매도, 출금, 당사 연금/계좌간 대체, 입금 후 재입금, 직업급여 외 예탁금 이용료/배당금 출금 시 혜택 제외)",
+     "source": "llm-ocr"
+    },
+    {
+     "ord": 6,
+     "label": "유지조건",
+     "value_text": "혜택 수령 전 연금저축 전계좌 유지",
+     "source": "llm-ocr"
+    },
+    {
+     "ord": 7,
      "label": "기타",
-     "value_text": "유효기간 60일, 최소 100만원 이상 주문 시 사용",
+     "value_text": "순입금(입금-출금) 및 순매수(매수-매도) 기준으로 산정",
+     "source": "llm-ocr"
+    },
+    {
+     "ord": 8,
+     "label": "기타",
+     "value_text": "이벤트 2 혜택: 롯데, 신세계, 현대백화점 상품권 중 택 1 지급 (11월 넷째주경)",
+     "source": "llm-ocr"
+    },
+    {
+     "ord": 9,
+     "label": "기타",
+     "value_text": "이벤트 3 혜택: Npay, CU편의점, GS편의점, 다이소, 배달의민족, 올리브영 쿠폰 중 택 1 지급 (11월 넷째주경)",
+     "source": "llm-ocr"
+    },
+    {
+     "ord": 10,
+     "label": "대상",
+     "value_text": "이벤트 3 대상: 국내주식형펀드 순매수 고객 (MMF, ETF 등 제외)",
+     "source": "llm-ocr"
+    },
+    {
+     "ord": 11,
+     "label": "기타",
+     "value_text": "이벤트 3 순매수 금액은 이벤트 기간 내 결제 완료 기준으로 산정",
      "source": "llm-ocr"
     }
    ],
    "extract_method": "ocr",
-   "last_verified_at": "2026-07-15T23:31:54.807878+00:00",
+   "last_verified_at": "2026-07-16T23:21:47.025604+00:00",
    "review_reason": null,
    "date_source": null,
    "needs_review": false,
    "review_retry_count": 0,
-   "review_retry_key": "19526b9d144b19f8:3",
-   "image_url": "https://etcimg.kbsec.com/html/design/20260623165649/img_05.jpg",
+   "review_retry_key": "20dc93165e93d9e1:3",
+   "image_url": "https://etcimg.kbsec.com/html/design/20260623165649/img_11.gif",
    "content_hash": "e493bcbbd17dd1ef"
   },
   {
@@ -755,11 +540,11 @@
    "acct_irp": false,
    "acct_dc": false,
    "acct_etc": null,
-   "conditions": "대상: 연금저축 고객\n신청: 이벤트 신청 필수\n유지조건: 이벤트 종료일(2026-06-30)까지 대상 상품 보유 및 잔고 유지\n개인(신용)정보 선택 동의(편의서비스) 및 문자 동의 필수 (이벤트 종료일 및 추첨일 기준 유지)\n이벤트 기간 내 주민등록번호 기준 고객의 각 연금저축계좌 합산 적용",
+   "conditions": "대상: 연금저축 고객\n신청: 이벤트 신청 필수\n유지조건: 이벤트 종료일 기준으로 잔고 유지\n순매수 금액은 기간 중 매수체결금액-매도체결금액(결제일 기준)으로 계산되며, 이벤트 이전 보유 중인 대상 종목을 매도하는 경우도 매도금액으로 계산됩니다. 이벤트 기간 내 주민등록번호 기준 고객의 각 연금저축계좌를 합산하여 적용됩니다.",
    "benefits": "KB자산운용 TDF 순매수 100만원 이상 ~ 300만원 미만 → [투썸플레이스] 카페라떼 2잔세트 (1만원 상당) 1매 (전원)\nKB자산운용 TDF 순매수 300만원 이상 ~ 500만원 미만 → [투썸플레이스] 카페라떼 2잔세트 (1만원 상당) 2매 (전원)\nKB자산운용 TDF 순매수 500만원 이상 → [투썸플레이스] 카페라떼 2잔세트 (1만원 상당) 3매 (전원)\nKB자산운용 ETF 순매수 100만원 이상 ~ 300만원 미만 → 배달의 민족 금액권 1만원권 (추첨 500명)\nKB자산운용 ETF 순매수 300만원 이상 ~ 500만원 미만 → 배달의 민족 금액권 2만원권 (추첨 300명)\nKB자산운용 ETF 순매수 500만원 이상 → 배달의 민족 금액권 3만원권 (추첨 200명)\n삼성자산운용 TDF 순매수 100만원 이상 ~ 300만원 미만 → [투썸플레이스] 금액권 1만원권 (전원)\n삼성자산운용 TDF 순매수 300만원 이상 ~ 500만원 미만 → [투썸플레이스] 금액권 2만원권 (전원)\n삼성자산운용 TDF 순매수 500만원 이상 → [투썸플레이스] 금액권 3만원권 (전원)\n삼성자산운용 ETF 순매수 100만원 이상 ~ 300만원 미만 → [투썸플레이스] 금액권 1만원권 (추첨 300명)\n삼성자산운용 ETF 순매수 300만원 이상 ~ 500만원 미만 → [투썸플레이스] 금액권 2만원권 (추첨 300명)\n삼성자산운용 ETF 순매수 500만원 이상 → [투썸플레이스] 금액권 3만원권 (추첨 300명)\n미래에셋자산운용 TDF 순매수 100만원 이상 ~ 300만원 미만 → [투썸플레이스] 떠먹는아박 + 아메리카노 세트 (1만원 상당) 1매 (전원)\n미래에셋자산운용 TDF 순매수 300만원 이상 ~ 500만원 미만 → [투썸플레이스] 떠먹는아박 + 아메리카노 세트 (1만원 상당) 2매 (전원)\n미래에셋자산운용 TDF 순매수 500만원 이상 → [투썸플레이스] 떠먹는아박 + 아메리카노 세트 (1만원 상당) 3매 (전원)\n미래에셋자산운용 ETF 순매수 100만원 이상 ~ 300만원 미만 → [투썸플레이스] 떠먹는아박 + 아메리카노 세트 (1만원 상당) 1매 (추첨 300명)\n미래에셋자산운용 ETF 순매수 300만원 이상 ~ 500만원 미만 → [투썸플레이스] 떠먹는아박 + 아메리카노 세트 (1만원 상당) 2매 (추첨 200명)\n미래에셋자산운용 ETF 순매수 500만원 이상 → [투썸플레이스] 떠먹는아박 + 아메리카노 세트 (1만원 상당) 3매 (추첨 100명)\n한국투자신탁운용 TDF 순매수 100만원 이상 ~ 300만원 미만 → [투썸플레이스] 아메리카노 2잔 세트 (1만원 상당) 1매 (추첨 200명)\n한국투자신탁운용 TDF 순매수 300만원 이상 ~ 500만원 미만 → [투썸플레이스] 아메리카노 2잔 세트 (1만원 상당) 2매 (추첨 100명)\n한국투자신탁운용 TDF 순매수 500만원 이상 → [투썸플레이스] 아메리카노 2잔 세트 (1만원 상당) 3매 (추첨 200명)\n한국투자신탁운용 ETF 순매수 100만원 이상 ~ 300만원 미만 → 모바일 문화상품권 1만원 (추첨 200명)\n한국투자신탁운용 ETF 순매수 300만원 이상 ~ 500만원 미만 → 모바일 문화상품권 2만원 (추첨 100명)\n한국투자신탁운용 ETF 순매수 500만원 이상 → 모바일 문화상품권 3만원 (추첨 200명)\n한화자산운용 TDF 순매수 100만원 이상 ~ 300만원 미만 → [투썸플레이스] 금액권 1만원 (추첨 50명)\n한화자산운용 TDF 순매수 300만원 이상 ~ 500만원 미만 → [투썸플레이스] 금액권 2만원 (추첨 50명)\n한화자산운용 TDF 순매수 500만원 이상 → [투썸플레이스] 금액권 3만원 (추첨 50명)\n한화자산운용 ETF 순매수 100만원 이상 ~ 300만원 미만 → [투썸플레이스] 금액권 1만원 (추첨 500명)\n한화자산운용 ETF 순매수 300만원 이상 ~ 500만원 미만 → [투썸플레이스] 금액권 2만원 (추첨 200명)\n한화자산운용 ETF 순매수 500만원 이상 → [투썸플레이스] 금액권 3만원 (추첨 200명)",
    "remarks": "요일 불일치 ['2026-06-30(수≠화)', '2026-06-30(수≠화)'] / 제외재원 조항 원문에 존재하나 추출 누락 — 원문 확인 필요",
    "source_event_id": "10010041",
-   "source_content_hash": "40175f3d2525c0bd",
+   "source_content_hash": "60def7c3c6569389",
    "extract_schema_version": 3,
    "benefit_rows": [
     {
@@ -1010,10 +795,10 @@
    "eligibility": "연금저축 고객",
    "exclusions": null,
    "apply_required": true,
-   "marketing_consent_required": true,
+   "marketing_consent_required": null,
    "annual_cap_krw": null,
-   "hold_condition": "이벤트 종료일(2026-06-30)까지 대상 상품 보유 및 잔고 유지",
-   "cond_notes": "개인(신용)정보 선택 동의(편의서비스) 및 문자 동의 필수 (이벤트 종료일 및 추첨일 기준 유지)\n이벤트 기간 내 주민등록번호 기준 고객의 각 연금저축계좌 합산 적용",
+   "hold_condition": "이벤트 종료일 기준으로 잔고 유지",
+   "cond_notes": "순매수 금액은 기간 중 매수체결금액-매도체결금액(결제일 기준)으로 계산되며, 이벤트 이전 보유 중인 대상 종목을 매도하는 경우도 매도금액으로 계산됩니다. 이벤트 기간 내 주민등록번호 기준 고객의 각 연금저축계좌를 합산하여 적용됩니다.",
    "condition_rows": [
     {
      "ord": 1,
@@ -1030,29 +815,23 @@
     {
      "ord": 3,
      "label": "유지조건",
-     "value_text": "이벤트 종료일(2026-06-30)까지 대상 상품 보유 및 잔고 유지",
+     "value_text": "이벤트 종료일 기준으로 잔고 유지",
      "source": "llm-text"
     },
     {
      "ord": 4,
      "label": "기타",
-     "value_text": "개인(신용)정보 선택 동의(편의서비스) 및 문자 동의 필수 (이벤트 종료일 및 추첨일 기준 유지)",
-     "source": "llm-text"
-    },
-    {
-     "ord": 5,
-     "label": "기타",
-     "value_text": "이벤트 기간 내 주민등록번호 기준 고객의 각 연금저축계좌 합산 적용",
+     "value_text": "순매수 금액은 기간 중 매수체결금액-매도체결금액(결제일 기준)으로 계산되며, 이벤트 이전 보유 중인 대상 종목을 매도하는 경우도 매도금액으로 계산됩니다. 이벤트 기간 내 주민등록번호 기준 고객의 각 연금저축계좌를 합산하여 적용됩니다.",
      "source": "llm-text"
     }
    ],
    "extract_method": "text",
-   "last_verified_at": "2026-07-15T23:32:26.403327+00:00",
+   "last_verified_at": "2026-07-16T23:22:22.145436+00:00",
    "review_reason": "요일 불일치 ['2026-06-30(수≠화)', '2026-06-30(수≠화)'] / 제외재원 조항 원문에 존재하나 추출 누락 — 원문 확인 필요",
    "needs_review": true,
    "date_source": "detail",
    "review_retry_count": 1,
-   "review_retry_key": "40175f3d2525c0bd:3",
+   "review_retry_key": "60def7c3c6569389:3",
    "content_hash": "9a27988080d9eac1"
   },
   {
@@ -1066,16 +845,172 @@
    "acct_irp": true,
    "acct_dc": false,
    "acct_etc": null,
-   "conditions": "대상: IRP 계좌\n순입금 항목: 개인납입, 타사이전, 당사/타ISA 만기전환 (타사이전, 타ISA 만기전환 금액은 실적 2배 인정)\n유지조건: 잔고유지기간 내 IRP 전계좌에서 출금(해지, 이전 포함) 또는 매도(채권만기 도래포함) 발생 시 혜택지급 대상에서 제외\n타사 이전 신청 시 당사로 수관 완료까지 시일 소요될 수 있음\n상품 순매수 대상: 장외채권, 국내주식형펀드 (MMF, ETF 등 그 외 상품 제외)\n상품 순매수 금액은 [상품별] 매수금액 - 매도금액으로 산정하며, 채권/펀드 상품간 합산 불가 (상품별 조건 충족 시 혜택 중복 가능)\n이벤트 기간 내 결제 완료된 금액 기준으로 산정",
-   "benefits": "IRP 순입금 1백만원 이상 ~ 3백만원 미만 → 1만원 (전원)\nIRP 순입금 3백만원 이상 ~ 9백만원 미만 → 2만원 (전원)\nIRP 순입금 9백만원 이상 → 3만원 (전원)\nIRP 상품 순매수 3백만원 이상 ~ 9백만원 미만 (대상 상품: 장외채권, 국내주식형펀드) → 5천원 (전원)\nIRP 상품 순매수 9백만원 이상 ~ 2천만원 미만 (대상 상품: 장외채권, 국내주식형펀드) → 1만원 (전원)\nIRP 상품 순매수 2천만원 이상 (대상 상품: 장외채권, 국내주식형펀드) → 2만원 (전원)",
+   "conditions": "대상: 개인(신용)정보 선택동의(편의서비스)를 동의(문자&전화)한 고객\n대상: 보유중인 IRP 전계좌 고객\n신청: 개인(신용)정보 선택동의(편의서비스) 동의 (문자&전화)\n유지조건: 잔고유지기간(2026-10-01 ~ 2026-10-31) 동안 IRP 전계좌 유지\n유지조건: 순매수 관련 혜택은 매도(채권만기거래 포함) 발생 시 제외\n유지조건: 순입금 관련 혜택은 출금(해지, 이전, 당사 본인명의 연금 및 계좌간 대체 포함) 발생 시 제외\n유지조건: 입금 후 출금·환급 후 재입금 시 혜택 제외\n유지조건: 고객 직접 입금 외 예탁금이용료, 배당금 등에 대한 출금 시 혜택 제외\n한도: 이벤트1~3 혜택 합산 최대 3만원\n한도: 다른 이벤트와 중복 지급 불가\n순입금 항목: 개인납입, 타사이전, 당사/타사 ISA 만기전환\n이벤트3 대상 상품: 장외채권, 국내주식형펀드",
+   "benefits": "IRP 순입금 1백만원 이상 ~ 3백만원 미만 → 1만원 (전원)\nIRP 순입금 3백만원 이상 ~ 9백만원 미만 → 2만원 (전원)\nIRP 순입금 9백만원 이상 → 3만원 (전원)\nIRP에서 대상 상품 순매수 3백만원 이상 ~ 9백만원 미만 → 5천원 (전원)\nIRP에서 대상 상품 순매수 9백만원 이상 ~ 2천만원 미만 → 1만원 (전원)\nIRP에서 대상 상품 순매수 2천만원 이상 → 2만원 (전원)",
    "remarks": null,
    "source_event_id": "10010039",
-   "source_content_hash": "5def11bb3b097b2b",
+   "source_content_hash": "c4eea3b842d34e87",
    "extract_schema_version": 3,
+   "benefit_rows": [
+    {
+     "tier_no": 1,
+     "condition_text": "IRP 순입금 1백만원 이상 ~ 3백만원 미만",
+     "benefit_text": "1만원",
+     "award_method": "전원",
+     "award_limit": null,
+     "source": "llm-ocr"
+    },
+    {
+     "tier_no": 2,
+     "condition_text": "IRP 순입금 3백만원 이상 ~ 9백만원 미만",
+     "benefit_text": "2만원",
+     "award_method": "전원",
+     "award_limit": null,
+     "source": "llm-ocr"
+    },
+    {
+     "tier_no": 3,
+     "condition_text": "IRP 순입금 9백만원 이상",
+     "benefit_text": "3만원",
+     "award_method": "전원",
+     "award_limit": null,
+     "source": "llm-ocr"
+    },
+    {
+     "tier_no": 4,
+     "condition_text": "IRP에서 대상 상품 순매수 3백만원 이상 ~ 9백만원 미만",
+     "benefit_text": "5천원",
+     "award_method": "전원",
+     "award_limit": null,
+     "source": "llm-ocr"
+    },
+    {
+     "tier_no": 5,
+     "condition_text": "IRP에서 대상 상품 순매수 9백만원 이상 ~ 2천만원 미만",
+     "benefit_text": "1만원",
+     "award_method": "전원",
+     "award_limit": null,
+     "source": "llm-ocr"
+    },
+    {
+     "tier_no": 6,
+     "condition_text": "IRP에서 대상 상품 순매수 2천만원 이상",
+     "benefit_text": "2만원",
+     "award_method": "전원",
+     "award_limit": null,
+     "source": "llm-ocr"
+    }
+   ],
+   "multiplier_rows": [
+    {
+     "source_type": "타사이전",
+     "multiplier": 2.0,
+     "scope": "인정금액",
+     "min_threshold_krw": 0,
+     "extra_condition": "",
+     "source": "llm-ocr"
+    },
+    {
+     "source_type": "타사ISA만기전환",
+     "multiplier": 2.0,
+     "scope": "인정금액",
+     "min_threshold_krw": 0,
+     "extra_condition": "",
+     "source": "llm-ocr"
+    }
+   ],
+   "stackable": true,
+   "annual_claim_limit": 1,
+   "rows_fresh": true,
+   "eligibility": "개인(신용)정보 선택동의(편의서비스)를 동의(문자&전화)한 고객; 보유중인 IRP 전계좌 고객",
+   "exclusions": null,
+   "apply_required": null,
+   "marketing_consent_required": null,
+   "annual_cap_krw": null,
+   "hold_condition": "잔고유지기간(2026-10-01 ~ 2026-10-31) 동안 IRP 전계좌 유지; 순매수 관련 혜택은 매도(채권만기거래 포함) 발생 시 제외; 순입금 관련 혜택은 출금(해지, 이전, 당사 본인명의 연금 및 계좌간 대체 포함) 발생 시 제외; 입금 후 출금·환급 후 재입금 시 혜택 제외; 고객 직접 입금 외 예탁금이용료, 배당금 등에 대한 출금 시 혜택 제외",
+   "cond_notes": "신청: 개인(신용)정보 선택동의(편의서비스) 동의 (문자&전화)\n한도: 이벤트1~3 혜택 합산 최대 3만원\n한도: 다른 이벤트와 중복 지급 불가\n순입금 항목: 개인납입, 타사이전, 당사/타사 ISA 만기전환\n이벤트3 대상 상품: 장외채권, 국내주식형펀드",
+   "condition_rows": [
+    {
+     "ord": 1,
+     "label": "대상",
+     "value_text": "개인(신용)정보 선택동의(편의서비스)를 동의(문자&전화)한 고객",
+     "source": "llm-ocr"
+    },
+    {
+     "ord": 2,
+     "label": "대상",
+     "value_text": "보유중인 IRP 전계좌 고객",
+     "source": "llm-ocr"
+    },
+    {
+     "ord": 3,
+     "label": "신청",
+     "value_text": "개인(신용)정보 선택동의(편의서비스) 동의 (문자&전화)",
+     "source": "llm-ocr"
+    },
+    {
+     "ord": 4,
+     "label": "유지조건",
+     "value_text": "잔고유지기간(2026-10-01 ~ 2026-10-31) 동안 IRP 전계좌 유지",
+     "source": "llm-ocr"
+    },
+    {
+     "ord": 5,
+     "label": "유지조건",
+     "value_text": "순매수 관련 혜택은 매도(채권만기거래 포함) 발생 시 제외",
+     "source": "llm-ocr"
+    },
+    {
+     "ord": 6,
+     "label": "유지조건",
+     "value_text": "순입금 관련 혜택은 출금(해지, 이전, 당사 본인명의 연금 및 계좌간 대체 포함) 발생 시 제외",
+     "source": "llm-ocr"
+    },
+    {
+     "ord": 7,
+     "label": "유지조건",
+     "value_text": "입금 후 출금·환급 후 재입금 시 혜택 제외",
+     "source": "llm-ocr"
+    },
+    {
+     "ord": 8,
+     "label": "유지조건",
+     "value_text": "고객 직접 입금 외 예탁금이용료, 배당금 등에 대한 출금 시 혜택 제외",
+     "source": "llm-ocr"
+    },
+    {
+     "ord": 9,
+     "label": "한도",
+     "value_text": "이벤트1~3 혜택 합산 최대 3만원",
+     "source": "llm-ocr"
+    },
+    {
+     "ord": 10,
+     "label": "한도",
+     "value_text": "다른 이벤트와 중복 지급 불가",
+     "source": "llm-ocr"
+    },
+    {
+     "ord": 11,
+     "label": "기타",
+     "value_text": "순입금 항목: 개인납입, 타사이전, 당사/타사 ISA 만기전환",
+     "source": "llm-ocr"
+    },
+    {
+     "ord": 12,
+     "label": "기타",
+     "value_text": "이벤트3 대상 상품: 장외채권, 국내주식형펀드",
+     "source": "llm-ocr"
+    }
+   ],
    "extract_method": "ocr",
+   "last_verified_at": "2026-07-16T23:23:17.020083+00:00",
    "review_reason": null,
    "date_source": null,
    "needs_review": false,
+   "review_retry_count": 0,
+   "review_retry_key": "c4eea3b842d34e87:3",
+   "image_url": "https://etcimg.kbsec.com/html/design/20260619163553/img19.gif",
    "content_hash": "32642eaed6734224"
   },
   {
@@ -1086,14 +1021,14 @@
    "event_url": "https://www.kbsec.com/go.able?linkcd=s060902030000&seq=10009676&idt=20260331&clsfcd=4&gubun=1",
    "raw_text": "퇴직연금 DC, 첫 만남 이벤트",
    "acct_pension": false,
-   "acct_irp": true,
+   "acct_irp": false,
    "acct_dc": true,
    "acct_etc": null,
    "conditions": "대상: DC계좌 첫 입금 고객\n신청: 조건 충족 시 자동 참여되며 혜택 수령을 위해 개인(신용)정보 동의 및 문자 수신 동의는 필수\n유지조건: 잔고유지 기간 내 출금 발생 시 경품 지급 조건에서 제외\n한도: 퇴직연금(DC/IRP) 관련 이벤트 혜택은 동일 연도(2026년) 기준 고객 1인당 합산 최대 3만원으로 제한되며, 4분기 본 이벤트 혜택 고객은 2027년 연간 한도에 합산",
    "benefits": "순입금 1천만원 이상 → 신세계이마트상품권 3만원 (전원)\n순입금 1원 이상 ~ 1천만원 미만 → 신세계이마트상품권 1만원 (전원)",
    "remarks": null,
    "source_event_id": "10009676",
-   "source_content_hash": "84452f4837e52c2f",
+   "source_content_hash": "f30914b1d167d751",
    "extract_schema_version": 3,
    "benefit_rows": [
     {
@@ -1151,12 +1086,13 @@
     }
    ],
    "extract_method": "text",
-   "last_verified_at": "2026-07-15T23:32:47.068224+00:00",
+   "last_verified_at": "2026-07-16T23:23:35.951240+00:00",
    "review_reason": null,
    "date_source": "detail",
    "needs_review": false,
    "review_retry_count": 0,
-   "review_retry_key": "84452f4837e52c2f:3",
+   "review_retry_key": "f30914b1d167d751:3",
+   "image_url": "https://etcimg.kbsec.com/html/design/20260327082106/evt05.png",
    "content_hash": "8f7ac91a6e485850"
   },
   {
@@ -1170,11 +1106,11 @@
    "acct_irp": false,
    "acct_dc": false,
    "acct_etc": null,
-   "conditions": "대상: 주민등록번호 기준 KB증권 비대면 채널로 개설된 최초 1개의 연금저축계좌\n영업점에서 개설한 연금저축 계좌를 보유한 고객이 비대면으로 추가 개설하는 경우, 혜택 적용이 불가합니다.\n기존 이벤트 혜택 적용 고객의 경우, 이벤트 기간 동안 혜택이 자동으로 연장 적용됩니다.\n이벤트 종료 시 정상 수수료가 부과됩니다.",
+   "conditions": "대상: 주민등록번호 기준 KB증권 비대면 채널로 개설된 최초 1개의 연금저축계좌\n대상: 영업점에서 개설한 연금저축 계좌를 보유한 고객이 비대면으로 추가 개설하는 경우 혜택 적용 불가\n대상: 기존 이벤트 혜택 적용 고객의 경우 이벤트 기간 동안 혜택 자동 연장 적용\n온라인으로 ETF 거래 시",
    "benefits": "신연금저축계좌에서 온라인으로 ETF 거래 시 → ETF 수수료 0.0050483% (전원)",
    "remarks": null,
    "source_event_id": "10009370",
-   "source_content_hash": "32942c1b07059659",
+   "source_content_hash": "e0a6eeaa7ec6c669",
    "extract_schema_version": 3,
    "benefit_rows": [
     {
@@ -1190,13 +1126,13 @@
    "stackable": false,
    "annual_claim_limit": null,
    "rows_fresh": true,
-   "eligibility": "주민등록번호 기준 KB증권 비대면 채널로 개설된 최초 1개의 연금저축계좌",
+   "eligibility": "주민등록번호 기준 KB증권 비대면 채널로 개설된 최초 1개의 연금저축계좌; 영업점에서 개설한 연금저축 계좌를 보유한 고객이 비대면으로 추가 개설하는 경우 혜택 적용 불가; 기존 이벤트 혜택 적용 고객의 경우 이벤트 기간 동안 혜택 자동 연장 적용",
    "exclusions": null,
    "apply_required": null,
    "marketing_consent_required": null,
    "annual_cap_krw": null,
    "hold_condition": null,
-   "cond_notes": "영업점에서 개설한 연금저축 계좌를 보유한 고객이 비대면으로 추가 개설하는 경우, 혜택 적용이 불가합니다.\n기존 이벤트 혜택 적용 고객의 경우, 이벤트 기간 동안 혜택이 자동으로 연장 적용됩니다.\n이벤트 종료 시 정상 수수료가 부과됩니다.",
+   "cond_notes": "온라인으로 ETF 거래 시",
    "condition_rows": [
     {
      "ord": 1,
@@ -1206,30 +1142,30 @@
     },
     {
      "ord": 2,
-     "label": "기타",
-     "value_text": "영업점에서 개설한 연금저축 계좌를 보유한 고객이 비대면으로 추가 개설하는 경우, 혜택 적용이 불가합니다.",
+     "label": "대상",
+     "value_text": "영업점에서 개설한 연금저축 계좌를 보유한 고객이 비대면으로 추가 개설하는 경우 혜택 적용 불가",
      "source": "llm-ocr"
     },
     {
      "ord": 3,
-     "label": "기타",
-     "value_text": "기존 이벤트 혜택 적용 고객의 경우, 이벤트 기간 동안 혜택이 자동으로 연장 적용됩니다.",
+     "label": "대상",
+     "value_text": "기존 이벤트 혜택 적용 고객의 경우 이벤트 기간 동안 혜택 자동 연장 적용",
      "source": "llm-ocr"
     },
     {
      "ord": 4,
      "label": "기타",
-     "value_text": "이벤트 종료 시 정상 수수료가 부과됩니다.",
+     "value_text": "온라인으로 ETF 거래 시",
      "source": "llm-ocr"
     }
    ],
    "extract_method": "ocr",
-   "last_verified_at": "2026-07-15T23:33:22.150714+00:00",
+   "last_verified_at": "2026-07-16T23:24:07.647056+00:00",
    "review_reason": null,
    "date_source": "llm",
    "needs_review": false,
    "review_retry_count": 0,
-   "review_retry_key": "32942c1b07059659:3",
+   "review_retry_key": "e0a6eeaa7ec6c669:3",
    "image_url": "https://etcimg.kbsec.com/html/design/20251226104205/img04.jpg",
    "content_hash": "0e6f5a57c9a9c096"
   },
@@ -1248,45 +1184,12 @@
    "benefits": "KB증권 IRP 비대면 계좌개설시 → 운용·자산관리 제도 수수료 평생 무료 (전원)",
    "remarks": null,
    "source_event_id": "10007688",
-   "source_content_hash": "17861b3fab54e849",
+   "source_content_hash": "7bad9388f1895f98",
    "extract_schema_version": 3,
-   "benefit_rows": [
-    {
-     "tier_no": 1,
-     "condition_text": "KB증권 IRP 비대면 계좌개설시",
-     "benefit_text": "운용·자산관리 제도 수수료 평생 무료",
-     "award_method": "전원",
-     "award_limit": null,
-     "source": "llm-ocr"
-    }
-   ],
-   "multiplier_rows": [],
-   "stackable": false,
-   "annual_claim_limit": null,
-   "rows_fresh": true,
-   "eligibility": "KB증권 IRP 비대면 계좌개설 고객",
-   "exclusions": null,
-   "apply_required": null,
-   "marketing_consent_required": null,
-   "annual_cap_krw": null,
-   "hold_condition": null,
-   "cond_notes": null,
-   "condition_rows": [
-    {
-     "ord": 1,
-     "label": "대상",
-     "value_text": "KB증권 IRP 비대면 계좌개설 고객",
-     "source": "llm-ocr"
-    }
-   ],
    "extract_method": "ocr",
-   "last_verified_at": "2026-07-15T23:33:56.978187+00:00",
    "review_reason": null,
    "date_source": null,
    "needs_review": false,
-   "review_retry_count": 0,
-   "review_retry_key": "17861b3fab54e849:3",
-   "image_url": "https://etcimg.kbsec.com/html/design/20241022102330/img01.jpg",
    "content_hash": "f996b97ddd34b8b6"
   },
   {
@@ -1324,16 +1227,16 @@
    "acct_irp": true,
    "acct_dc": false,
    "acct_etc": null,
-   "conditions": "대상: 이벤트 기간 내 N2 IRP 계좌로 순입금한 고객 (신규 입금(퇴직금 포함), 타사 IRP 실물이전(현금 이전 포함), 중개형 ISA 만기자금 연금납입 합산)\n신청: 이벤트 신청 및 마케팅 선택 동의(SMS, PUSH) 필수 (혜택 지급 시점까지 유지)\n유지조건: 2026.09.30까지 IRP 계좌 잔고 유지 필수\n한도: 퇴직연금 특별이익 제공한도(연간 총 3만원)에 따라 혜택 지급. NH투자증권에서 제공하는 모든 퇴직연금 관련 이벤트 사은품 및 판촉물 금액도 제공한도에 포함되며, 타 퇴직연금 이벤트 혜택과 합산하여 초과 시 혜택 미지급\n당사간 (N2 → 나무) 이전 금액은 대상이 되지 않음",
-   "benefits": "순입금 1백만원 이상 ~ 1천만원 미만 → 배민 모바일상품권 1만원 (추첨 1,000명)\n순입금 1천만원 이상 ~ 2천만원 미만 → 배민 모바일상품권 2만원 (전원)\n순입금 2천만원 이상 → 배민 모바일상품권 3만원 (전원)",
-   "remarks": "제외재원 조항 원문에 존재하나 추출 누락 — 원문 확인 필요",
+   "conditions": "대상: 이벤트 기간 내 N2 IRP 계좌로 순입금한 고객 (신규 입금(퇴직금 포함), 타사 IRP 실물이전(현금 이전 포함), 중개형 ISA 만기자금 연금납입 합산)\n유지조건: 2026.09.30까지 잔고 유지 필수\n신청: 이벤트 신청 및 마케팅 동의(SMS, PUSH) 필수 (혜택 지급 시까지 유지)\n한도: 퇴직연금 특별이익 제공한도(연간 총 3만원) 내 지급 (NH투자증권 모든 퇴직연금 이벤트 합산)\n당사간 (N2 → 나무) 이전 금액은 대상 제외",
+   "benefits": "순입금액 1백만원 이상 ~ 1천만원 미만 → 배민 모바일상품권 1만원 (추첨 1,000명)\n순입금액 1천만원 이상 ~ 2천만원 미만 → 배민 모바일상품권 2만원 (전원)\n순입금액 2천만원 이상 → 배민 모바일상품권 3만원 (전원)",
+   "remarks": null,
    "source_event_id": "1000",
    "source_content_hash": "057f3ae5d1e8ce76",
    "extract_schema_version": 3,
    "benefit_rows": [
     {
      "tier_no": 1,
-     "condition_text": "순입금 1백만원 이상 ~ 1천만원 미만",
+     "condition_text": "순입금액 1백만원 이상 ~ 1천만원 미만",
      "benefit_text": "배민 모바일상품권 1만원",
      "award_method": "추첨",
      "award_limit": 1000,
@@ -1341,7 +1244,7 @@
     },
     {
      "tier_no": 2,
-     "condition_text": "순입금 1천만원 이상 ~ 2천만원 미만",
+     "condition_text": "순입금액 1천만원 이상 ~ 2천만원 미만",
      "benefit_text": "배민 모바일상품권 2만원",
      "award_method": "전원",
      "award_limit": null,
@@ -1349,7 +1252,7 @@
     },
     {
      "tier_no": 3,
-     "condition_text": "순입금 2천만원 이상",
+     "condition_text": "순입금액 2천만원 이상",
      "benefit_text": "배민 모바일상품권 3만원",
      "award_method": "전원",
      "award_limit": null,
@@ -1362,7 +1265,7 @@
      "multiplier": 2.0,
      "scope": "인정금액",
      "min_threshold_krw": 0,
-     "extra_condition": "실물이전 (현금 포함)",
+     "extra_condition": "현금 포함",
      "source": "llm-ocr"
     }
    ],
@@ -1374,8 +1277,8 @@
    "apply_required": true,
    "marketing_consent_required": true,
    "annual_cap_krw": 30000,
-   "hold_condition": "2026.09.30까지 IRP 계좌 잔고 유지 필수",
-   "cond_notes": "한도: 퇴직연금 특별이익 제공한도(연간 총 3만원)에 따라 혜택 지급. NH투자증권에서 제공하는 모든 퇴직연금 관련 이벤트 사은품 및 판촉물 금액도 제공한도에 포함되며, 타 퇴직연금 이벤트 혜택과 합산하여 초과 시 혜택 미지급\n당사간 (N2 → 나무) 이전 금액은 대상이 되지 않음",
+   "hold_condition": "2026.09.30까지 잔고 유지 필수",
+   "cond_notes": "한도: 퇴직연금 특별이익 제공한도(연간 총 3만원) 내 지급 (NH투자증권 모든 퇴직연금 이벤트 합산)\n당사간 (N2 → 나무) 이전 금액은 대상 제외",
    "condition_rows": [
     {
      "ord": 1,
@@ -1385,35 +1288,35 @@
     },
     {
      "ord": 2,
-     "label": "신청",
-     "value_text": "이벤트 신청 및 마케팅 선택 동의(SMS, PUSH) 필수 (혜택 지급 시점까지 유지)",
+     "label": "유지조건",
+     "value_text": "2026.09.30까지 잔고 유지 필수",
      "source": "llm-ocr"
     },
     {
      "ord": 3,
-     "label": "유지조건",
-     "value_text": "2026.09.30까지 IRP 계좌 잔고 유지 필수",
+     "label": "신청",
+     "value_text": "이벤트 신청 및 마케팅 동의(SMS, PUSH) 필수 (혜택 지급 시까지 유지)",
      "source": "llm-ocr"
     },
     {
      "ord": 4,
      "label": "한도",
-     "value_text": "퇴직연금 특별이익 제공한도(연간 총 3만원)에 따라 혜택 지급. NH투자증권에서 제공하는 모든 퇴직연금 관련 이벤트 사은품 및 판촉물 금액도 제공한도에 포함되며, 타 퇴직연금 이벤트 혜택과 합산하여 초과 시 혜택 미지급",
+     "value_text": "퇴직연금 특별이익 제공한도(연간 총 3만원) 내 지급 (NH투자증권 모든 퇴직연금 이벤트 합산)",
      "source": "llm-ocr"
     },
     {
      "ord": 5,
      "label": "기타",
-     "value_text": "당사간 (N2 → 나무) 이전 금액은 대상이 되지 않음",
+     "value_text": "당사간 (N2 → 나무) 이전 금액은 대상 제외",
      "source": "llm-ocr"
     }
    ],
    "extract_method": "ocr",
-   "last_verified_at": "2026-07-15T23:34:41.025727+00:00",
-   "review_reason": "제외재원 조항 원문에 존재하나 추출 누락 — 원문 확인 필요",
+   "last_verified_at": "2026-07-16T23:24:52.781446+00:00",
+   "review_reason": null,
    "date_source": "list",
-   "needs_review": true,
-   "review_retry_count": 1,
+   "needs_review": false,
+   "review_retry_count": 0,
    "review_retry_key": "057f3ae5d1e8ce76:3",
    "image_url": "https://m.nhqv.com/fileUpload/namoCrossEditor/temp/1781757202483.png",
    "content_hash": "c7acdd942dd2dd26"
@@ -1439,8 +1342,6 @@
    "review_reason": null,
    "date_source": "list",
    "needs_review": false,
-   "review_retry_count": 0,
-   "review_retry_key": "40c535ebcad20aa1:3",
    "image_url": "https://m.nhqv.com/fileUpload/namoCrossEditor/temp/1779427867372.png",
    "content_hash": "4a6cec4aa48f4e7f"
   },
