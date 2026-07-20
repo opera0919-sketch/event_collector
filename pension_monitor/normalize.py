@@ -20,7 +20,7 @@ import time
 from . import db, vision
 from .classify import (
     extract_period, suspicious_dates, weekday_conflicts, infer_end_from_hold,
-    source_content_hash, _TRANSFER_HINT, _MULT_HINT,
+    source_content_hash, pick_content_images, _TRANSFER_HINT, _MULT_HINT,
 )
 
 # ── 예산 (Gemini 무료 티어 보호 — 기존 운영값 유지) ─────────────────
@@ -294,16 +294,15 @@ def _resolve_banner_images(ev):
         from bs4 import BeautifulSoup
         from .scrapers.static_generic import fetch_html
         soup = BeautifulSoup(fetch_html(url, retries=1), "html.parser")
-        out = []
+        cands = []
         for img in soup.find_all("img"):
             src = img.get("src") or img.get("data-src") or ""
             if not src or re.search(r"(logo|icon|btn|bullet|sprite|blank|dot|arrow|nav_)", src, re.I):
                 continue
             if re.search(r"(cmd=down|/event/|fileUpload|mlist|/public/mw/event|upload\.file)", src, re.I):
-                out.append(urljoin(url, src))
-            if len(out) >= vision.MAX_IMAGES:
-                break
-        return out
+                cands.append(urljoin(url, src))
+        # 결정론적 선택(래스터 우선·URL 정렬) — 실행마다 다른 이미지를 집던 churn 제거
+        return pick_content_images(cands, vision.MAX_IMAGES)
     except Exception as e:
         print(f"[배너] 해상 실패 {ev['event_name'][:24]}: {type(e).__name__}")
         return []
