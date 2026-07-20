@@ -20,7 +20,7 @@ import sys
 
 from . import db, mailer, normalize, report as report_mod
 from .classify import (is_pension, detect_accounts, extract_details, content_hash,
-                       source_event_id, clip_detail)
+                       source_event_id, clip_detail, pick_content_images)
 from .config import TRIGGER_TYPE
 from .scrapers import SCRAPERS
 from .scrapers.base import load_page
@@ -125,20 +125,20 @@ JS_CONTENT_IMGS = r"""
 
 
 def _imgs_from_html(soup, base_url, limit=3):
-    """정적 HTML 에서 콘텐츠 배너 이미지 최대 limit 장 (아이콘/로고 제외)."""
+    """정적 HTML 에서 콘텐츠 배너 이미지 최대 limit 장 (아이콘/로고 제외).
+    후보 전체를 모은 뒤 pick_content_images 로 결정론적 선택 — DOM 순서/장식 gif
+    개입으로 실행마다 다른 이미지를 집던 비결정성 제거(churn 방지)."""
     import re as _re
     from urllib.parse import urljoin
-    out = []
+    cands = []
     for img in soup.find_all("img"):
         src = img.get("src") or img.get("data-src") or ""
         if not src or _re.search(r"(logo|icon|btn|bullet|sprite|blank|dot|arrow|nav_)", src, _re.I):
             continue
         if _re.search(r"(cmd=down|/event/|fileUpload|mlist|/public/mw/event|upload\.file|/img/|/images/)",
                       src, _re.I):
-            out.append(urljoin(base_url, src))
-            if len(out) >= limit:
-                break
-    return out
+            cands.append(urljoin(base_url, src))
+    return pick_content_images(cands, limit)
 
 
 async def enrich_details(browser, pension_events):
@@ -194,7 +194,7 @@ async def enrich_details(browser, pension_events):
                 try:
                     detail_text = await page.inner_text("body")
                     if need_img:
-                        srcs = await page.evaluate(JS_CONTENT_IMGS)
+                        srcs = pick_content_images(await page.evaluate(JS_CONTENT_IMGS))
                         if srcs:
                             ev["_image_urls"] = srcs
                         elif len(detail_text) < 400:

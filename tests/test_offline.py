@@ -793,3 +793,41 @@ if __name__ == "__main__":
     test_retry_key_mismatch_resets()
     test_retry_meta_not_sent_when_no_attempt()
     print("검수(B)/M4 회귀 12종 통과")
+
+
+# ── churn 억제: 이미지 선택 결정론화 + 해시 정규화 (운영 2주 진단 반영) ──────
+def test_pick_content_images_deterministic():
+    from pension_monitor.classify import pick_content_images
+    # KB 재현: 같은 폴더의 jpg(콘텐츠)와 gif(장식)가 공존 — DOM 순서와 무관하게
+    # 항상 같은 집합(래스터 우선)을 뽑아야 한다
+    a = ["https://x/design/T/img_11.gif", "https://x/design/T/img_05.jpg"]
+    b = list(reversed(a))
+    assert pick_content_images(a) == pick_content_images(b), "순서 의존(비결정)"
+    assert pick_content_images(a)[0].endswith("img_05.jpg"), "래스터 우선 아님"
+    # 중복 제거 + limit
+    dup = ["u/1.jpg", "u/1.jpg", "u/2.jpg", "u/3.png", "u/4.jpg"]
+    got = pick_content_images(dup, limit=3)
+    assert got == sorted(set(dup))[:3] and len(got) == 3, got
+    # 래스터가 없으면 gif 라도 반환(폴백)
+    assert pick_content_images(["a.gif", "b.gif"]) == ["a.gif", "b.gif"]
+    assert pick_content_images([]) == []
+    print("OK pick_content_images (결정론·래스터 우선·중복/limit)")
+
+
+def test_source_content_hash_normalized():
+    from pension_monitor.classify import source_content_hash as h
+    # 의미 없는 차이(공백·이미지 순서·캐시버스팅 쿼리)는 같은 해시여야 함
+    base = {"_detail_text": "타사이전 1.5배 인정", "_image_urls": ["c/b.jpg", "c/a.jpg"]}
+    ws   = {"_detail_text": "타사이전  1.5배\n인정 ", "_image_urls": ["c/a.jpg", "c/b.jpg"]}
+    qs   = {"_detail_text": "타사이전 1.5배 인정", "_image_urls": ["c/b.jpg?v=2", "c/a.jpg?t=9"]}
+    assert h(base) == h(ws) == h(qs), "휘발 성분이 해시를 뒤집음(churn)"
+    # 실질 변화(이미지 경로/본문 내용)는 반드시 다른 해시여야 함(누락영구화 방지)
+    assert h(base) != h({"_detail_text": "타사이전 2배 인정", "_image_urls": ["c/a.jpg", "c/b.jpg"]})
+    assert h(base) != h({"_detail_text": "타사이전 1.5배 인정", "_image_urls": ["c/a.jpg", "c/NEW.jpg"]})
+    print("OK source_content_hash 정규화 (휘발 불변·실질 민감)")
+
+
+if __name__ == "__main__":
+    test_pick_content_images_deterministic()
+    test_source_content_hash_normalized()
+    print("churn 억제 회귀 2종 통과")

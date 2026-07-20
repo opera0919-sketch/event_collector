@@ -13,6 +13,27 @@ from .config import (
 _TRANSFER_HINT = re.compile(r"이전|가져오|수관|전환")
 _MULT_HINT = re.compile(r"\d(?:\.\d)?\s*배")
 
+# 콘텐츠 배너(래스터) 판별 — 장식용 gif 를 후순위로 밀어 OCR 입력을 안정화
+_RASTER_RE = re.compile(r"\.(jpe?g|png|webp)(\?|$)", re.I)
+
+
+def pick_content_images(urls, limit=3):
+    """콘텐츠 배너 이미지를 '결정론적으로' 선택한다 (OCR 입력·재추출 트리거 안정화).
+
+    기존 선택기는 DOM 순서로 앞 N장을 집어, 페이지에 장식용 gif 가 끼었다 빠졌다
+    하면 실행마다 다른 이미지를 골랐다(예: KB 시즌3 img_05.jpg ↔ img_11.gif).
+    OCR 입력이 흔들리니 혜택 추출이 매번 달라지고(churn) source_content_hash 도
+    뒤집혔다. 같은 HTML 이면 항상 같은 집합을 뽑도록: 중복 제거 → 래스터
+    (jpg/png/webp) 우선·장식 gif 후순위 → URL 사전순 정렬 → 앞 limit 장."""
+    seen, uniq = set(), []
+    for u in urls or []:
+        if u and u not in seen:
+            seen.add(u)
+            uniq.append(u)
+    raster = sorted(u for u in uniq if _RASTER_RE.search(u))
+    rest = sorted(u for u in uniq if not _RASTER_RE.search(u))
+    return (raster + rest)[:limit]
+
 
 def is_pension(text: str) -> bool:
     t = text or ""
@@ -271,6 +292,12 @@ def source_content_hash(ev: dict) -> str:
     content_hash 는 리포트용(원천 식별자/기간)이라 조항이 바뀌어도 흔들리지
     않는다. 반면 이 해시는 '무엇을 LLM 에 넣었는가'를 반영하므로, 상세 본문의
     유의사항/배수 조항이 바뀌면(또는 추출 개선으로 더 많이 읽으면) 캐시가
-    무효화돼 재추출이 일어난다 (누락의 영구화 방지)."""
-    basis = (ev.get("_detail_text") or "") + "|" + "|".join(ev.get("_image_urls") or [])
+    무효화돼 재추출이 일어난다 (누락의 영구화 방지).
+
+    단, '의미 없는 휘발 성분'까지 반영하면 매 실행 캐시가 헛돌아 재추출·churn 이
+    발생한다. 그래서 실질을 바꾸지 않는 차이만 정규화해 제거한다(안전 — 의미 변화는
+    숨기지 못함): 본문 공백 축약, 이미지 URL 의 순서·캐시버스팅 쿼리스트링 제거."""
+    detail = re.sub(r"\s+", " ", ev.get("_detail_text") or "").strip()
+    imgs = sorted((u or "").split("?", 1)[0] for u in (ev.get("_image_urls") or []))
+    basis = detail + "|" + "|".join(imgs)
     return hashlib.sha256(basis.encode("utf-8")).hexdigest()[:16]
