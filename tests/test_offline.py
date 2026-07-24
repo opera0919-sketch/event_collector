@@ -831,3 +831,81 @@ if __name__ == "__main__":
     test_pick_content_images_deterministic()
     test_source_content_hash_normalized()
     print("churn 억제 회귀 2종 통과")
+
+
+# ── strict-B: 리포트 노이즈 차단 (금액/수치 시그니처 기반 '변경' 판정) ──────────
+def test_amount_sig_suppresses_cosmetic_churn():
+    """db._amount_sig: 금액이 같으면 문구/어순/접두 차이는 같은 시그니처여야 한다."""
+    from pension_monitor.db import _amount_sig
+    # 실측 churn 케이스 1: 및→후, '상품권' 접두 탈락 — 금액 동일
+    a = "DC 신규 입금 및 디폴트옵션 지정 → 네이버페이 상품권 3만원 (전원)"
+    b = "DC 신규 입금 후 디폴트옵션 지정 → 네이버페이 3만원 (전원)"
+    assert _amount_sig(a) == _amount_sig(b), (_amount_sig(a), _amount_sig(b))
+    # 케이스 2: 어순 변경 — 금액 동일
+    c = "개인연금 순입금 1백만원 이상 2천만원 미만 → 상품권 3만원"
+    d = "1백만원 이상 2천만원 미만 → 개인연금 3만원"
+    assert _amount_sig(c) == _amount_sig(d)
+    # 실질 변경(금액/티어)은 시그니처가 달라야 함
+    assert _amount_sig(a) != _amount_sig("네이버페이 3만원 → 3만5천원 인상")
+    assert _amount_sig("순입금 3백만원 → 2만원") != \
+           _amount_sig("최초신규 1백만원 → ETF쿠폰 30,000\n순입금 3백만원 → 2만원")
+    print("OK _amount_sig (문구 churn 흡수·실질 변경 보존)")
+
+
+def test_sync_suppresses_cosmetic_benefit_change():
+    """rows_fresh 재추출이 금액 그대로 문구만 바꾸면 diff['changed']에 안 남고,
+    마스터 benefits 는 최신 문구로 갱신된다(현재 데이터 정확)."""
+    year = dt.date.today().year
+    calls = {"patch": [], "post": [], "delete": []}
+    db.fetch_all_events = lambda: existing
+    db.enabled = lambda: True
+    db._patch = lambda path, params, payload: calls["patch"].append((path, params, payload))
+    db._post = lambda path, payload, prefer=None: (calls["post"].append((path, payload)), [{"id": 99}])[1]
+    db._delete = lambda path, params: calls["delete"].append((path, params))
+    existing = [{"id": 1, "firm_name": "KB증권", "event_name": "DC 이벤트",
+                 "source_event_id": "5", "start_date": f"{year}-05-01", "end_date": f"{year}-08-31",
+                 "status": "진행중", "missed_count": 0,
+                 "benefits": "DC 신규 입금 및 디폴트옵션 → 네이버페이 상품권 3만원 (전원)",
+                 "conditions": None, "content_hash": "x", "last_seen_at": f"{year}-06-30T00:00:00+00:00"}]
+    # 금액 동일, 문구만 다른 재추출
+    ev = {"firm_name": "KB증권", "event_name": "DC 이벤트", "source_event_id": "5",
+          "start_date": f"{year}-05-01", "end_date": f"{year}-08-31", "status": None,
+          "benefits": "DC 신규 입금 후 디폴트옵션 → 네이버페이 3만원 (전원)", "conditions": None,
+          "rows_fresh": True, "benefit_rows": [], "condition_rows": [],
+          "needs_review": False, "extract_method": "ocr"}
+    ev["content_hash"] = content_hash(ev)
+    diff = db.sync([ev], firms_failed=[], trigger_type="manual")
+    assert not any(f == "benefits" for _, f, _, _ in diff["changed"]), "문구 churn 이 변경으로 기록됨"
+    # 마스터 benefits 는 새 문구로 갱신됨 (현재 데이터 정확성)
+    patch_payloads = [p[2] for p in calls["patch"] if p[0] == "pension_events"]
+    assert any("benefits" in pl and "네이버페이 3만원" in pl["benefits"] for pl in patch_payloads), patch_payloads
+    print("OK sync 문구 churn 억제 (변경 미기록·마스터 최신화)")
+
+
+def test_sync_still_logs_real_amount_change():
+    """금액/티어가 실제로 바뀌면 여전히 diff['changed']에 남아야 한다(신호 보존)."""
+    year = dt.date.today().year
+    db.fetch_all_events = lambda: existing
+    db.enabled = lambda: True
+    db._patch = lambda path, params, payload: None
+    db._post = lambda path, payload, prefer=None: [{"id": 1}]
+    db._delete = lambda path, params: None
+    existing = [{"id": 1, "firm_name": "KB증권", "event_name": "DC 이벤트", "source_event_id": "5",
+                 "start_date": f"{year}-05-01", "end_date": f"{year}-08-31", "status": "진행중",
+                 "missed_count": 0, "benefits": "신규 입금 → 상품권 3만원", "conditions": None,
+                 "content_hash": "x", "last_seen_at": f"{year}-06-30T00:00:00+00:00"}]
+    ev = {"firm_name": "KB증권", "event_name": "DC 이벤트", "source_event_id": "5",
+          "start_date": f"{year}-05-01", "end_date": f"{year}-08-31", "status": None,
+          "benefits": "신규 입금 → 상품권 5만원", "conditions": None,   # 3만 → 5만 실질 변경
+          "rows_fresh": True, "needs_review": False, "extract_method": "ocr"}
+    ev["content_hash"] = content_hash(ev)
+    diff = db.sync([ev], firms_failed=[], trigger_type="manual")
+    assert any(f == "benefits" for _, f, _, _ in diff["changed"]), "실질 금액 변경이 누락됨"
+    print("OK sync 실질 금액 변경 보존")
+
+
+if __name__ == "__main__":
+    test_amount_sig_suppresses_cosmetic_churn()
+    test_sync_suppresses_cosmetic_benefit_change()
+    test_sync_still_logs_real_amount_change()
+    print("strict-B 노이즈 차단 회귀 3종 통과")
