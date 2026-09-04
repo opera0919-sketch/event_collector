@@ -411,7 +411,9 @@ def test_cache_invalidation_on_schema_bump():
     ev = {"firm_name": "삼성증권", "event_name": "연금 파워업", "source_event_id": "3808",
           "start_date": f"{year}-05-01", "end_date": f"{year}-07-31",
           "acct_pension": True, "acct_irp": False, "acct_dc": False, "acct_etc": None,
-          "benefits": None, "conditions": None, "_detail_text": ""}
+          "benefits": None, "conditions": None,
+          # S1 이후 '원문 확보 성공'이어야 재평가 대상 — 실질 본문을 준다
+          "_detail_text": "이벤트 안내 본문 " * 30}
     normalize.normalize_events([ev], [old])
     # 새 원문 해시/스키마 버전이 ev 에 반영됐고(재평가됨), 무회귀로 old benefits 유지
     assert ev["extract_schema_version"] == vision.EXTRACT_SCHEMA_VERSION
@@ -834,3 +836,185 @@ if __name__ == "__main__":
     test_pick_content_images_deterministic()
     test_source_content_hash_normalized()
     print("churn 억제 회귀 2종 통과")
+
+
+# ── P0 (IMPROVEMENT_PLAN_2026-09 §6): S1 fetch 실패 상태화 · S4 기간 스티키 ──────
+def test_s1_fetch_failure_keeps_existing():
+    """상세 원문을 못 얻은 실행은 '내용 변경'이 아니다: 기존 캐노니컬·기간을 유지하고
+    원문 해시/스키마 버전을 싣지 않으며(DB 메타 불변), LLM 재추출 대상도 아니다."""
+    year = dt.date.today().year
+    old = {"id": 48, "firm_name": "KB증권", "event_name": "2026 시즌3 연금저축 순입금(이전) 이벤트",
+           "source_event_id": "10010044", "start_date": f"{year}-07-01",
+           "end_date": f"{year}-09-30", "date_source": "detail", "needs_review": False,
+           "benefits": "순입금 3백만원 이상 → 백화점 상품권 2만원 (전원)",
+           "conditions": "대상: 연금저축 계좌", "extract_method": "ocr",
+           "source_content_hash": "KEEP-ME", "extract_schema_version": vision.EXTRACT_SCHEMA_VERSION,
+           "acct_pension": True}
+    ev = {"firm_name": "KB증권", "event_name": "2026 시즌3 연금저축 순입금(이전) 이벤트",
+          "source_event_id": "10010044", "start_date": None, "end_date": None,
+          "acct_pension": False, "acct_irp": False, "acct_dc": False, "acct_etc": None,
+          "benefits": None, "conditions": None, "_detail_text": "", "_detail_status": "error"}
+    stats = normalize.normalize_events([ev], [old])
+    assert stats["fetch_failed"] == 1 and stats["llm_calls"] == 0, stats
+    assert ev["benefits"] == old["benefits"] and ev["conditions"] == old["conditions"]
+    assert not ev.get("rows_fresh")
+    assert "source_content_hash" not in ev and "extract_schema_version" not in ev, \
+        "실패 실행이 재추출 트리거 메타를 건드리면 안 됨"
+    assert (ev["start_date"], ev["end_date"], ev["date_source"]) == \
+        (old["start_date"], old["end_date"], "detail"), "기간이 NULL 로 진동"
+    assert ev["acct_pension"] is True and ev["needs_review"] is False
+    # 상태 미기록(예산 소진 등)이라도 빈 본문·이미지 없음은 실패로 추정
+    ev2 = dict(ev); ev2.pop("_detail_status")
+    normalize.normalize_events([ev2], [old])
+    assert ev2["benefits"] == old["benefits"] and "source_content_hash" not in ev2
+    # 신규(기존 행 없음) + 실패 → 폴백(hint)으로 진행하되 해시는 싣지 않아 다음 실행에 재시도
+    ev3 = {"firm_name": "KB증권", "event_name": "새 이벤트", "source_event_id": "1",
+           "start_date": None, "end_date": None, "acct_pension": True, "acct_irp": False,
+           "acct_dc": False, "acct_etc": None, "benefits": None, "conditions": None,
+           "_detail_text": "", "_detail_status": "empty", "_benefits_hint": "순입금하면 상품권"}
+    normalize.normalize_events([ev3], [])
+    assert ev3["extract_method"] == "hint" and "source_content_hash" not in ev3
+    # 기존 값이 정크면 실패 실행이라도 재사용하지 않는다 (G3 재검사 유지)
+    old_junk = {**old, "benefits": "순입금 → 혜택 없음 (자료 없음)", "extract_method": None}
+    ev4 = dict(ev)
+    normalize.normalize_events([ev4], [old_junk])
+    assert ev4["benefits"] is None and ev4["extract_method"] == "none"
+    assert "혜택 미확인" in ev4["review_reason"]
+    print("OK S1 상세 fetch 실패 = 기존값 유지 (해시·기간·LLM 불변, 정크 재사용 차단)")
+
+
+def test_s4_sticky_period():
+    """비확정 출처(LLM/추론/무응답)는 기존 기간을 덮지 못하고 빈 칸만 채운다.
+    확정 출처(상세 본문 '기간' 정규식)는 종전대로 교체한다."""
+    year = dt.date.today().year
+    old = {"start_date": f"{year}-04-01", "end_date": f"{year}-12-31", "date_source": "llm"}
+    # 1) KB(목록 불신) + 본문 없음 + LLM 무응답 → 기존 값 유지, 검토 플래그 없음
+    ev = {"firm_name": "KB증권", "event_name": "x", "start_date": None, "end_date": None,
+          "_detail_text": ""}
+    normalize.reconcile_period(ev, {}, old)
+    assert (ev["start_date"], ev["end_date"], ev["date_source"]) == \
+        (old["start_date"], old["end_date"], "llm"), ev
+    assert not ev.get("needs_review")
+    # 2) LLM 이 다른 값을 줘도 확정 출처가 아니면 기존 값 유지 (KB 「ETF 수수료」 12-29↔01-01 진동)
+    ev = {"firm_name": "KB증권", "event_name": "x", "start_date": None, "end_date": None,
+          "_detail_text": ""}
+    normalize.reconcile_period(ev, {"period_start": f"{year - 1}-12-29",
+                                    "period_end": f"{year}-12-28"}, old)
+    assert (ev["start_date"], ev["end_date"]) == (old["start_date"], old["end_date"])
+    # 3) 기존이 비어 있으면 LLM 값으로 채운다
+    ev = {"firm_name": "KB증권", "event_name": "x", "start_date": None, "end_date": None,
+          "_detail_text": ""}
+    normalize.reconcile_period(ev, {"period_start": f"{year}-05-01",
+                                    "period_end": f"{year}-08-31"},
+                               {"start_date": None, "end_date": None})
+    assert (ev["start_date"], ev["end_date"], ev["date_source"]) == \
+        (f"{year}-05-01", f"{year}-08-31", "llm")
+    # 3b) 기존이 종료일만 있으면 시작일만 채운다
+    ev = {"firm_name": "KB증권", "event_name": "x", "start_date": None, "end_date": None,
+          "_detail_text": ""}
+    normalize.reconcile_period(ev, {"period_start": f"{year}-05-01",
+                                    "period_end": f"{year}-08-31"},
+                               {"start_date": None, "end_date": f"{year}-09-30",
+                                "date_source": "hold_inferred"})
+    assert (ev["start_date"], ev["end_date"]) == (f"{year}-05-01", f"{year}-09-30")
+    # 4) 확정 출처(상세 본문 '기간')는 기존 값을 교체한다
+    ev = {"firm_name": "KB증권", "event_name": "x", "start_date": None, "end_date": None,
+          "_detail_text": f"이벤트 기간 : {year}.06.01 ~ {year}.10.31 안내"}
+    normalize.reconcile_period(ev, {}, old)
+    assert (ev["start_date"], ev["end_date"], ev["date_source"]) == \
+        (f"{year}-06-01", f"{year}-10-31", "detail")
+    print("OK S4 기간 스티키 (비확정 출처는 빈 칸만 채움, 확정 출처만 교체)")
+
+
+def test_s4_hold_period_rejected():
+    """LLM 이 '잔고유지기간'을 이벤트 기간으로 돌려주면 거부한다 (KB 시즌3 재현)."""
+    from pension_monitor.classify import hold_period
+    year = dt.date.today().year
+    yy = year % 100
+    text = (f"연금저축 순입금 이벤트 안내. 잔고유지기간({yy}.10.1~10.31) 동안 출금 시 "
+            f"혜택 지급 대상에서 제외됩니다.")
+    assert hold_period(text, year) == (f"{year}-10-01", f"{year}-10-31")
+    assert hold_period("기간 표기 없음", year) is None
+    ev = {"firm_name": "KB증권", "event_name": "시즌3", "start_date": None, "end_date": None,
+          "_detail_text": text}
+    normalize.reconcile_period(ev, {"period_start": f"{year}-10-01",
+                                    "period_end": f"{year}-10-31"})
+    assert ev["start_date"] is None, ev
+    # 거부 후엔 종전 G9 역산(유지 시작 - 1일)으로 종료일만 추론
+    assert ev["end_date"] == f"{year}-09-30" and ev["date_source"] == "hold_inferred", ev
+    # 정상 기간(유지기간과 무관)은 그대로 수용
+    ev = {"firm_name": "KB증권", "event_name": "시즌3", "start_date": None, "end_date": None,
+          "_detail_text": text}
+    normalize.reconcile_period(ev, {"period_start": f"{year}-07-01",
+                                    "period_end": f"{year}-09-30"})
+    assert (ev["start_date"], ev["end_date"], ev["date_source"]) == \
+        (f"{year}-07-01", f"{year}-09-30", "llm")
+    print("OK S4 잔고유지기간 오인 거부")
+
+
+def test_s4_db_sync_never_nulls_dates():
+    """db.sync 방어선: 새 값이 None 이면 기존 start/end 를 지우지도, '변경'으로 기록하지도 않는다."""
+    year = dt.date.today().year
+    future_end = (dt.date.today() + dt.timedelta(days=90)).isoformat()
+    calls = {"patch": []}
+    db.fetch_all_events = lambda: existing
+    db.enabled = lambda: True
+    db._patch = lambda path, params, payload: calls["patch"].append((params, payload))
+    db._post = lambda path, payload, prefer=None: [{"id": 1}]
+    db._delete = lambda path, params: None
+    existing = [
+        {"id": 45, "firm_name": "KB증권", "event_name": "TDF 시즌3", "source_event_id": "10010041",
+         "start_date": f"{year}-04-01", "end_date": future_end, "date_source": "detail",
+         "status": "진행중", "missed_count": 0, "benefits": "b", "conditions": None,
+         "content_hash": "x", "last_seen_at": f"{year}-06-30T00:00:00+00:00"},
+    ]
+    ev = {"firm_name": "KB증권", "event_name": "TDF 시즌3", "source_event_id": "10010041",
+          "start_date": None, "end_date": None, "date_source": None, "benefits": "b",
+          "conditions": None, "status": None, "needs_review": False, "content_hash": "x"}
+    diff = db.sync([ev], firms_failed=[], trigger_type="manual")
+    assert not [c for c in diff["changed"] if c[1] in ("start_date", "end_date")], diff["changed"]
+    payload = calls["patch"][0][1]
+    assert "start_date" not in payload and "end_date" not in payload, payload
+    assert payload.get("date_source", "detail") == "detail", payload
+    assert ev["start_date"] == f"{year}-04-01" and ev["end_date"] == future_end
+    assert ev["status"] == "진행중" and diff["active"] == [ev]
+    print("OK S4 db.sync 기간 None 덮어쓰기 차단")
+
+
+def test_koreainvestment_detail_domain_fallback():
+    """한투 상세: 1차 도메인 실패 시 2차 도메인으로 폴백, 전부 실패면 raise (빈 문자열 금지)."""
+    from pension_monitor.scrapers import koreainvestment as ki
+    calls = []
+
+    def fake_get(url, retries=3):
+        calls.append(url)
+        if "securities.koreainvestment.com" in url:
+            raise ConnectionError("refused")
+        return "<html><body><p>본문 텍스트</p></body></html>"
+
+    orig = ki._get
+    ki._get = fake_get
+    try:
+        assert ki.fetch_detail_text("6754") == "본문 텍스트"
+        assert "securities.koreainvestment.com" in calls[0] and "m.koreainvestment.com" in calls[1]
+
+        def always_fail(url, retries=3):
+            raise ConnectionError("refused")
+        ki._get = always_fail
+        try:
+            ki.fetch_detail_text("6754")
+            raise AssertionError("실패를 삼키고 빈 문자열을 반환하면 안 됨")
+        except ConnectionError:
+            pass
+    finally:
+        ki._get = orig
+    print("OK 한투 상세 도메인 폴백 + 실패 raise")
+
+
+if __name__ == "__main__":
+    test_s1_fetch_failure_keeps_existing()
+    test_s4_sticky_period()
+    test_s4_hold_period_rejected()
+    test_s4_db_sync_never_nulls_dates()
+    test_koreainvestment_detail_domain_fallback()
+    print("P0 회귀 5종 통과")

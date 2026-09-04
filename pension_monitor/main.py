@@ -22,6 +22,7 @@ from . import db, mailer, normalize, report as report_mod
 from .classify import (is_pension, detect_accounts, extract_details, content_hash,
                        source_event_id, clip_detail, pick_content_images)
 from .config import TRIGGER_TYPE
+from .normalize import TEXT_MIN
 from .scrapers import SCRAPERS
 from .scrapers.base import load_page
 from .scrapers.koreainvestment import fetch_detail_text
@@ -35,6 +36,9 @@ RETRY_PASS_DELAY_SEC = 8
 
 # 상세 로그(이벤트 전건·리포트 전문)는 로그/토큰 비용이 커서 기본 off. DEBUG=1 로 활성화.
 DEBUG = os.environ.get("DEBUG", "").lower() in ("1", "true", "yes")
+
+# 정규화 통계(LLM 호출/캐시/상세 fetch 실패) — 요약 파일·Step Summary 에 실어 추이를 본다
+_RUN_STATS = {}
 
 
 # 개별 상세가 아니라 목록 페이지 그 자체인 URL(상세 본문 없음) — 경로(path) 기준 판정.
@@ -155,16 +159,22 @@ async def enrich_details(browser, pension_events):
             print(f"[상세] 예산 도달 — {fetched}건 조회 후 중단")
             break
         if ev.get("_detail_text"):
+            ev.setdefault("_detail_status", "ok")       # 스크레이퍼가 본문을 채운 경우(NH)
             continue
         url = ev.get("_content_url") or ev.get("event_url") or ""
         if not url.startswith("http") or _is_list_url(url):
+            ev["_detail_status"] = "none"               # 상세 페이지 자체가 없음(목록 URL)
             continue
         # 한투: 상세 텍스트 전용 엔드포인트
         if ev["firm_name"] == "한국투자증권" and ev.get("_detail_id"):
             try:
-                ev["_detail_text"] = clip_detail(fetch_detail_text(ev["_detail_id"]) or "")
+                text = clip_detail(fetch_detail_text(ev["_detail_id"]) or "")
                 fetched += 1
+                if text:
+                    ev["_detail_text"] = text
+                ev["_detail_status"] = "ok" if len(text) >= TEXT_MIN else "empty"
             except Exception as e:
+                ev["_detail_status"] = "error"
                 print(f"[상세실패] 한국투자증권 {ev['event_name'][:24]}: {type(e).__name__}")
             continue
         need_img = not ev.get("_image_urls")
@@ -216,7 +226,13 @@ async def enrich_details(browser, pension_events):
             if soup is not None:
                 detail_text += _fetch_sub_content(soup, url)
             fetched += 1
+            # S1: 실질 내용(본문 텍스트 or 콘텐츠 이미지 or 스크린샷)이 있어야 'ok'.
+            # 그 외는 'empty' — normalize 가 재추출/해시/기간 갱신을 모두 건너뛴다.
+            substantive = (len(detail_text) >= TEXT_MIN or ev.get("_image_urls")
+                           or ev.get("_screenshot_b64"))
+            ev["_detail_status"] = "ok" if substantive else "empty"
         except Exception as e:
+            ev["_detail_status"] = "error"
             print(f"[상세실패] {ev['firm_name']} {ev['event_name'][:30]}: {type(e).__name__}")
         if detail_text:
             # 앞에서 자르지 않고 '본문 + 유의사항 꼬리(배수·제외재원)'를 보존해 절단
@@ -293,13 +309,19 @@ def main():
         ev["source_event_id"] = source_event_id(ev)
     existing = db.fetch_all_events() if db.enabled() else []
     # 정규화 v2: Gemini 구조화(캐시 우선) → 검증 게이트 → 캐노니컬 + 구조화 행
-    normalize.normalize_events(pension, existing)
+    stats = normalize.normalize_events(pension, existing)
+    # 상세 fetch 실패 건(기존 값 유지·재추출 생략) — 관측용
+    fetch_failed = [f"{ev['firm_name']}:{ev['event_name'][:20]}" for ev in pension
+                    if ev.get("_detail_status") not in ("ok", "none")]
     pension = finalize(pension)
     by_firm = {}
     for ev in pension:
         by_firm[ev["firm_name"]] = by_firm.get(ev["firm_name"], 0) + 1
     print(f"전체 {len(events)}건 중 연금 관련 {len(pension)}건 "
-          f"(증권사별 {by_firm}, 수집 실패: {failed or '없음'})")
+          f"(증권사별 {by_firm}, 수집 실패: {failed or '없음'}, "
+          f"상세 fetch 실패: {fetch_failed or '없음'})")
+    _RUN_STATS.update(stats or {})
+    _RUN_STATS["detail_fetch_failed"] = fetch_failed
     if DEBUG:
         for ev in pension:
             print(f"  - [{ev['firm_name']}] {ev['event_name']} ({ev.get('start_date')}~{ev.get('end_date')}) "
@@ -360,7 +382,9 @@ def main():
     sent = mailer.send(subject, report_md, attachments=attachments)
     write_step_summary(
         f"진행중 {len(diff['active'])} · 신규 {len(diff['new'])} · 종료 {len(diff['closed'])} "
-        f"· 변경 {len(diff['changed'])} · 수집실패 {failed or '없음'} · 메일 {'발송' if sent else '스킵'}")
+        f"· 변경 {len(diff['changed'])} · 수집실패 {failed or '없음'} · 메일 {'발송' if sent else '스킵'} "
+        f"· LLM {_RUN_STATS.get('llm_calls', 0)}콜/캐시 {_RUN_STATS.get('cache_hits', 0)}"
+        f"/상세실패 {len(_RUN_STATS.get('detail_fetch_failed') or [])}")
 
 
 def _write_summary(active, by_firm, failed, diff, note=""):
@@ -375,6 +399,7 @@ def _write_summary(active, by_firm, failed, diff, note=""):
         "closed": len(diff["closed"]) if diff else None,
         "changed": len(diff["changed"]) if diff else None,
         "note": note,
+        **_RUN_STATS,
     }
     pathlib.Path("data").mkdir(exist_ok=True)
     with open("data/last_run_summary.json", "w", encoding="utf-8") as f:
