@@ -28,7 +28,11 @@ API_KEY = os.environ.get("GEMINI_API_KEY") or ""
 MODEL = os.environ.get("VISION_MODEL", "gemini-2.5-flash")
 ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
-MAX_IMAGES = 3  # 한 요청에 전달할 상세 이미지 상한 (다단 배너 커버, 호출 수는 1회)
+# 한 요청에 전달할 상세 이미지 상한. KB 는 긴 배너를 같은 폴더에 img_01…img_11 로
+# 잘라 두므로 3장이면 티어가 잘린다(운영 관측: 날마다 다른 3장을 읽어 혜택이 요동).
+# 폴더 단위 전량 선택(classify.pick_content_images v2)과 짝을 이뤄 12장까지 허용.
+# 개별 이미지 7MB 상한(fetch_image_b64)은 유지 — 슬라이스는 수백 KB 수준.
+MAX_IMAGES = 12
 
 # 스키마/프롬프트 버전 — 이 값을 올리면 캐시가 무효화돼 전건이 재추출된다
 # (normalize.py 캐시 조건이 old.extract_schema_version 와 비교). 스키마·_RULES 를

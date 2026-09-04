@@ -10,6 +10,7 @@ import datetime as dt
 import requests
 
 from .config import SUPABASE_URL, SUPABASE_KEY, FIRMS, EXCLUDED_FIRMS
+from .facts import fact_signature, tier_count
 
 MISSED_LIMIT = 2  # 연속 미노출 N회 → 종료 처리
 
@@ -162,6 +163,34 @@ def fetch_children(table: str) -> list:
         return []
 
 
+def _multiplier_map() -> dict:
+    """event_id → 기존 배수 행 목록 (사실 시그니처 비교용). 조회 실패는 빈 dict."""
+    out = {}
+    for r in fetch_children("pension_event_multipliers"):
+        out.setdefault(r.get("event_id"), []).append(r)
+    return out
+
+
+def material_change(old: dict, ev: dict, old_mults=None) -> bool:
+    """S3: 신선 추출(ev)이 기존 행(old) 대비 '실질'(수치·티어·판정·배수)이 바뀌었는가.
+
+    같으면 호출자는 기존 캐노니컬·타입드 컬럼·자식 행을 그대로 두고 last_verified_at 만
+    갱신한다 — LLM 문장 요동(운영: conditions 34회 변경에 33개 값)이 DB 에 닿지 않는다.
+    새 추출의 티어 수가 기존보다 적으면(슬라이스 일부만 읽힘·evidence 부족) 실질 변경으로
+    보지 않고 기존 값을 유지한다(무회귀). 기존 값이 없으면 항상 실질."""
+    if not (old.get("benefits") or "").strip():
+        return True
+    if tier_count(ev) < tier_count(old):
+        print(f"[게이트] {ev.get('event_name', '')[:24]}: 새 추출 티어 {tier_count(ev)} < "
+              f"기존 {tier_count(old)} — 기존 값 유지")
+        return False
+    return fact_signature(old, old_mults) != fact_signature(ev, ev.get("multiplier_rows"))
+
+
+# 시그니처 동일 시 기존 값을 유지하는 컬럼 (캐노니컬 텍스트 + 파서/LLM 유래 메타)
+_GATED_COLS = ("conditions", "benefits") + _TYPED_COND_COLS + ("stackable", "annual_claim_limit")
+
+
 def build_index(existing: list) -> dict:
     """기존 이벤트 매칭 인덱스. source_event_id(불변) 우선, 자연키 폴백."""
     idx = {}
@@ -196,6 +225,7 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
     idx = build_index(existing)
     matched_ids = set()
     failed_set = set(firms_failed)
+    old_mults = _multiplier_map() if enabled() else {}
 
     # ── 1단계: 변동 판정(순수 계산) + DB 쓰기는 건별 안전 실행 ──────
     # '변경' 이력 기록 대상: 원천 필드는 항상, 콘텐츠 필드는 이번 실행에서 실제
@@ -209,6 +239,7 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
     for ev in scraped:
         ev["status"] = "종료" if (ev.get("end_date") and ev["end_date"] < today) else "진행중"
         old = find_existing(idx, ev)
+        material = True          # 신규 행은 항상 실질(자식 행 적재)
         if old is None:
             new_events.append(ev)
             if enabled():
@@ -227,6 +258,15 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
             updates = {"last_seen_at": now, "missed_count": 0, "status": ev["status"]}
             if ev.get("source_event_id") and not old.get("source_event_id"):
                 updates["source_event_id"] = ev["source_event_id"]
+            # S3 사실 시그니처 게이트: 신선 추출이라도 실질이 같으면 기존 캐노니컬·
+            # 타입드·자식 행을 유지한다 (재추출 트리거 메타·last_verified_at 은 갱신 →
+            # 다음 실행은 캐시 적중). 표현만 다른 재추출은 여기서 멈춘다.
+            material = True
+            if ev.get("rows_fresh"):
+                material = material_change(old, ev, old_mults.get(old["id"]))
+                if not material:
+                    for f in _GATED_COLS:
+                        ev[f] = old.get(f)
             # S4 기간 스티키(방어선): 새 값이 None 이면 기존 기간을 지우지 않는다.
             # (1차 판정은 normalize.reconcile_period(old) — 여기서는 어떤 경로로 오든
             # '값 → NULL' 진동이 DB 에 닿지 않도록 마지막으로 막는다.)
@@ -279,8 +319,8 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
                 updates["closed_at"] = now
             if enabled():
                 _safe(_patch, "pension_events", {"id": f"eq.{old['id']}"}, updates)
-        # 자식 테이블(조건/혜택/배수 행): 신선한 추출 성공 건만 교체 (무회귀)
-        if ev.get("rows_fresh") and ev.get("id"):
+        # 자식 테이블(조건/혜택/배수 행): 신선한 추출 성공 + 실질 변경 건만 교체 (무회귀)
+        if ev.get("rows_fresh") and ev.get("id") and (old is None or material):
             replace_children(ev["id"], ev.get("condition_rows") or [],
                              ev.get("benefit_rows") or [],
                              multiplier_rows=ev.get("multiplier_rows") or [])
