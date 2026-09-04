@@ -152,6 +152,9 @@ def test_normalize_rejects_junk_reused_from_old():
 def test_sync_v2():
     year = dt.date.today().year
     today = dt.date.today().isoformat()
+    # 진행중 판정(end_date >= today)이 리포트 '확인' 컬럼 검증의 전제 — 고정 월일
+    # (올해-08-31)은 9월 이후 '종료'로 바뀌어 매년 재발하므로 오늘 기준 상대 날짜 사용
+    future_end = (dt.date.today() + dt.timedelta(days=60)).isoformat()
     calls = {"patch": [], "post": [], "delete": []}
     db.fetch_all_events = lambda: existing
     db.enabled = lambda: True
@@ -161,7 +164,7 @@ def test_sync_v2():
 
     existing = [
         {"id": 1, "firm_name": "NH투자증권", "event_name": "IRP 이벤트",
-         "source_event_id": "1000", "start_date": f"{year}-05-01", "end_date": f"{year}-08-31",
+         "source_event_id": "1000", "start_date": f"{year}-05-01", "end_date": future_end,
          "status": "진행중", "missed_count": 0, "benefits": "옛 혜택 → 상품권 (전원)",
          "conditions": None, "content_hash": "old", "last_seen_at": f"{year}-06-30T00:00:00+00:00"},
         {"id": 2, "firm_name": "한국투자증권", "event_name": "만기 이벤트",
@@ -170,7 +173,7 @@ def test_sync_v2():
          "last_seen_at": f"{year}-06-29T00:00:00+00:00"},
     ]
     ev = {"firm_name": "NH투자증권", "event_name": "IRP 이벤트", "source_event_id": "1000",
-          "start_date": f"{year}-05-01", "end_date": f"{year}-08-31", "status": None,
+          "start_date": f"{year}-05-01", "end_date": future_end, "status": None,
           "benefits": "새 혜택 → 상품권 2만원 (전원)", "conditions": "대상: IRP",
           "rows_fresh": True,
           "benefit_rows": [{"tier_no": 1, "condition_text": "새 혜택", "benefit_text": "상품권 2만원",
