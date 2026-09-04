@@ -227,6 +227,15 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
             updates = {"last_seen_at": now, "missed_count": 0, "status": ev["status"]}
             if ev.get("source_event_id") and not old.get("source_event_id"):
                 updates["source_event_id"] = ev["source_event_id"]
+            # S4 기간 스티키(방어선): 새 값이 None 이면 기존 기간을 지우지 않는다.
+            # (1차 판정은 normalize.reconcile_period(old) — 여기서는 어떤 경로로 오든
+            # '값 → NULL' 진동이 DB 에 닿지 않도록 마지막으로 막는다.)
+            kept_dates = [f for f in ("start_date", "end_date")
+                          if ev.get(f) is None and old.get(f)]
+            for f in kept_dates:
+                ev[f] = old.get(f)
+            if kept_dates and not ev.get("date_source"):
+                ev["date_source"] = old.get("date_source")
             for f in _RAW_FIELDS:
                 if (old.get(f) or None) != (ev.get(f) or None):
                     changed.append((ev, f, old.get(f), ev.get(f)))

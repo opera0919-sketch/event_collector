@@ -220,6 +220,36 @@ def infer_end_from_hold(text, year_hint):
     return (hold_start - dt.timedelta(days=1)).isoformat()
 
 
+# 잔고유지기간의 '시작 ~ 종료' 양끝 (예: '잔고유지기간(26.10.1~10.31)')
+_HOLD_RANGE_RE = re.compile(
+    r"(?:잔고\s*유지|유지)\s*기간[^0-9]{0,10}"
+    r"(?:(\d{2,4})[.\-/년]\s*)?(\d{1,2})[.\-/월]\s*(\d{1,2})일?\s*[~∼-]\s*"
+    r"(?:(\d{2,4})[.\-/년]\s*)?(\d{1,2})[.\-/월]\s*(\d{1,2})")
+
+
+def hold_period(text, year_hint):
+    """본문의 잔고유지기간 (시작ISO, 종료ISO). 없으면 None.
+
+    실전(KB 시즌3, 2026-07~08)에서 LLM 이 '잔고유지기간(26.10.1~10.31)' 을 이벤트
+    기간으로 돌려줘 start/end 가 10-01~10-31 로 진동했다. 이벤트 기간 후보가 이
+    구간과 겹치면 거부하기 위한 참조값."""
+    m = _HOLD_RANGE_RE.search(" ".join((text or "").split()))
+    if not m:
+        return None
+
+    def _y(v, fallback):
+        y = int(v) if v else fallback
+        return 2000 + y if y < 100 else y
+
+    try:
+        y1 = _y(m.group(1), year_hint)
+        s = dt.date(y1, int(m.group(2)), int(m.group(3)))
+        e = dt.date(_y(m.group(4), y1), int(m.group(5)), int(m.group(6)))
+    except ValueError:
+        return None
+    return s.isoformat(), e.isoformat()
+
+
 def extract_details(detail_text: str) -> dict:
     """상세 페이지 본문에서 참여조건/혜택 휴리스틱 추출."""
     out = {"conditions": None, "benefits": None, "remarks": None}

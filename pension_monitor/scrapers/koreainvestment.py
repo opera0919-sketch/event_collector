@@ -17,7 +17,7 @@ from ..config import UA
 _DOMAINS = ["securities.koreainvestment.com", "m.koreainvestment.com"]
 LIST_URL = ("https://{domain}/main/customer/notice/Event.jsp"
             "?gubun=i&currentPage={page}&userRowsPerPage=10")
-DETAIL_URL = ("https://securities.koreainvestment.com/main/customer/notice/Event.jsp"
+DETAIL_URL = ("https://{domain}/main/customer/notice/Event.jsp"
               "?gubun=i&cmd=TF04gb010002&num={num}")
 
 _PERIOD_RE = re.compile(r"기간\s*:\s*(\d{4}\.\d{1,2}\.\d{1,2})\s*~\s*(\d{4}\.\d{1,2}\.\d{1,2})")
@@ -54,11 +54,18 @@ def _to_iso(d):
 
 
 def fetch_detail_text(num: str) -> str:
-    try:
-        soup = BeautifulSoup(_get(DETAIL_URL.format(num=num)), "html.parser")
-        return soup.get_text("\n", strip=True)
-    except Exception:
-        return ""
+    """상세 본문 텍스트. 목록과 같은 도메인 폴백을 적용하고, 전부 실패하면 raise.
+
+    종전엔 실패를 "" 로 삼켜 호출측이 '빈 본문'을 정상 내용으로 오인했다 —
+    빈 본문 해시(sha256('|')=cbe5cfdf…)가 재추출 트리거를 매일 뒤집던 원인(S1)."""
+    last = None
+    for domain in _DOMAINS:
+        try:
+            soup = BeautifulSoup(_get(DETAIL_URL.format(domain=domain, num=num)), "html.parser")
+            return soup.get_text("\n", strip=True)
+        except Exception as e:
+            last = e
+    raise last
 
 
 async def scrape(browser=None):
@@ -84,7 +91,7 @@ async def scrape(browser=None):
                 "event_name": name[:120],
                 "start_date": _to_iso(m.group(1)),
                 "end_date": _to_iso(m.group(2)),
-                "event_url": (DETAIL_URL.format(num=num) if num
+                "event_url": (DETAIL_URL.format(domain=_DOMAINS[0], num=num) if num
                               else LIST_URL.format(domain=_DOMAINS[0], page=1)),
                 "raw_text": text,
                 "_detail_id": num,

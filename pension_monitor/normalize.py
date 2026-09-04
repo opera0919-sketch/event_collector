@@ -20,7 +20,7 @@ import time
 from . import db, vision
 from .classify import (
     extract_period, suspicious_dates, weekday_conflicts, infer_end_from_hold,
-    source_content_hash, pick_content_images, _TRANSFER_HINT, _MULT_HINT,
+    hold_period, source_content_hash, pick_content_images, _TRANSFER_HINT, _MULT_HINT,
 )
 
 # ── 예산 (Gemini 무료 티어 보호 — 기존 운영값 유지) ─────────────────
@@ -216,16 +216,41 @@ def _valid_iso(s, lo, hi):
         return None
 
 
-def reconcile_period(ev, res):
-    """G4: 기간 신뢰원 규칙. 확신 없으면 비우고 검토 표기 (틀린 날짜 노출 금지)."""
+# 기간 확정 출처는 list/detail 뿐이다 — 그 값만 기존 값을 '교체'할 수 있고,
+# llm/hold_inferred/None 은 비어 있는 칸을 채울 수만 있다 (S4 기간 스티키).
+def _sticky_period(ev, old, ps, pe, inferred_end=None):
+    """S4: 확정 출처가 없을 때 기존 DB 기간을 우선 유지하고, 빈 칸만 비확정값으로 채운다.
+
+    실전(07~09월, event_changes 72건 중 62건)에서 KB 이벤트의 start/end 가
+    '값 ↔ NULL' 로 매일 진동했다. 상세 fetch 실패·LLM 무응답이 곧바로 NULL 확정으로
+    이어졌기 때문이다. 기존 값이 있으면 그것이 새 비확정값보다 항상 우선한다.
+    반환: True 면 기존 값으로 확정됨(호출자는 더 진행하지 않는다)."""
+    if not old or not (old.get("start_date") or old.get("end_date")):
+        return False
+    ev["start_date"] = old.get("start_date") or ps
+    ev["end_date"] = old.get("end_date") or pe or inferred_end
+    ev["date_source"] = old.get("date_source") or ("llm" if (ps or pe) else None)
+    return True
+
+
+def reconcile_period(ev, res, old=None):
+    """G4: 기간 신뢰원 규칙. 확신 없으면 비우고 검토 표기 (틀린 날짜 노출 금지).
+    old(기존 DB 행)가 주어지면 비확정 출처는 기존 값을 덮지 못한다 (S4)."""
     year = dt.date.today().year
+    text = ev.get("_detail_text", "")
     # G6: 본문의 'YYYY.MM.DD(요일)' 표기와 실제 요일이 어긋나면 표기 (기간 오추출 신호)
-    bad_wd = weekday_conflicts(ev.get("_detail_text", ""))
+    bad_wd = weekday_conflicts(text)
     if bad_wd:
         _flag(ev, f"요일 불일치 {bad_wd}")
     ps = _valid_iso((res or {}).get("period_start"), year - 2, year + 2)
     pe = _valid_iso((res or {}).get("period_end"), year - 1, year + 2)
     if ps and pe and ps > pe:
+        ps = pe = None
+    # S4: LLM 이 '잔고유지기간'을 이벤트 기간으로 돌려준 경우 거부 (KB 시즌3 재현)
+    hold = hold_period(text, year)
+    if hold and (ps == hold[0] or pe == hold[1]):
+        print(f"[기간] {ev.get('event_name', '')[:24]}: LLM 기간 {ps}~{pe} 이 잔고유지기간과 "
+              f"일치 — 거부")
         ps = pe = None
     list_ok = (ev["firm_name"] in TRUSTED_LIST_DATES
                and ev.get("start_date") and ev.get("end_date")
@@ -236,14 +261,17 @@ def reconcile_period(ev, res):
             _flag(ev, f"기간 불일치(목록 {ev['end_date']} vs 상세 {pe}) — 목록 우선 적용")
         return
     # 목록 불신/누락 → 상세 본문 '기간 :' 정규식
-    ds, de = extract_period(ev.get("_detail_text", ""))
+    ds, de = extract_period(text)
     if ds and de and not suspicious_dates(ds, de):
         ev["start_date"], ev["end_date"], ev["date_source"] = ds, de, "detail"
+        return
+    # 이하 비확정 출처(LLM/추론/NULL): 기존 DB 값이 있으면 그것을 유지한다 (S4)
+    inferred_end = (infer_end_from_hold(text, year) if not (ps and pe) else None)
+    if _sticky_period(ev, old, ps, pe, inferred_end):
         return
     # G9: 정규식/LLM 이 기간을 못 줄 때, 잔고유지기간 시작일 - 1일 로 종료일 역산
     #     (KB 시즌3 등 기간 NULL 방지). 추론값이므로 감사 추적 가능하게 표기만.
     if not (ps and pe):
-        inferred_end = infer_end_from_hold(ev.get("_detail_text", ""), year)
         if inferred_end:
             # 종료일만 추론했을 뿐 시작일 근거는 없다. 목록에서 온 start_date 는
             # 불신 대상(KB 게시일 혼입)이므로 남기지 않는다 — date_source 는
@@ -389,42 +417,82 @@ def _reuse_cached(ev, old):
         ev["acct_etc"] = old["acct_etc"]
 
 
+def detail_fetch_ok(ev) -> bool:
+    """S1: 이번 실행에서 상세 원문을 실제로 확보했는가.
+
+    enrich_details 가 `_detail_status` 를 기록한다(ok/empty/error/none). 값이 없는
+    경로(예산 소진으로 미조회, 오프라인 테스트)는 내용으로 추정한다: 본문이
+    TEXT_MIN 이상이거나 콘텐츠 이미지가 있으면 ok."""
+    status = ev.get("_detail_status")
+    if status is not None:
+        return status == "ok"
+    text = (ev.get("_detail_text") or "").strip()
+    return len(text) >= TEXT_MIN or bool(ev.get("_image_urls") or ev.get("_screenshot_b64"))
+
+
 def normalize_events(pension, existing):
-    """전 이벤트 정규화 오케스트레이션. Gemini 미설정 시 휴리스틱 값 유지 + 기간 규칙만 적용."""
+    """전 이벤트 정규화 오케스트레이션. Gemini 미설정 시 휴리스틱 값 유지 + 기간 규칙만 적용.
+    반환: 관측 통계 dict (llm_calls/cache_hits/retry_skips/fetch_failed)."""
     idx = db.build_index(existing)
     started = time.monotonic()
-    n_call, n_cache, n_retry_skip = 0, 0, 0
+    n_call, n_cache, n_retry_skip, n_fetch_fail = 0, 0, 0, 0
 
     def _may_call():
         return (vision.enabled() and not vision.blocked() and n_call < STRUCT_BUDGET
                 and time.monotonic() - started <= TIME_BUDGET_SEC)
 
     for ev in pension:
-        # 재추출 트리거 메타: LLM 입력 원문 해시 + 스키마 버전. 캐시 조건이 이 둘을
-        # 비교하므로, 조항이 바뀌거나 스키마를 고치면 자동으로 재추출된다 (누락 영구화 방지).
-        ev["source_content_hash"] = source_content_hash(ev)
-        ev["extract_schema_version"] = vision.EXTRACT_SCHEMA_VERSION
         old = db.find_existing(idx, ev)
         res = {}
+        # S1: 상세 원문을 확보하지 못한 실행은 '내용 변경'이 아니다. 기존 행이 있으면
+        # 캐노니컬·기간·재추출 메타를 그대로 유지하고 LLM 도 부르지 않는다.
+        # (종전엔 빈 본문의 해시 sha256('|') 가 캐시를 깨고 → 재추출 → 다음 날 또
+        #  해시가 바뀌어 재추출 — 하루 실패가 이틀치 overwrite 를 만들었다.)
+        # 기존 행이 없으면(신규) 아래 폴백(hint 등)으로 진행하되 원문 해시는 싣지 않아
+        # 다음 실행에서 자연히 재시도된다.
+        fetch_ok = detail_fetch_ok(ev)
+        if not fetch_ok:
+            n_fetch_fail += 1
+            if old is not None:
+                # 기존 값도 _is_trustworthy 재검사(G3) — 정크 재오염분을 영구 전파하지 않음
+                if _is_trustworthy(old.get("benefits")):
+                    _reuse_cached(ev, old)
+                    if old.get("needs_review"):
+                        _flag(ev, old.get("review_reason") or "재검증 실패 — 원문 확인 필요")
+                else:
+                    ev["benefits"] = None
+                    ev["extract_method"] = old.get("extract_method") or "none"
+                    _flag(ev, "혜택 미확인(상세 원문 미확보) — 원문 확인 필요")
+                reconcile_period(ev, res, old)
+                apply_accounts(ev, res)
+                ev["needs_review"] = bool(ev.get("needs_review"))
+                continue
+        else:
+            # 재추출 트리거 메타: LLM 입력 원문 해시 + 스키마 버전. 캐시 조건이 이 둘을
+            # 비교하므로, 조항이 바뀌거나 스키마를 고치면 자동으로 재추출된다 (누락 영구화 방지).
+            ev["source_content_hash"] = source_content_hash(ev)
+            ev["extract_schema_version"] = vision.EXTRACT_SCHEMA_VERSION
+        src_hash = ev.get("source_content_hash")
         # M4: 재시도 카운터의 대상 식별자. old 의 카운터는 같은 키(같은 원문·스키마)에
         # 대한 실패일 때만 유효 — 키가 다르면(원문 변경·스키마 상향) 0으로 간주해
         # 재시도를 재개한다.
-        retry_key = f"{ev['source_content_hash']}:{vision.EXTRACT_SCHEMA_VERSION}"
+        retry_key = f"{src_hash}:{vision.EXTRACT_SCHEMA_VERSION}"
         old_retries = ((old.get("review_retry_count") or 0)
                        if (old and old.get("review_retry_key") == retry_key) else 0)
         # 캐시: 같은 이벤트 + 같은 종료일 + 원문/스키마 불변 + 기존 캐노니컬 양호 → 재호출 생략.
         # source_content_hash/extract_schema_version 불일치면(조항 변경·추출 개선)
         # 재추출을 유발한다. _is_trustworthy 로 old.benefits 정크 여부도 재검사.
         cache_ok = (old
+                    and fetch_ok
                     and old.get("end_date") == ev.get("end_date")
-                    and old.get("source_content_hash") == ev["source_content_hash"]
+                    and old.get("source_content_hash") == src_hash
                     and old.get("extract_schema_version") == vision.EXTRACT_SCHEMA_VERSION
                     and not old.get("needs_review")
                     and _is_trustworthy(old.get("benefits")))
         if cache_ok:
             _reuse_cached(ev, old)
             n_cache += 1
-            reconcile_period(ev, res)
+            reconcile_period(ev, res, old)
             apply_accounts(ev, res)
             continue
         # M4: 재발성 플래그(needs_review)로 캐시가 영영 미스인 이벤트의 재시도 상한.
@@ -443,7 +511,7 @@ def normalize_events(pension, existing):
             ev["review_retry_count"], ev["review_retry_key"] = old_retries, retry_key
             _flag(ev, old.get("review_reason") or "재검증 실패 — 원문 확인 필요")
             n_retry_skip += 1
-            reconcile_period(ev, res)
+            reconcile_period(ev, res, old)
             apply_accounts(ev, res)
             ev["needs_review"] = True
             continue
@@ -518,7 +586,7 @@ def normalize_events(pension, existing):
                 ev["extract_method"] = "none"
                 _flag(ev, "혜택 미확인(본문/이미지 추출 실패) — 원문 확인 필요")
 
-        reconcile_period(ev, res)
+        reconcile_period(ev, res, old)
         apply_accounts(ev, res)
         # G8: 이전 유치형인데 배수·제외재원이 원문엔 있으나 추출엔 없으면 검토 표기
         check_coverage(ev)
@@ -546,4 +614,6 @@ def normalize_events(pension, existing):
         ev["needs_review"] = bool(ev.get("needs_review"))
 
     print(f"[정규화] Gemini {n_call}건 호출, 캐시 재사용 {n_cache}건, "
-          f"재시도한도 스킵 {n_retry_skip}건")
+          f"재시도한도 스킵 {n_retry_skip}건, 상세 fetch 실패(기존값 유지) {n_fetch_fail}건")
+    return {"llm_calls": n_call, "cache_hits": n_cache,
+            "retry_skips": n_retry_skip, "fetch_failed": n_fetch_fail}
