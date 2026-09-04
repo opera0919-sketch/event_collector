@@ -1165,3 +1165,42 @@ if __name__ == "__main__":
     test_fact_signature_equivalence()
     test_sync_fact_gate_keeps_canonical()
     print("KB 보완 회귀 4종 통과")
+
+
+# ── 예산 배분 순서 (2026-09-04 실측 회귀): 뒤쪽 증권사 굶음 방지 ──────────────
+def test_extraction_order_prefers_stale():
+    """전건 캐시 미스 실행에서 수집 순서를 그대로 따르면 앞 증권사가 예산을 다 쓰고
+    뒤 증권사(KB·NH)가 통째로 누락된다. 신규 우선 → 재검증이 오래된 순으로 처리한다."""
+    year = dt.date.today().year
+    existing = [
+        {"id": 1, "firm_name": "미래에셋증권", "event_name": "미래A", "source_event_id": "M1",
+         "start_date": None, "end_date": None, "last_verified_at": f"{year}-09-04T07:35:00+00:00"},
+        {"id": 2, "firm_name": "한국투자증권", "event_name": "한투A", "source_event_id": "K1",
+         "start_date": None, "end_date": None, "last_verified_at": f"{year}-09-04T00:24:00+00:00"},
+        {"id": 3, "firm_name": "KB증권", "event_name": "KB_A", "source_event_id": "B1",
+         "start_date": None, "end_date": None, "last_verified_at": f"{year}-09-01T00:30:00+00:00"},
+        {"id": 4, "firm_name": "NH투자증권", "event_name": "NH_A", "source_event_id": "N1",
+         "start_date": None, "end_date": None, "last_verified_at": None},
+    ]
+    mk = lambda f, n, s: {"firm_name": f, "event_name": n, "source_event_id": s,
+                          "start_date": None, "end_date": None}
+    # 수집 순서: 미래 → 한투 → KB → NH → (신규)삼성
+    pension = [mk("미래에셋증권", "미래A", "M1"), mk("한국투자증권", "한투A", "K1"),
+               mk("KB증권", "KB_A", "B1"), mk("NH투자증권", "NH_A", "N1"),
+               mk("삼성증권", "삼성신규", "S9")]
+    idx = db.build_index(existing)
+    got = [e["event_name"] for e in normalize.extraction_order(pension, idx)]
+    # 신규(삼성) → last_verified 없음(NH) → 오래된 순(KB 09-01, 한투 00:24, 미래 07:35)
+    assert got == ["삼성신규", "NH_A", "KB_A", "한투A", "미래A"], got
+    # 원본 리스트는 그대로(호출측이 이후 단계에서 사용) + 동일 객체 재사용
+    assert [e["event_name"] for e in pension][0] == "미래A"
+    assert normalize.extraction_order(pension, idx)[0] is pension[4]
+    # 동률이면 수집 순서 유지(결정론)
+    tie = [mk("A증권", "a", "1"), mk("B증권", "b", "2")]
+    assert [e["event_name"] for e in normalize.extraction_order(tie, {})] == ["a", "b"]
+    print("OK extraction_order (신규·오래된 것 우선, 동률 시 수집 순서 유지)")
+
+
+if __name__ == "__main__":
+    test_extraction_order_prefers_stale()
+    print("예산 배분 회귀 1종 통과")

@@ -25,7 +25,11 @@ from .classify import (
 
 # ── 예산 (Gemini 무료 티어 보호 — 기존 운영값 유지) ─────────────────
 STRUCT_BUDGET = 40       # 1회 실행 Gemini 호출 상한
-TIME_BUDGET_SEC = 360    # 구조화 전체 시간 예산(초)
+# 구조화 전체 시간 예산(초). 이벤트당 텍스트+OCR 2콜 × 6.5s 페이싱 + Gemini 지연으로
+# 콜당 실질 ~24초가 든다. 360초로는 전건 재추출(캐시 일괄 무효화) 시 15콜에서 끊겨
+# 뒤쪽 증권사가 통째로 누락됐다(2026-09-04 실측: KB·NH·삼성 미처리). 워크플로 타임아웃
+# 25분 대비 수집 6분 + 구조화 10분 = 여유 있음.
+TIME_BUDGET_SEC = 600
 PACE_SEC = 6.5           # 10 RPM 준수 간격
 TEXT_MIN = 200           # 이 길이 이상이면 본문 텍스트로 구조화, 미만이면 이미지 OCR
 # M4: 같은 원문·스키마(review_retry_key)에 대해 이 횟수 초과 재추출 금지.
@@ -425,6 +429,27 @@ def detail_fetch_ok(ev) -> bool:
     return len(text) >= TEXT_MIN or bool(ev.get("_image_urls") or ev.get("_screenshot_b64"))
 
 
+def extraction_order(pension, idx):
+    """LLM 예산을 배분할 순서 — '가장 오래 재검증되지 않은 이벤트' 우선.
+
+    종전엔 수집 순서(= 증권사 순서: 미래→한투→삼성→KB→NH)를 그대로 따랐다. 평소엔
+    캐시가 대부분 적중해 문제가 없지만, 캐시가 일괄 무효화되는 실행(해시식 변경·스키마
+    상향)에서는 앞쪽 증권사가 예산을 모두 쓰고 **뒤쪽 증권사가 통째로 누락**된다
+    (2026-09-04 실측: 미래 5건·한투 3건에서 15콜 소진 → KB·NH·삼성 0건 처리).
+    그 상태로는 다음 실행에서도 같은 순서로 굶으므로 특정 증권사가 영구히 밀릴 수 있다.
+
+    신규(기존 행 없음)를 먼저, 그다음 last_verified_at 오름차순(오래된 것 우선).
+    같은 시각이면 원래 수집 순서를 유지해 결과의 결정론을 지킨다."""
+    def key(item):
+        i, ev = item
+        old = db.find_existing(idx, ev)
+        if old is None:
+            return (0, "", i)                      # 신규 최우선
+        return (1, old.get("last_verified_at") or "", i)
+
+    return [ev for _, ev in sorted(enumerate(pension), key=key)]
+
+
 def normalize_events(pension, existing):
     """전 이벤트 정규화 오케스트레이션. Gemini 미설정 시 휴리스틱 값 유지 + 기간 규칙만 적용.
     반환: 관측 통계 dict (llm_calls/cache_hits/retry_skips/fetch_failed)."""
@@ -436,7 +461,7 @@ def normalize_events(pension, existing):
         return (vision.enabled() and not vision.blocked() and n_call < STRUCT_BUDGET
                 and time.monotonic() - started <= TIME_BUDGET_SEC)
 
-    for ev in pension:
+    for ev in extraction_order(pension, idx):
         old = db.find_existing(idx, ev)
         res = {}
         # S1: 상세 원문을 확보하지 못한 실행은 '내용 변경'이 아니다. 기존 행이 있으면
