@@ -1018,3 +1018,150 @@ if __name__ == "__main__":
     test_s4_db_sync_never_nulls_dates()
     test_koreainvestment_detail_domain_fallback()
     print("P0 회귀 5종 통과")
+
+
+# ── KB 보완 (IMPROVEMENT_PLAN §1.4/§2 S2·S3 근사): 폴더 단위 이미지 · 공통 라인 해시 · 사실 시그니처 ──
+def test_select_content_images_folder_all_slices():
+    """KB 상세 페이지 재현: 네비 png 3장(/img/common/) + 본문 슬라이스 11장(/html/design/T/)
+    + 타 이벤트 광고 배너 1장(/html/design/AD/). 본문 폴더의 슬라이스를 번호순 전량 반환."""
+    from pension_monitor.classify import select_content_images, pick_content_images
+    nav = [f"https://www.kbsec.com/img/common/menu_{i}.png" for i in range(3)]
+    slices = [f"https://etcimg.kbsec.com/html/design/T/img_{i:02d}.jpg" for i in range(1, 12)]
+    ad = ["https://etcimg.kbsec.com/html/design/AD/img_01.jpg"]
+    icons = ["https://www.kbsec.com/html/design/T/icon_arrow.png"]
+    page = nav + [slices[4], slices[10]] + ad + icons + slices[:4] + slices[5:10]   # DOM 순서 뒤섞임
+    got = select_content_images(page, 12)
+    assert got == slices, got                        # 번호순 전량, 광고/네비/아이콘 제외
+    # 지연 로드로 일부 슬라이스가 빠져도 남은 것은 같은 순서 → 부분집합(안정)
+    got2 = select_content_images(nav + slices[:6] + ad, 12)
+    assert got2 == slices[:6]
+    # 자연 정렬: img_2 < img_10
+    assert pick_content_images(["u/img_10.jpg", "u/img_2.jpg", "u/img_1.jpg"], 12) == \
+        ["u/img_1.jpg", "u/img_2.jpg", "u/img_10.jpg"]
+    # 강한 신호가 없으면 약한 신호(/img/), 그것도 없으면 래스터 전체
+    assert select_content_images(["https://x/img/a/1.jpg", "https://x/a.jpg"], 3) == ["https://x/img/a/1.jpg"]
+    assert select_content_images(["https://x/a.jpg", "https://x/b.gif"], 3) == ["https://x/a.jpg"]   # 최후 폴백은 래스터만
+    print("OK select_content_images (폴더 단위 전량·자연 정렬·광고/네비 제외)")
+
+
+def test_hash_text_per_firm_strips_common_lines():
+    from pension_monitor.classify import hash_text_per_firm, source_content_hash
+    nav = "전체메뉴\n진행중 이벤트\n시즌3 연금저축 이벤트\nTDF 굴려볼까 시즌3\n오늘의 광고 배너 A"
+    a = {"firm_name": "KB증권", "_detail_text": nav + "\n순입금 1백만원 이상 시 상품권"}
+    b = {"firm_name": "KB증권", "_detail_text": nav + "\nTDF 순매수 100만원 이상"}
+    c = {"firm_name": "NH투자증권", "_detail_text": "단독 증권사 본문\n전체메뉴"}
+    hash_text_per_firm([a, b, c])
+    assert a["_hash_text"] == "순입금 1백만원 이상 시 상품권", a["_hash_text"]
+    assert b["_hash_text"] == "TDF 순매수 100만원 이상"
+    assert c["_hash_text"] == "단독 증권사 본문\n전체메뉴"      # 1건뿐이면 제거 없음
+    h_a = source_content_hash(a)
+    # 광고 배너 문구가 두 페이지 모두에서 바뀌어도(템플릿 변화) 해시 불변
+    a2 = {"firm_name": "KB증권", "_detail_text": nav.replace("배너 A", "배너 B") + "\n순입금 1백만원 이상 시 상품권"}
+    b2 = {"firm_name": "KB증권", "_detail_text": nav.replace("배너 A", "배너 B") + "\nTDF 순매수 100만원 이상"}
+    hash_text_per_firm([a2, b2])
+    assert source_content_hash(a2) == h_a
+    # 이벤트 고유 조항이 바뀌면 해시 변경 (재추출 트리거 유지)
+    a3 = {"firm_name": "KB증권", "_detail_text": nav + "\n순입금 3백만원 이상 시 상품권"}
+    hash_text_per_firm([a3, b])
+    assert source_content_hash(a3) != h_a
+    print("OK hash_text_per_firm (런 내 공통 라인 제거 → 템플릿 변화에 불변, 조항 변화에 민감)")
+
+
+def test_fact_signature_equivalence():
+    from pension_monitor.facts import num_tokens, fact_signature
+    assert num_tokens("1백만원 이상 ~ 3백만원 미만 → 2만원 (추첨 3,000명)") == \
+        ["1000000원", "3000000원", "20000원", "3000명"]
+    assert num_tokens("100만원 이상 300만원 미만 → 10,000원 (추첨 3000명)")[2] == "10000원"
+    assert num_tokens("1억 5천만원") == ["150000000원"]
+    assert num_tokens("2026년 6월 30일 / 26.6.30 / 2026-06-30") == ["D:2026-06-30"] * 3
+    assert num_tokens("ETF 0.0042087%") == ["0.0042087%"] and num_tokens("1.5배") == ["1.5배"]
+    base = {"benefits": "IRP 순입금 1백만원 이상 → 상품권 1만원 (전원)\n순입금 3백만원 이상 → 상품권 2만원 (전원)",
+            "conditions": "대상: IRP 보유 고객\n한도: 연간 3만원", "apply_required": True,
+            "marketing_consent_required": None, "annual_cap_krw": 30000}
+    # 표현만 다른 재추출 (어순·티어 순서·상품명 접두·쉼표 금액) → 동일
+    rephrased = {**base,
+                 "benefits": "순입금 3백만원 이상 시 → 신세계 상품권 20,000원 (전원)\n"
+                             "IRP에 100만원 이상 순입금 시 → 신세계 상품권 10,000원 (전원)",
+                 "conditions": "대상: IRP 계좌를 보유한 고객에 한함\n한도: 연 3만원"}
+    assert fact_signature(base) == fact_signature(rephrased)
+    # 실질 변경: 금액 / 티어 추가 / 판정 플래그 / 배수
+    assert fact_signature(base) != fact_signature({**base, "benefits": base["benefits"].replace("2만원", "3만원")})
+    assert fact_signature(base) != fact_signature({**base, "benefits": base["benefits"] + "\n5백만원 이상 → 5만원 (전원)"})
+    assert fact_signature(base) != fact_signature({**base, "apply_required": False})
+    assert fact_signature(base) != fact_signature(base, [{"source_type": "타사이전", "multiplier": 1.5,
+                                                          "scope": "인정금액", "min_threshold_krw": 0}])
+    # 기존 DB 배수(문자열 numeric)와 새 추출(float)이 같은 사실이면 동일
+    old_m = [{"source_type": "타사이전", "multiplier": "1.50", "scope": "인정금액", "min_threshold_krw": 0}]
+    new_m = [{"source_type": "타사이전", "multiplier": 1.5, "scope": "인정금액", "min_threshold_krw": 0}]
+    assert fact_signature(base, old_m) == fact_signature(base, new_m)
+    print("OK fact_signature (표기 무관 동일·실질 변경 감지)")
+
+
+def test_sync_fact_gate_keeps_canonical():
+    """S3: rows_fresh 라도 시그니처가 같으면 캐노니컬/타입드/자식 행을 유지하고 변경 로그도 없다.
+    실질이 바뀌면(티어 추가) 종전대로 교체·기록·자식 교체."""
+    year = dt.date.today().year
+    future_end = (dt.date.today() + dt.timedelta(days=90)).isoformat()
+    calls = {"patch": [], "post": [], "delete": []}
+    db.fetch_all_events = lambda: existing
+    db.fetch_children = lambda table: []
+    db.enabled = lambda: True
+    db._patch = lambda path, params, payload: calls["patch"].append((path, params, payload))
+    db._post = lambda path, payload, prefer=None: (calls["post"].append((path, payload)), [{"id": 99}])[1]
+    db._delete = lambda path, params: calls["delete"].append((path, params))
+    old_ben = "IRP 순입금 1백만원 이상 → 상품권 1만원 (전원)\n순입금 3백만원 이상 → 상품권 2만원 (전원)"
+    existing = [
+        {"id": 46, "firm_name": "KB증권", "event_name": "시즌3 IRP", "source_event_id": "10010039",
+         "start_date": f"{year}-07-01", "end_date": future_end, "date_source": "detail",
+         "status": "진행중", "missed_count": 0, "benefits": old_ben,
+         "conditions": "대상: IRP 계좌 보유 고객\n한도: 연간 3만원", "eligibility": "IRP 계좌 보유 고객",
+         "annual_cap_krw": 30000, "apply_required": None, "content_hash": "x",
+         "source_content_hash": "OLD", "extract_schema_version": 3,
+         "last_seen_at": f"{year}-06-30T00:00:00+00:00"},
+    ]
+
+    def fresh(benefits, conditions):
+        return {"firm_name": "KB증권", "event_name": "시즌3 IRP", "source_event_id": "10010039",
+                "start_date": f"{year}-07-01", "end_date": future_end, "date_source": "detail",
+                "status": None, "benefits": benefits, "conditions": conditions,
+                "eligibility": "IRP 계좌를 보유한 고객", "annual_cap_krw": 30000, "apply_required": None,
+                "rows_fresh": True, "benefit_rows": [{"tier_no": 1, "condition_text": "c", "benefit_text": "b",
+                                                      "award_method": "전원", "award_limit": None, "source": "llm-ocr"}],
+                "condition_rows": [{"ord": 1, "label": "대상", "value_text": "v", "source": "llm-ocr"}],
+                "multiplier_rows": [], "needs_review": False, "review_reason": None,
+                "extract_method": "ocr", "last_verified_at": "now", "content_hash": "x",
+                "source_content_hash": "NEW", "extract_schema_version": 3}
+
+    # 1) 표현만 다른 재추출
+    ev = fresh("순입금 3백만원 이상 시 → 신세계 상품권 20,000원 (전원)\n"
+               "IRP에 100만원 이상 순입금 시 → 신세계 상품권 10,000원 (전원)",
+               "대상: IRP 계좌를 보유한 고객에 한함\n한도: 연 3만원")
+    diff = db.sync([ev], firms_failed=[], trigger_type="manual")
+    assert diff["changed"] == [], diff["changed"]
+    assert not calls["delete"], "시그니처 동일인데 자식 행을 교체함"
+    payload = calls["patch"][0][2]
+    assert "benefits" not in payload and "conditions" not in payload and "eligibility" not in payload, payload
+    assert payload.get("source_content_hash") == "NEW" and payload.get("last_verified_at") == "now"
+    assert ev["benefits"] == old_ben and ev["eligibility"] == "IRP 계좌 보유 고객"
+    # 2) 티어가 줄어든 재추출(슬라이스 일부만 읽힘) → 기존 유지
+    calls["patch"].clear(); calls["delete"].clear()
+    ev2 = fresh("순입금 3백만원 이상 → 상품권 2만원 (전원)", "대상: IRP")
+    db.sync([ev2], firms_failed=[], trigger_type="manual")
+    assert ev2["benefits"] == old_ben and not calls["delete"]
+    # 3) 실질 변경(티어 추가) → 교체 + 변경 기록 + 자식 교체
+    calls["patch"].clear(); calls["delete"].clear()
+    ev3 = fresh(old_ben + "\n순입금 5백만원 이상 → 상품권 5만원 (전원)",
+                "대상: IRP 계좌 보유 고객\n한도: 연간 3만원")
+    diff3 = db.sync([ev3], firms_failed=[], trigger_type="manual")
+    assert any(f == "benefits" for _, f, _, _ in diff3["changed"])
+    assert any(p[0] == "event_benefits" for p in calls["delete"])
+    assert calls["patch"][0][2].get("benefits") == ev3["benefits"]
+    print("OK db.sync 사실 시그니처 게이트 (동일→유지, 티어 감소→유지, 실질 변경→교체)")
+
+
+if __name__ == "__main__":
+    test_select_content_images_folder_all_slices()
+    test_hash_text_per_firm_strips_common_lines()
+    test_fact_signature_equivalence()
+    test_sync_fact_gate_keeps_canonical()
+    print("KB 보완 회귀 4종 통과")

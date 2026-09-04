@@ -17,22 +17,97 @@ _MULT_HINT = re.compile(r"\d(?:\.\d)?\s*배")
 _RASTER_RE = re.compile(r"\.(jpe?g|png|webp)(\?|$)", re.I)
 
 
+def _natural_key(u: str):
+    """img_2 < img_10 이 되도록 숫자 구간을 정수로 비교."""
+    return [int(t) if t.isdigit() else t for t in re.split(r"(\d+)", u)]
+
+
+def _folder(u: str) -> str:
+    path = u.split("?", 1)[0]
+    return path.rsplit("/", 1)[0] if "/" in path else ""
+
+
 def pick_content_images(urls, limit=3):
     """콘텐츠 배너 이미지를 '결정론적으로' 선택한다 (OCR 입력·재추출 트리거 안정화).
 
-    기존 선택기는 DOM 순서로 앞 N장을 집어, 페이지에 장식용 gif 가 끼었다 빠졌다
-    하면 실행마다 다른 이미지를 골랐다(예: KB 시즌3 img_05.jpg ↔ img_11.gif).
-    OCR 입력이 흔들리니 혜택 추출이 매번 달라지고(churn) source_content_hash 도
-    뒤집혔다. 같은 HTML 이면 항상 같은 집합을 뽑도록: 중복 제거 → 래스터
-    (jpg/png/webp) 우선·장식 gif 후순위 → URL 사전순 정렬 → 앞 limit 장."""
+    v1(07-20): 중복 제거 → 래스터 우선 → URL 정렬 → 앞 N장. 선택은 결정론이 됐지만
+    후보 집합 자체가 흔들리면(광고 배너 회전, 지연 로드) 결과가 바뀌었다.
+    v2: 이미지를 **폴더(디렉터리) 단위**로 묶고, 래스터 수가 가장 많은 폴더 하나를
+    '이벤트 본문 폴더'로 본다 — KB 는 긴 배너를 같은 디자인 폴더에 img_01…img_11 로
+    잘라 두고(운영 관측: design/20260623165649/), 미래에셋은 /public/mw/event/{ID}/ 에
+    모아 둔다. 그 폴더의 이미지를 **자연 정렬(번호순)로 전부** 돌려준다. 같은 페이지의
+    다른 폴더(광고·타 이벤트 배너·네비)는 후보에서 빠지고, 다단 배너의 일부만 읽어
+    티어를 누락하던 문제(3장 상한)도 함께 사라진다."""
     seen, uniq = set(), []
     for u in urls or []:
         if u and u not in seen:
             seen.add(u)
             uniq.append(u)
-    raster = sorted(u for u in uniq if _RASTER_RE.search(u))
-    rest = sorted(u for u in uniq if not _RASTER_RE.search(u))
+    if not uniq:
+        return []
+    groups = {}
+    for u in uniq:
+        groups.setdefault(_folder(u), []).append(u)
+
+    def _score(item):
+        folder, us = item
+        n_raster = sum(1 for u in us if _RASTER_RE.search(u))
+        return (-n_raster, -len(us), folder)
+
+    _, chosen = sorted(groups.items(), key=_score)[0]
+    raster = sorted((u for u in chosen if _RASTER_RE.search(u)), key=_natural_key)
+    rest = sorted((u for u in chosen if not _RASTER_RE.search(u)), key=_natural_key)
     return (raster + rest)[:limit]
+
+
+# 콘텐츠 이미지 후보 필터 — 세 수집 경로(정적 HTML·브라우저 렌더·재검증 재조회)가
+# 같은 규칙을 쓴다. 강한 콘텐츠 신호(업로드/이벤트/디자인 폴더)가 하나라도 있으면
+# 그것만, 없으면 약한 신호(/img/, /images/), 그것도 없으면 래스터 전체를 후보로.
+_IMG_EXCLUDE_RE = re.compile(r"(logo|icon|btn|bullet|sprite|blank|dot|arrow|nav_)", re.I)
+_IMG_STRONG_RE = re.compile(
+    r"(cmd=down|/event/|fileUpload|mlist|/public/mw/event|upload\.file|/design/)", re.I)
+_IMG_WEAK_RE = re.compile(r"(/img/|/images/)", re.I)
+
+
+def select_content_images(urls, limit=3):
+    """페이지의 모든 <img> src 후보에서 이벤트 본문 이미지를 고른다.
+    반환은 pick_content_images 의 폴더·자연정렬 규칙을 따른다."""
+    cands = [u for u in (urls or [])
+             if u and u.startswith("http") and not _IMG_EXCLUDE_RE.search(u)]
+    strong = [u for u in cands if _IMG_STRONG_RE.search(u)]
+    if strong:
+        return pick_content_images(strong, limit)
+    weak = [u for u in cands if _IMG_WEAK_RE.search(u)]
+    if weak:
+        return pick_content_images(weak, limit)
+    return pick_content_images([u for u in cands if _RASTER_RE.search(u)], limit)
+
+
+def hash_text_per_firm(events, min_events=2):
+    """재추출 트리거 해시용 본문(`_hash_text`) — 같은 실행에서 같은 증권사의 상세
+    페이지 2건 이상에 공통으로 나타나는 줄은 네비·푸터·'진행중 이벤트' 목록·광고 등
+    페이지 템플릿이므로 해시 입력에서 제거한다 (S2 의 셀렉터 없는 근사).
+
+    LLM 입력(`_detail_text`)은 건드리지 않는다 — 두 이벤트가 정당하게 공유하는
+    조항(예: 동의 유지 필수)을 추출에서 잃지 않기 위해. 해시만 안정화한다.
+    KB 실측: 상세 5건이 30일 중 30일 해시가 뒤집힌 원인이 페이지 전체 텍스트였다."""
+    import collections
+    by_firm = collections.defaultdict(list)
+    for ev in events:
+        if ev.get("_detail_text"):
+            by_firm[ev.get("firm_name")].append(ev)
+    for firm, evs in by_firm.items():
+        lines_of = {id(ev): [l.strip() for l in ev["_detail_text"].splitlines() if l.strip()]
+                    for ev in evs}
+        if len(evs) < min_events:
+            for ev in evs:
+                ev["_hash_text"] = "\n".join(lines_of[id(ev)])
+            continue
+        freq = collections.Counter()
+        for ev in evs:
+            freq.update(set(lines_of[id(ev)]))
+        for ev in evs:
+            ev["_hash_text"] = "\n".join(l for l in lines_of[id(ev)] if freq[l] < 2)
 
 
 def is_pension(text: str) -> bool:
@@ -327,7 +402,9 @@ def source_content_hash(ev: dict) -> str:
     단, '의미 없는 휘발 성분'까지 반영하면 매 실행 캐시가 헛돌아 재추출·churn 이
     발생한다. 그래서 실질을 바꾸지 않는 차이만 정규화해 제거한다(안전 — 의미 변화는
     숨기지 못함): 본문 공백 축약, 이미지 URL 의 순서·캐시버스팅 쿼리스트링 제거."""
-    detail = re.sub(r"\s+", " ", ev.get("_detail_text") or "").strip()
+    # _hash_text(런 내 공통 라인 제거본, hash_text_per_firm)가 있으면 그것을, 없으면 원문
+    src_text = ev["_hash_text"] if "_hash_text" in ev else (ev.get("_detail_text") or "")
+    detail = re.sub(r"\s+", " ", src_text or "").strip()
     imgs = sorted((u or "").split("?", 1)[0] for u in (ev.get("_image_urls") or []))
     basis = detail + "|" + "|".join(imgs)
     return hashlib.sha256(basis.encode("utf-8")).hexdigest()[:16]

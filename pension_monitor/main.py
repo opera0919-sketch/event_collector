@@ -20,7 +20,8 @@ import sys
 
 from . import db, mailer, normalize, report as report_mod
 from .classify import (is_pension, detect_accounts, extract_details, content_hash,
-                       source_event_id, clip_detail, pick_content_images)
+                       source_event_id, clip_detail, select_content_images,
+                       hash_text_per_firm)
 from .config import TRIGGER_TYPE
 from .normalize import TEXT_MIN
 from .scrapers import SCRAPERS
@@ -116,33 +117,26 @@ async def collect():
     return events, failed
 
 
-# 상세 페이지의 콘텐츠 이미지 상위 3장 (다단 배너 대응 — OCR 은 전부 한 요청에 전달)
+# 상세 페이지의 모든 이미지 src 후보 (지연 로드 속성 포함). 선택은 Python 쪽
+# select_content_images(폴더 단위 전량·자연 정렬)가 담당한다.
+# 종전엔 '로드된 크기 상위 3장'을 여기서 골랐는데, 4초 대기 시점에 아직 로드되지
+# 않은 슬라이스는 naturalWidth=0 으로 제외돼 날마다 다른 3장을 읽었다(KB churn 원인).
 JS_CONTENT_IMGS = r"""
 () => Array.from(document.querySelectorAll('img'))
-  .map(i => ({src: i.currentSrc || i.src || '', w: i.naturalWidth, h: i.naturalHeight}))
-  .filter(i => i.src && i.w >= 280 && i.h >= 180
-               && !/logo|icon|btn|sprite|nav_|bullet|arrow|blank|dot/i.test(i.src))
-  .sort((a, b) => (b.w * b.h) - (a.w * a.h))
-  .slice(0, 3)
-  .map(i => i.src)
+  .map(i => i.currentSrc || i.src || i.getAttribute('data-src')
+            || i.getAttribute('data-original') || '')
+  .filter(s => s)
 """
 
 
-def _imgs_from_html(soup, base_url, limit=3):
-    """정적 HTML 에서 콘텐츠 배너 이미지 최대 limit 장 (아이콘/로고 제외).
-    후보 전체를 모은 뒤 pick_content_images 로 결정론적 선택 — DOM 순서/장식 gif
-    개입으로 실행마다 다른 이미지를 집던 비결정성 제거(churn 방지)."""
-    import re as _re
+def _imgs_from_html(soup, base_url, limit=None):
+    """정적 HTML 의 이벤트 본문 이미지 (아이콘/로고 제외, 폴더 단위 전량·자연 정렬)."""
     from urllib.parse import urljoin
-    cands = []
-    for img in soup.find_all("img"):
-        src = img.get("src") or img.get("data-src") or ""
-        if not src or _re.search(r"(logo|icon|btn|bullet|sprite|blank|dot|arrow|nav_)", src, _re.I):
-            continue
-        if _re.search(r"(cmd=down|/event/|fileUpload|mlist|/public/mw/event|upload\.file|/img/|/images/)",
-                      src, _re.I):
-            cands.append(urljoin(base_url, src))
-    return pick_content_images(cands, limit)
+    from . import vision
+    cands = [urljoin(base_url, img.get("src") or img.get("data-src")
+                     or img.get("data-original") or "")
+             for img in soup.find_all("img")]
+    return select_content_images(cands, limit or vision.MAX_IMAGES)
 
 
 async def enrich_details(browser, pension_events):
@@ -204,7 +198,15 @@ async def enrich_details(browser, pension_events):
                 try:
                     detail_text = await page.inner_text("body")
                     if need_img:
-                        srcs = pick_content_images(await page.evaluate(JS_CONTENT_IMGS))
+                        # 지연 로드 배너 슬라이스를 깨우기 위해 끝까지 스크롤 후 수집
+                        try:
+                            await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                            await page.wait_for_timeout(1000)
+                        except Exception:
+                            pass
+                        from . import vision as _vision
+                        srcs = select_content_images(await page.evaluate(JS_CONTENT_IMGS),
+                                                     _vision.MAX_IMAGES)
                         if srcs:
                             ev["_image_urls"] = srcs
                         elif len(detail_text) < 400:
@@ -308,6 +310,9 @@ def main():
         # 안정 소스 ID(상세 URL 의 증권사 고유 파라미터) — DB 매칭/캐시의 1차 키
         ev["source_event_id"] = source_event_id(ev)
     existing = db.fetch_all_events() if db.enabled() else []
+    # S2(근사): 같은 증권사 상세 페이지들의 공통 라인(네비·타 이벤트 목록·광고)을
+    # 재추출 트리거 해시 입력에서 제거 — LLM 입력은 그대로 (classify.hash_text_per_firm)
+    hash_text_per_firm(pension)
     # 정규화 v2: Gemini 구조화(캐시 우선) → 검증 게이트 → 캐노니컬 + 구조화 행
     stats = normalize.normalize_events(pension, existing)
     # 상세 fetch 실패 건(기존 값 유지·재추출 생략) — 관측용
