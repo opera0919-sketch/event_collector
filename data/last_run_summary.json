@@ -1,6 +1,6 @@
 {
- "run_at": "2026-09-04T07:36:35.895386+00:00",
- "trigger": "manual",
+ "run_at": "2026-09-07T00:13:37.813017+00:00",
+ "trigger": "weekly",
  "active": 23,
  "by_firm": {
   "미래에셋증권": 6,
@@ -14,8 +14,8 @@
  "closed": 0,
  "changed": 10,
  "note": "",
- "llm_calls": 15,
- "cache_hits": 1,
+ "llm_calls": 16,
+ "cache_hits": 5,
  "retry_skips": 0,
  "fetch_failed": 0,
  "detail_fetch_failed": []
