@@ -1204,3 +1204,88 @@ def test_extraction_order_prefers_stale():
 if __name__ == "__main__":
     test_extraction_order_prefers_stale()
     print("예산 배분 회귀 1종 통과")
+
+
+# ── G6-b: 요일 불일치 날짜는 기간으로 채택하지 않는다 ─────────────────
+def test_g6b_weekday_conflict_date_not_adopted():
+    """본문 표기 요일이 실제와 어긋나는 날짜는 start/end 로 쓰지 않는다.
+
+    실사례(KB id45 「연금, TDF & ETF 굴려볼까? 시즌 3」): 시즌3 본문에 남아 있던
+    시즌2 기간이 상세 정규식으로 잡혀 end_date 로 적재됐고, db.sync 가 그 날짜만
+    보고 status 를 '종료'로 확정해 아직 게시 중인 30티어 이벤트가 리포트에서
+    통째로 사라졌다. G6 는 불일치를 '표기'만 했을 뿐 채택을 막지 않았다."""
+    _WD = "월화수목금토일"
+    start = dt.date(2026, 4, 1)
+    end = dt.date(2026, 6, 30)
+    ok_wd = _WD[start.weekday()]
+    bad_wd = _WD[(end.weekday() + 1) % 7]        # 실제와 다른 요일을 일부러 표기
+    text = (f"이벤트 기간 : 2026.04.01({ok_wd}) ~ 2026.06.30({bad_wd})\n"
+            f"연금저축 순매수 고객 대상 안내")
+
+    # 1) 상세 정규식이 잡아도 종료일이 요일 불일치면 채택하지 않는다
+    ev = {"firm_name": "KB증권", "event_name": "시즌3", "start_date": None,
+          "end_date": None, "_detail_text": text}
+    normalize.reconcile_period(ev, {}, None)
+    assert ev["end_date"] != "2026-06-30", ev
+    assert ev.get("needs_review"), ev
+
+    # 2) 이미 잘못 적재된 기간은 스티키 대상에서 제외돼 스스로 회복한다
+    old = {"start_date": "2026-04-01", "end_date": "2026-06-30", "date_source": "detail"}
+    ev = {"firm_name": "KB증권", "event_name": "시즌3", "start_date": None,
+          "end_date": None, "_detail_text": text}
+    normalize.reconcile_period(ev, {}, old)
+    assert ev["end_date"] != "2026-06-30", ev
+
+    # 3) LLM 이 같은 날짜를 돌려줘도 채택하지 않는다
+    ev = {"firm_name": "KB증권", "event_name": "시즌3", "start_date": None,
+          "end_date": None, "_detail_text": text}
+    normalize.reconcile_period(ev, {"period_start": "2026-04-01",
+                                    "period_end": "2026-06-30"}, None)
+    assert ev["end_date"] != "2026-06-30", ev
+
+    # 4) 요일 표기가 맞으면 종전대로 상세 기간을 채택한다 (회귀 방지)
+    good = (f"이벤트 기간 : 2026.04.01({ok_wd}) ~ 2026.06.30({_WD[end.weekday()]})\n"
+            f"연금저축 순매수 고객 대상 안내")
+    ev = {"firm_name": "KB증권", "event_name": "시즌3", "start_date": None,
+          "end_date": None, "_detail_text": good}
+    normalize.reconcile_period(ev, {}, None)
+    assert (ev["start_date"], ev["end_date"], ev["date_source"]) == \
+        ("2026-04-01", "2026-06-30", "detail"), ev
+    print("OK G6-b (요일 불일치 날짜는 기간 미채택 + 오적재분 자가 회복)")
+
+
+def test_reopen_clears_closed_meta():
+    """목록에 계속 노출되는 건의 기간이 비워지면 '종료'가 풀리고 종료 메타도 지운다."""
+    calls = {"patch": []}
+    existing = [
+        {"id": 45, "firm_name": "KB증권", "event_name": "시즌3", "source_event_id": "B45",
+         "status": "종료", "close_reason": "expired", "missed_count": 0,
+         "closed_at": "2026-09-03T00:00:00+00:00",
+         "start_date": "2026-04-01", "end_date": "2026-06-30", "date_source": "detail",
+         "conditions": None, "benefits": None, "content_hash": "x",
+         "last_seen_at": "2026-09-08T00:00:00+00:00"},
+    ]
+    db.fetch_all_events = lambda: existing
+    db.fetch_children = lambda table: []
+    db.enabled = lambda: True
+    db._patch = lambda path, params, payload: calls["patch"].append((path, params, payload))
+    db._post = lambda path, payload, prefer=None: [{"id": 99}]
+    db._delete = lambda path, params: None
+
+    ev = {"firm_name": "KB증권", "event_name": "시즌3", "source_event_id": "B45",
+          "start_date": None, "end_date": None, "status": None}
+    db.sync([ev], firms_failed=[], trigger_type="manual")
+
+    merged = {}
+    for path, params, payload in calls["patch"]:
+        if path == "pension_events" and params == {"id": "eq.45"}:
+            merged.update(payload)
+    assert merged.get("status") == "진행중", merged
+    assert merged.get("closed_at") is None and merged.get("close_reason") is None, merged
+    print("OK 종료 해제 시 closed_at/close_reason 초기화")
+
+
+if __name__ == "__main__":
+    test_g6b_weekday_conflict_date_not_adopted()
+    test_reopen_clears_closed_meta()
+    print("G6-b 회귀 2종 통과")

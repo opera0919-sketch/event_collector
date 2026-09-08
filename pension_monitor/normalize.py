@@ -222,17 +222,29 @@ def _valid_iso(s, lo, hi):
 
 # 기간 확정 출처는 list/detail 뿐이다 — 그 값만 기존 값을 '교체'할 수 있고,
 # llm/hold_inferred/None 은 비어 있는 칸을 채울 수만 있다 (S4 기간 스티키).
-def _sticky_period(ev, old, ps, pe, inferred_end=None):
+def _sticky_period(ev, old, ps, pe, inferred_end=None, bad_dates=()):
     """S4: 확정 출처가 없을 때 기존 DB 기간을 우선 유지하고, 빈 칸만 비확정값으로 채운다.
 
     실전(07~09월, event_changes 72건 중 62건)에서 KB 이벤트의 start/end 가
     '값 ↔ NULL' 로 매일 진동했다. 상세 fetch 실패·LLM 무응답이 곧바로 NULL 확정으로
     이어졌기 때문이다. 기존 값이 있으면 그것이 새 비확정값보다 항상 우선한다.
+
+    단, G6 요일 검사에서 어긋난 날짜(bad_dates)는 스티키 대상에서 제외한다. 한번
+    잘못 적재된 기간이 '기존 값 우선' 규칙에 업혀 영구 고착되면 스스로 회복할 수
+    없기 때문이다 (KB id45 시즌3 이 시즌2 기간으로 종료 처리된 실사례).
     반환: True 면 기존 값으로 확정됨(호출자는 더 진행하지 않는다)."""
-    if not old or not (old.get("start_date") or old.get("end_date")):
+    if not old:
         return False
-    ev["start_date"] = old.get("start_date") or ps
-    ev["end_date"] = old.get("end_date") or pe or inferred_end
+    o_start = old.get("start_date")
+    o_end = old.get("end_date")
+    if o_start in bad_dates:
+        o_start = None
+    if o_end in bad_dates:
+        o_end = None
+    if not (o_start or o_end):
+        return False
+    ev["start_date"] = o_start or ps
+    ev["end_date"] = o_end or pe or inferred_end
     ev["date_source"] = old.get("date_source") or ("llm" if (ps or pe) else None)
     return True
 
@@ -246,8 +258,17 @@ def reconcile_period(ev, res, old=None):
     bad_wd = weekday_conflicts(text)
     if bad_wd:
         _flag(ev, f"요일 불일치 {bad_wd}")
+    # G6-b: 요일이 어긋난 날짜는 '기간으로 채택하지 않는다'. 표기만 하던 종전 동작에서는
+    # 시즌3 본문에 남은 시즌2 기간(2026-06-30(수≠화))이 그대로 end_date 로 적재되고,
+    # db.sync 가 그 날짜만 보고 status 를 '종료'로 확정해 아직 게시 중인 이벤트가
+    # 리포트에서 통째로 사라졌다 (KB id45 실사례).
+    bad_dates = {b.split("(", 1)[0] for b in bad_wd}
     ps = _valid_iso((res or {}).get("period_start"), year - 2, year + 2)
     pe = _valid_iso((res or {}).get("period_end"), year - 1, year + 2)
+    if ps in bad_dates:
+        ps = None
+    if pe in bad_dates:
+        pe = None
     if ps and pe and ps > pe:
         ps = pe = None
     # S4: LLM 이 '잔고유지기간'을 이벤트 기간으로 돌려준 경우 거부 (KB 시즌3 재현)
@@ -266,12 +287,15 @@ def reconcile_period(ev, res, old=None):
         return
     # 목록 불신/누락 → 상세 본문 '기간 :' 정규식
     ds, de = extract_period(text)
+    if ds in bad_dates or de in bad_dates:
+        _flag(ev, "본문 기간 표기의 요일이 실제와 불일치 — 상세 기간 불채택")
+        ds = de = None
     if ds and de and not suspicious_dates(ds, de):
         ev["start_date"], ev["end_date"], ev["date_source"] = ds, de, "detail"
         return
     # 이하 비확정 출처(LLM/추론/NULL): 기존 DB 값이 있으면 그것을 유지한다 (S4)
     inferred_end = (infer_end_from_hold(text, year) if not (ps and pe) else None)
-    if _sticky_period(ev, old, ps, pe, inferred_end):
+    if _sticky_period(ev, old, ps, pe, inferred_end, bad_dates):
         return
     # G9: 정규식/LLM 이 기간을 못 줄 때, 잔고유지기간 시작일 - 1일 로 종료일 역산
     #     (KB 시즌3 등 기간 NULL 방지). 추론값이므로 감사 추적 가능하게 표기만.
