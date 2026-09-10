@@ -1,5 +1,5 @@
 {
- "run_at": "2026-09-09T00:31:28.275934+00:00",
+ "run_at": "2026-09-10T00:27:31.938477+00:00",
  "trigger": "weekly",
  "active": 23,
  "by_firm": {
@@ -10,12 +10,12 @@
   "NH투자증권": 4
  },
  "firms_failed": [],
- "new": 1,
- "closed": 1,
- "changed": 9,
+ "new": 0,
+ "closed": 0,
+ "changed": 7,
  "note": "",
- "llm_calls": 12,
- "cache_hits": 11,
+ "llm_calls": 8,
+ "cache_hits": 14,
  "retry_skips": 3,
  "fetch_failed": 0,
  "detail_fetch_failed": []
