@@ -1,21 +1,21 @@
 {
- "run_at": "2026-09-22T01:06:04.496429+00:00",
+ "run_at": "2026-09-23T00:53:14.037535+00:00",
  "trigger": "weekly",
- "active": 24,
+ "active": 25,
  "by_firm": {
   "미래에셋증권": 6,
   "한국투자증권": 5,
-  "삼성증권": 4,
+  "삼성증권": 5,
   "KB증권": 5,
   "NH투자증권": 5
  },
  "firms_failed": [],
  "new": 1,
  "closed": 0,
- "changed": 8,
+ "changed": 3,
  "note": "",
- "llm_calls": 7,
- "cache_hits": 15,
+ "llm_calls": 9,
+ "cache_hits": 16,
  "retry_skips": 3,
  "fetch_failed": 0,
  "detail_fetch_failed": []
