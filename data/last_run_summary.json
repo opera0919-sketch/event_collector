@@ -1,5 +1,5 @@
 {
- "run_at": "2026-09-25T00:45:50.840382+00:00",
+ "run_at": "2026-09-28T01:04:40.788004+00:00",
  "trigger": "weekly",
  "active": 26,
  "by_firm": {
@@ -12,11 +12,11 @@
  "firms_failed": [],
  "new": 0,
  "closed": 0,
- "changed": 4,
+ "changed": 1,
  "note": "",
- "llm_calls": 10,
+ "llm_calls": 8,
  "cache_hits": 16,
- "retry_skips": 3,
+ "retry_skips": 4,
  "fetch_failed": 0,
  "detail_fetch_failed": []
 }
