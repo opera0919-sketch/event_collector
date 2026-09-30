@@ -25,7 +25,11 @@ from .classify import (
 
 # ── 예산 (Gemini 무료 티어 보호 — 기존 운영값 유지) ─────────────────
 STRUCT_BUDGET = 40       # 1회 실행 Gemini 호출 상한
-TIME_BUDGET_SEC = 360    # 구조화 전체 시간 예산(초)
+# 구조화 전체 시간 예산(초). 이벤트당 텍스트+OCR 2콜 × 6.5s 페이싱 + Gemini 지연으로
+# 콜당 실질 ~24초가 든다. 360초로는 전건 재추출(캐시 일괄 무효화) 시 15콜에서 끊겨
+# 뒤쪽 증권사가 통째로 누락됐다(2026-09-04 실측: KB·NH·삼성 미처리). 워크플로 타임아웃
+# 25분 대비 수집 6분 + 구조화 10분 = 여유 있음.
+TIME_BUDGET_SEC = 600
 PACE_SEC = 6.5           # 10 RPM 준수 간격
 TEXT_MIN = 200           # 이 길이 이상이면 본문 텍스트로 구조화, 미만이면 이미지 OCR
 # M4: 같은 원문·스키마(review_retry_key)에 대해 이 횟수 초과 재추출 금지.
@@ -218,17 +222,29 @@ def _valid_iso(s, lo, hi):
 
 # 기간 확정 출처는 list/detail 뿐이다 — 그 값만 기존 값을 '교체'할 수 있고,
 # llm/hold_inferred/None 은 비어 있는 칸을 채울 수만 있다 (S4 기간 스티키).
-def _sticky_period(ev, old, ps, pe, inferred_end=None):
+def _sticky_period(ev, old, ps, pe, inferred_end=None, bad_dates=()):
     """S4: 확정 출처가 없을 때 기존 DB 기간을 우선 유지하고, 빈 칸만 비확정값으로 채운다.
 
     실전(07~09월, event_changes 72건 중 62건)에서 KB 이벤트의 start/end 가
     '값 ↔ NULL' 로 매일 진동했다. 상세 fetch 실패·LLM 무응답이 곧바로 NULL 확정으로
     이어졌기 때문이다. 기존 값이 있으면 그것이 새 비확정값보다 항상 우선한다.
+
+    단, G6 요일 검사에서 어긋난 날짜(bad_dates)는 스티키 대상에서 제외한다. 한번
+    잘못 적재된 기간이 '기존 값 우선' 규칙에 업혀 영구 고착되면 스스로 회복할 수
+    없기 때문이다 (KB id45 시즌3 이 시즌2 기간으로 종료 처리된 실사례).
     반환: True 면 기존 값으로 확정됨(호출자는 더 진행하지 않는다)."""
-    if not old or not (old.get("start_date") or old.get("end_date")):
+    if not old:
         return False
-    ev["start_date"] = old.get("start_date") or ps
-    ev["end_date"] = old.get("end_date") or pe or inferred_end
+    o_start = old.get("start_date")
+    o_end = old.get("end_date")
+    if o_start in bad_dates:
+        o_start = None
+    if o_end in bad_dates:
+        o_end = None
+    if not (o_start or o_end):
+        return False
+    ev["start_date"] = o_start or ps
+    ev["end_date"] = o_end or pe or inferred_end
     ev["date_source"] = old.get("date_source") or ("llm" if (ps or pe) else None)
     return True
 
@@ -242,8 +258,17 @@ def reconcile_period(ev, res, old=None):
     bad_wd = weekday_conflicts(text)
     if bad_wd:
         _flag(ev, f"요일 불일치 {bad_wd}")
+    # G6-b: 요일이 어긋난 날짜는 '기간으로 채택하지 않는다'. 표기만 하던 종전 동작에서는
+    # 시즌3 본문에 남은 시즌2 기간(2026-06-30(수≠화))이 그대로 end_date 로 적재되고,
+    # db.sync 가 그 날짜만 보고 status 를 '종료'로 확정해 아직 게시 중인 이벤트가
+    # 리포트에서 통째로 사라졌다 (KB id45 실사례).
+    bad_dates = {b.split("(", 1)[0] for b in bad_wd}
     ps = _valid_iso((res or {}).get("period_start"), year - 2, year + 2)
     pe = _valid_iso((res or {}).get("period_end"), year - 1, year + 2)
+    if ps in bad_dates:
+        ps = None
+    if pe in bad_dates:
+        pe = None
     if ps and pe and ps > pe:
         ps = pe = None
     # S4: LLM 이 '잔고유지기간'을 이벤트 기간으로 돌려준 경우 거부 (KB 시즌3 재현)
@@ -262,12 +287,15 @@ def reconcile_period(ev, res, old=None):
         return
     # 목록 불신/누락 → 상세 본문 '기간 :' 정규식
     ds, de = extract_period(text)
+    if ds in bad_dates or de in bad_dates:
+        _flag(ev, "본문 기간 표기의 요일이 실제와 불일치 — 상세 기간 불채택")
+        ds = de = None
     if ds and de and not suspicious_dates(ds, de):
         ev["start_date"], ev["end_date"], ev["date_source"] = ds, de, "detail"
         return
     # 이하 비확정 출처(LLM/추론/NULL): 기존 DB 값이 있으면 그것을 유지한다 (S4)
     inferred_end = (infer_end_from_hold(text, year) if not (ps and pe) else None)
-    if _sticky_period(ev, old, ps, pe, inferred_end):
+    if _sticky_period(ev, old, ps, pe, inferred_end, bad_dates):
         return
     # G9: 정규식/LLM 이 기간을 못 줄 때, 잔고유지기간 시작일 - 1일 로 종료일 역산
     #     (KB 시즌3 등 기간 NULL 방지). 추론값이므로 감사 추적 가능하게 표기만.
@@ -425,6 +453,27 @@ def detail_fetch_ok(ev) -> bool:
     return len(text) >= TEXT_MIN or bool(ev.get("_image_urls") or ev.get("_screenshot_b64"))
 
 
+def extraction_order(pension, idx):
+    """LLM 예산을 배분할 순서 — '가장 오래 재검증되지 않은 이벤트' 우선.
+
+    종전엔 수집 순서(= 증권사 순서: 미래→한투→삼성→KB→NH)를 그대로 따랐다. 평소엔
+    캐시가 대부분 적중해 문제가 없지만, 캐시가 일괄 무효화되는 실행(해시식 변경·스키마
+    상향)에서는 앞쪽 증권사가 예산을 모두 쓰고 **뒤쪽 증권사가 통째로 누락**된다
+    (2026-09-04 실측: 미래 5건·한투 3건에서 15콜 소진 → KB·NH·삼성 0건 처리).
+    그 상태로는 다음 실행에서도 같은 순서로 굶으므로 특정 증권사가 영구히 밀릴 수 있다.
+
+    신규(기존 행 없음)를 먼저, 그다음 last_verified_at 오름차순(오래된 것 우선).
+    같은 시각이면 원래 수집 순서를 유지해 결과의 결정론을 지킨다."""
+    def key(item):
+        i, ev = item
+        old = db.find_existing(idx, ev)
+        if old is None:
+            return (0, "", i)                      # 신규 최우선
+        return (1, old.get("last_verified_at") or "", i)
+
+    return [ev for _, ev in sorted(enumerate(pension), key=key)]
+
+
 def normalize_events(pension, existing):
     """전 이벤트 정규화 오케스트레이션. Gemini 미설정 시 휴리스틱 값 유지 + 기간 규칙만 적용.
     반환: 관측 통계 dict (llm_calls/cache_hits/retry_skips/fetch_failed)."""
@@ -436,7 +485,7 @@ def normalize_events(pension, existing):
         return (vision.enabled() and not vision.blocked() and n_call < STRUCT_BUDGET
                 and time.monotonic() - started <= TIME_BUDGET_SEC)
 
-    for ev in pension:
+    for ev in extraction_order(pension, idx):
         old = db.find_existing(idx, ev)
         res = {}
         # S1: 상세 원문을 확보하지 못한 실행은 '내용 변경'이 아니다. 기존 행이 있으면
