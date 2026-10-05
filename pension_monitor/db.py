@@ -317,6 +317,11 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
                     updates[f] = ev.get(f)
             if old["status"] == "진행중" and ev["status"] == "종료":
                 updates["closed_at"] = now
+            elif old["status"] == "종료" and ev["status"] == "진행중":
+                # 잘못된 종료일로 닫혔던 건이 목록에 계속 노출되고 기간이 재검증되면
+                # 스스로 되살아나야 한다 (G6-b 로 오적재 기간이 비워지는 경우).
+                updates["closed_at"] = None
+                updates["close_reason"] = None
             if enabled():
                 _safe(_patch, "pension_events", {"id": f"eq.{old['id']}"}, updates)
         # 자식 테이블(조건/혜택/배수 행): 신선한 추출 성공 + 실질 변경 건만 교체 (무회귀)
