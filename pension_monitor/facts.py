@@ -73,6 +73,35 @@ def _tier_sig(line: str) -> tuple:
     return (tuple(sorted(num_tokens(line))), m.group(1) if m else None)
 
 
+def benefit_signature(row: dict) -> tuple:
+    """혜택 그룹의 사실 시그니처 (티어별 수치 토큰 + 지급방식 멀티셋)."""
+    return tuple(sorted(_tier_sig(l) for l in _lines(row.get("benefits"))))
+
+
+def condition_signature(row: dict) -> tuple:
+    """조건 그룹의 사실 시그니처 (조건 수치 토큰 멀티셋 + 파서 유래 판정)."""
+    conds = tuple(sorted(num_tokens(" ".join(_lines(row.get("conditions"))))))
+    flags = (row.get("apply_required"), row.get("marketing_consent_required"),
+             row.get("annual_cap_krw"))
+    return (conds, flags)
+
+
+def token_multiset(row: dict, field: str) -> "Counter":
+    """필드의 수치 토큰 다중집합. 정보 손실 방향 판정(무회귀)에 쓴다."""
+    from collections import Counter
+    return Counter(num_tokens(" ".join(_lines(row.get(field)))))
+
+
+def loses_facts(old: dict, new: dict, field: str) -> bool:
+    """새 값이 기존 값의 '진부분집합'인가 — 추가는 없고 유실만 있는가.
+
+    운영 관측(2026-10): KB 이벤트에서 LLM 이 종료일 같은 수치를 한 실행에서 떨어뜨리고
+    다음 실행에서 되살리는 왕복이 매일 반복됐다(id 72 conditions: D:2026-12-31 유실 ↔
+    복원). 유실 방향을 막으면 왕복이 '정보가 더 많은 쪽'으로 수렴한다."""
+    o, n = token_multiset(old, field), token_multiset(new, field)
+    return bool(o - n) and not (n - o)
+
+
 def fact_signature(row: dict, multipliers=None) -> tuple:
     """이벤트 행(마스터 컬럼 dict)의 사실 시그니처.
 
