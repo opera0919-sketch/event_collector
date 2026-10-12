@@ -1,5 +1,5 @@
 {
- "run_at": "2026-10-09T02:27:17.602453+00:00",
+ "run_at": "2026-10-12T01:34:02.949675+00:00",
  "trigger": "weekly",
  "active": 29,
  "by_firm": {
@@ -13,7 +13,7 @@
  ],
  "new": 0,
  "closed": 0,
- "changed": 7,
+ "changed": 6,
  "note": "",
  "llm_calls": 8,
  "cache_hits": 14,
