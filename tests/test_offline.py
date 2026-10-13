@@ -1289,3 +1289,82 @@ if __name__ == "__main__":
     test_g6b_weekday_conflict_date_not_adopted()
     test_reopen_clears_closed_meta()
     print("G6-b 회귀 2종 통과")
+
+
+# ── S5: 필드별 게이팅 + 정보 손실 방향 차단 ──────────────────────────
+def test_s5_group_gate_and_lossy_block():
+    """운영 실측(2026-10, KB) 재현: conditions 의 수치 1개가 흔들려도 benefits 는
+    덮이지 않아야 하고, '추가 없이 유실만'인 재추출은 기존 값을 유지해야 한다.
+
+    id 72 실사례 — benefits 는 상품명 구체성만 바뀌어 티어 시그니처가 완전히 동일한데,
+    conditions 에서 종료일(2026-12-31) 하나가 떨어졌다가 다음 실행에 되살아나는 왕복이
+    매일 반복됐다. 행 전체를 한 덩어리로 판정하던 종전 게이트에서는 그 1개 때문에
+    benefits 까지 함께 교체됐다."""
+    from pension_monitor.facts import (benefit_signature, condition_signature,
+                                       loses_facts)
+    ben_a = ("KB자산운용 TDF 순매수 100만원 이상 ~ 300만원 미만 → 카페라떼 2잔세트 (1만원 상당) 1매 (전원)\n"
+             "KB자산운용 ETF 순매수 300만원 이상 ~ 500만원 미만 → 배달의민족 금액권 1만원권 (추첨 300명)")
+    ben_b = ("KB온국민 TDF, KB다이나믹 TDF 순매수 100만원 이상 ~ 300만원 미만 → 카페라떼 2잔세트 (1만원 상당) 1매 (전원)\n"
+             "RISE ETF 전종목 순매수 300만원 이상 ~ 500만원 미만 → 배달의민족 금액권 1만원권 (추첨 300명)")
+    cond_a = ("대상: 연금저축 고객\n"
+              "유지조건: 2026. 12. 31(목)까지 상품 보유 기준, 이벤트 종료일 기준 잔고 유지")
+    cond_b = ("대상: 연금저축 고객\n유지조건: 이벤트 종료일 기준으로 잔고 유지")
+
+    # 1) 표기만 다른 혜택은 티어 시그니처가 같다 (상품명 구체성은 수치가 아니다)
+    assert benefit_signature({"benefits": ben_a}) == benefit_signature({"benefits": ben_b})
+    # 2) 조건에서 종료일이 떨어진 쪽은 '유실만' 이다
+    assert loses_facts({"conditions": cond_a}, {"conditions": cond_b}, "conditions")
+    assert not loses_facts({"conditions": cond_b}, {"conditions": cond_a}, "conditions")
+    assert condition_signature({"conditions": cond_a}) != condition_signature({"conditions": cond_b})
+
+    old = {"benefits": ben_a, "conditions": cond_a, "event_name": "KB TDF/ETF"}
+    # 3) 유실 방향 재추출 → 두 그룹 모두 기존 값 유지 + 검토 표기
+    ev = {"benefits": ben_b, "conditions": cond_b, "event_name": "KB TDF/ETF"}
+    v = db._group_verdicts(old, ev)
+    assert v == {"benefits": False, "conditions": "lossy"}, v
+    # 4) 반대 방향(정보가 늘어난 쪽)은 조건만 실질 — 혜택은 건드리지 않는다
+    ev2 = {"benefits": ben_b, "conditions": cond_a, "event_name": "KB TDF/ETF"}
+    v2 = db._group_verdicts({"benefits": ben_a, "conditions": cond_b,
+                             "event_name": "KB TDF/ETF"}, ev2)
+    assert v2 == {"benefits": False, "conditions": True}, v2
+    # 5) 혜택에 실제 티어가 추가되면 혜택만 실질
+    ev3 = {"benefits": ben_a + "\nKB자산운용 ETF 순매수 1,000만원 이상 → 3만원권 (추첨 200명)",
+           "conditions": cond_a, "event_name": "KB TDF/ETF"}
+    v3 = db._group_verdicts(old, ev3)
+    assert v3 == {"benefits": True, "conditions": False}, v3
+    print("OK S5 필드별 게이팅 + 유실 방향 차단")
+
+
+def test_s5_fact_relocation_between_fields():
+    """id 70 실사례: 잔고유지 기한(27.1.31)이 conditions → benefits 로 옮겨 적히는
+    왕복. 옮겨 간 쪽(혜택)은 토큰이 늘어 실질, 잃은 쪽(조건)은 유실이라 유지된다 →
+    정보가 더 많은 조합으로 수렴하고 왕복이 멈춘다."""
+    b_a = "청년 대상 (1991년 1월 1일 ~ 2011년 12월 31일)이 IRP 최초신규 개설 → 1만원 (전원)"
+    b_b = ("청년 대상(1991.1.1~2011.12.31 출생)이 IRP 최초신규 개설 및 "
+           "27.1.31까지 계좌 보유 → 1만원 (전원)")
+    c_a = "유지조건: Special Event 청년 대상은 27.1.31까지 계좌 보유 필수"
+    c_b = "유지조건: 청년 대상은 해당 계좌 보유 필수"
+    old = {"benefits": b_a, "conditions": c_a, "event_name": "KB IRP 시즌4"}
+    ev = {"benefits": b_b, "conditions": c_b, "event_name": "KB IRP 시즌4"}
+    v = db._group_verdicts(old, ev)
+    assert v["benefits"] is True, v            # 날짜가 추가된 쪽 = 실질
+    assert v["conditions"] == "lossy", v       # 날짜를 잃은 쪽 = 유지
+    print("OK S5 필드 간 사실 이동 (풍부한 쪽으로 수렴)")
+
+
+def test_s5_lossy_sets_review_flag():
+    """무회귀로 막은 유실은 조용히 묻지 않고 검토 사유로 남긴다."""
+    ev = {"event_name": "x", "review_reason": None}
+    db._flag_lossy(ev, ["conditions"])
+    assert ev["needs_review"] is True
+    assert "부분집합" in ev["review_reason"], ev["review_reason"]
+    db._flag_lossy(ev, ["conditions"])         # 중복 누적 방지
+    assert ev["review_reason"].count("부분집합") == 1, ev["review_reason"]
+    print("OK S5 유실 차단 시 검토 표기")
+
+
+if __name__ == "__main__":
+    test_s5_group_gate_and_lossy_block()
+    test_s5_fact_relocation_between_fields()
+    test_s5_lossy_sets_review_flag()
+    print("S5 회귀 3종 통과")

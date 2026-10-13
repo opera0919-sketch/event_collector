@@ -10,7 +10,8 @@ import datetime as dt
 import requests
 
 from .config import SUPABASE_URL, SUPABASE_KEY, FIRMS, EXCLUDED_FIRMS
-from .facts import fact_signature, tier_count
+from .facts import (fact_signature, tier_count, benefit_signature,
+                    condition_signature, loses_facts)
 
 MISSED_LIMIT = 2  # 연속 미노출 N회 → 종료 처리
 
@@ -189,6 +190,52 @@ def material_change(old: dict, ev: dict, old_mults=None) -> bool:
 
 # 시그니처 동일 시 기존 값을 유지하는 컬럼 (캐노니컬 텍스트 + 파서/LLM 유래 메타)
 _GATED_COLS = ("conditions", "benefits") + _TYPED_COND_COLS + ("stackable", "annual_claim_limit")
+# S5: 게이트를 '혜택 그룹'과 '조건 그룹'으로 분리한다. 종전에는 행 전체를 한 덩어리로
+# 판정해, conditions 의 수치 하나가 흔들리면 benefits 까지 함께 덮였다 (운영 2026-10:
+# KB id 72 는 conditions 에서 종료일 1개만 유실·복원되는데 benefits 의 상품명 표기가
+# 매일 왕복했다 — 혜택 티어 시그니처는 양쪽이 완전히 동일했다).
+_BENEFIT_GROUP = ("benefits",)
+_CONDITION_GROUP = ("conditions",) + _TYPED_COND_COLS + ("stackable", "annual_claim_limit")
+
+
+def _flag_lossy(ev: dict, groups: list):
+    """무회귀로 막은 사실 유실을 검토 사유로 남긴다 (조용한 고착 금지)."""
+    label = "/".join("혜택" if g == "benefits" else "조건" for g in groups)
+    note = f"{label} 재추출이 기존 수치의 부분집합(유실만) — 기존 값 유지, 원문 확인 필요"
+    ev["needs_review"] = True
+    prev = (ev.get("review_reason") or "").strip()
+    ev["review_reason"] = f"{prev} / {note}" if prev and note not in prev else note
+
+
+def _group_verdicts(old: dict, ev: dict, old_mults=None) -> dict:
+    """그룹별 '실질 변경' 판정. 반환: {"benefits": True|False|"lossy", "conditions": ...}.
+
+    각 그룹은 (a) 자기 시그니처가 달라졌고 (b) 정보를 잃는 방향이 아닐 때만 실질이다.
+    (b) 는 무회귀 규칙 — 새 값이 기존 값 수치 토큰의 진부분집합이면("lossy") 기존 값을
+    유지하고 호출자가 needs_review 로 표기한다. 혜택 티어 수가 줄어든 경우(슬라이스
+    일부만 읽힘)도 종전대로 혜택 그룹을 유지한다. 기존 혜택이 비어 있으면 항상 실질."""
+    if not (old.get("benefits") or "").strip():
+        return {"benefits": True, "conditions": True}
+    out = {}
+    for name, sig in (("benefits", benefit_signature),
+                      ("conditions", condition_signature)):
+        if sig(old) == sig(ev):
+            out[name] = False
+        elif loses_facts(old, ev, name):
+            print(f"[게이트] {ev.get('event_name', '')[:24]}: {name} 새 추출이 기존 "
+                  f"수치의 부분집합(유실만) — 기존 값 유지")
+            out[name] = "lossy"
+        else:
+            out[name] = True
+    if out["benefits"] is True and tier_count(ev) < tier_count(old):
+        print(f"[게이트] {ev.get('event_name', '')[:24]}: 새 추출 티어 {tier_count(ev)} < "
+              f"기존 {tier_count(old)} — 기존 값 유지")
+        out["benefits"] = False
+    # 배수 행은 혜택 쪽 사실이므로 혜택 그룹에 합산한다.
+    if out["benefits"] is False and (fact_signature(old, old_mults)[3]
+                                     != fact_signature(ev, ev.get("multiplier_rows"))[3]):
+        out["benefits"] = True
+    return out
 
 
 def build_index(existing: list) -> dict:
@@ -263,10 +310,16 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
             # 다음 실행은 캐시 적중). 표현만 다른 재추출은 여기서 멈춘다.
             material = True
             if ev.get("rows_fresh"):
-                material = material_change(old, ev, old_mults.get(old["id"]))
-                if not material:
-                    for f in _GATED_COLS:
-                        ev[f] = old.get(f)
+                verdicts = _group_verdicts(old, ev, old_mults.get(old["id"]))
+                for group, cols in (("benefits", _BENEFIT_GROUP),
+                                    ("conditions", _CONDITION_GROUP)):
+                    if verdicts[group] is not True:
+                        for f in cols:          # 유지 대상 그룹만 기존 값 복원
+                            ev[f] = old.get(f)
+                material = any(v is True for v in verdicts.values())
+                lossy = [g for g, v in verdicts.items() if v == "lossy"]
+                if lossy:
+                    _flag_lossy(ev, lossy)
             # S4 기간 스티키(방어선): 새 값이 None 이면 기존 기간을 지우지 않는다.
             # (1차 판정은 normalize.reconcile_period(old) — 여기서는 어떤 경로로 오든
             # '값 → NULL' 진동이 DB 에 닿지 않도록 마지막으로 막는다.)
