@@ -36,6 +36,8 @@ TEXT_MIN = 200           # 이 길이 이상이면 본문 텍스트로 구조화
 # needs_review 플래그가 재발성(원문 오타·LLM 반복 실패)이면 매 배치 예산만
 # 잠식하므로, 한도 도달 시 캐시를 허용하되 플래그는 유지한다.
 REVIEW_RETRY_LIMIT = 3
+# M4 쿨다운: 이 일수마다 재시도 한도를 초기화한다 (영구 고착 방지).
+RETRY_COOLDOWN_DAYS = 7
 
 # 목록의 기간 표기를 신뢰하는 증권사 (KB 는 게시일(idt) 혼입 이력 → 불신)
 TRUSTED_LIST_DATES = {"미래에셋증권", "NH투자증권", "한국투자증권", "삼성증권"}
@@ -425,7 +427,14 @@ def _apply_success(ev, b_rows, c_rows, grounded, method,
         _flag(ev, "근거 불일치(추출 수치가 원문과 대조 실패)")
 
 
-def _reuse_cached(ev, old):
+def _reuse_cached(ev, old, verified=False):
+    """기존 캐노니컬 값을 재사용한다.
+
+    verified=True 는 '원문 해시가 일치해 변경 없음을 확인' 한 경로(캐시 적중)다. 이때도
+    last_verified_at 을 갱신한다 — 종전에는 신선 LLM 추출 때만 찍혀서, 원문이 안 바뀐
+    이벤트가 리포트에 '수 주간 미검증' 으로 보였다(2026-10 실측: 미래에셋 6건 전부).
+    LLM 이 마지막으로 돌아간 시점은 source_content_hash/extract_schema_version 으로
+    여전히 식별된다. 재시도 한도 스킵 등 '확인하지 못한' 경로는 갱신하지 않는다."""
     ev["benefits"] = old["benefits"]
     ev["conditions"] = old.get("conditions") or ev.get("conditions")
     ev["extract_method"] = old.get("extract_method")
@@ -438,6 +447,8 @@ def _reuse_cached(ev, old):
             ev[k] = True
     if old.get("acct_etc") and not ev.get("acct_etc"):
         ev["acct_etc"] = old["acct_etc"]
+    if verified:
+        ev["last_verified_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
 
 
 def detail_fetch_ok(ev) -> bool:
@@ -520,7 +531,13 @@ def normalize_events(pension, existing):
         # M4: 재시도 카운터의 대상 식별자. old 의 카운터는 같은 키(같은 원문·스키마)에
         # 대한 실패일 때만 유효 — 키가 다르면(원문 변경·스키마 상향) 0으로 간주해
         # 재시도를 재개한다.
-        retry_key = f"{src_hash}:{vision.EXTRACT_SCHEMA_VERSION}"
+        # 쿨다운 버킷을 키에 포함해 한도가 영구 고착되지 않게 한다. 원문·스키마가 그대로면
+        # 종전엔 한도 소진 후 영영 재시도하지 않아, 상세 추출이 한 번 실패한 건이 혜택 0건
+        # 빈 레코드로 굳었다 (2026-10 실측: 한투 id 78·79 가 3주째 extract_method='hint',
+        # review_retry_count=3). 버킷이 바뀌면 카운터가 0 으로 간주돼 다시 최대 3회 시도한다
+        # → 간헐 장애는 스스로 회복하고, 비용은 이벤트당 REVIEW_RETRY_LIMIT/쿨다운으로 묶인다.
+        retry_key = (f"{src_hash}:{vision.EXTRACT_SCHEMA_VERSION}"
+                     f":{dt.date.today().toordinal() // RETRY_COOLDOWN_DAYS}")
         old_retries = ((old.get("review_retry_count") or 0)
                        if (old and old.get("review_retry_key") == retry_key) else 0)
         # 캐시: 같은 이벤트 + 같은 종료일 + 원문/스키마 불변 + 기존 캐노니컬 양호 → 재호출 생략.
@@ -534,7 +551,7 @@ def normalize_events(pension, existing):
                     and not old.get("needs_review")
                     and _is_trustworthy(old.get("benefits")))
         if cache_ok:
-            _reuse_cached(ev, old)
+            _reuse_cached(ev, old, verified=True)
             n_cache += 1
             reconcile_period(ev, res, old)
             apply_accounts(ev, res)

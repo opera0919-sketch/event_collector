@@ -659,6 +659,13 @@ def _retry_ev(det, **over):
     return ev
 
 
+def _retry_key_of(det):
+    """생산 코드(normalize)와 동일한 M4 재시도 키. 쿨다운 버킷 포함."""
+    return (f"{source_content_hash({'_detail_text': det})}"
+            f":{vision.EXTRACT_SCHEMA_VERSION}"
+            f":{dt.date.today().toordinal() // normalize.RETRY_COOLDOWN_DAYS}")
+
+
 def _retry_old(det, count, key=None, **over):
     year = dt.date.today().year
     old = {"id": 70, "firm_name": "NH투자증권", "event_name": "IRP 순입금 응원",
@@ -668,8 +675,7 @@ def _retry_old(det, count, key=None, **over):
            "benefits": "순입금 1백만원 이상 → 상품권 1만원 (전원)", "conditions": None,
            "acct_irp": True, "extract_method": "text",
            "review_retry_count": count,
-           "review_retry_key": key if key is not None else
-           f"{source_content_hash({'_detail_text': det})}:{vision.EXTRACT_SCHEMA_VERSION}"}
+           "review_retry_key": key if key is not None else _retry_key_of(det)}
     old.update(over)
     return old
 
@@ -754,7 +760,7 @@ def test_retry_key_mismatch_resets():
     n = _run_with_vision([ev], [old], lambda t, h: {})
     assert n == 1, "키가 다르면(다른 원문에 대한 실패) 재시도가 재개돼야 함"
     assert ev["review_retry_count"] == 1                 # 새 키 기준 첫 실패
-    assert ev["review_retry_key"].startswith(source_content_hash({"_detail_text": det}))
+    assert ev["review_retry_key"] == _retry_key_of(det)
     print("OK M4 키 불일치 시 카운터 리셋(재시도 재개)")
 
 
@@ -1368,3 +1374,80 @@ if __name__ == "__main__":
     test_s5_fact_relocation_between_fields()
     test_s5_lossy_sets_review_flag()
     print("S5 회귀 3종 통과")
+
+
+# ── 2026-10-19 주간 점검 후속 3종 ──────────────────────────────────
+def test_samsungpop_anchor_fallback():
+    """삼성증권 신형 마크업(span.data 소실) 파싱. 운영 로그의 실제 앵커를 그대로 쓴다.
+
+    [debug:삼성증권] anchor: {'t': '국내주식 국내주식 고객감사제이벤트 2026-08-14 ~ 2026-10-30',
+                              'h': "javascript:goIngView('3883', '', 'H');"}
+    카테고리가 접두로 오고, 제목이 같은 낱말로 시작할 수 있다 — 한 번만 떼어내야 한다."""
+    from pension_monitor.scrapers import samsungpop as sp
+    import re as _re
+    items = [
+        {"text": "국내주식 국내주식 고객감사제이벤트 2026-08-14 ~ 2026-10-30",
+         "period": "2026-08-14 ~ 2026-10-30",
+         "href": "javascript:goIngView('3883', '', 'H');", "onclick": ""},
+        {"text": "기타 투자안정지원금 패키지 이벤트 2026-07-13 ~ 2026-10-30",
+         "period": "2026-07-13 ~ 2026-10-30",
+         "href": "javascript:goIngView('3859', '', 'H');", "onclick": ""},
+    ]
+    # scrape() 의 파싱부와 동일한 경로를 재현 (브라우저 없이 검증)
+    got = []
+    for it in items:
+        m = sp._PERIOD_RE.search(it["period"])
+        assert m, it
+        name = it["text"].replace(it["period"], " ")
+        name = _re.sub(r"^\[?신규\]?", "", name).strip()
+        category = next((c for c in sp._CATEGORIES if name.endswith(c)), None)
+        if category:
+            name = name[: -len(category)].strip()
+        else:
+            category = next((c for c in sp._CATEGORIES if name.startswith(c)), None)
+            if category:
+                name = name[len(category):].strip()
+        name = _re.sub(r"\s{2,}", " ", name).strip()
+        vm = _re.search(r"goIngView\('(\d+)'", it["href"] + " " + it["onclick"])
+        got.append((name, category, vm.group(1) if vm else None,
+                    f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"))
+    assert got[0] == ("국내주식 고객감사제이벤트", "국내주식", "3883", "2026-08-14"), got[0]
+    assert got[1] == ("투자안정지원금 패키지 이벤트", "기타", "3859", "2026-07-13"), got[1]
+    assert "JS_ANCHOR_ITEMS" in dir(sp)
+    print("OK 삼성 앵커 폴백 (카테고리 접두 1회 제거·goIngView id)")
+
+
+def test_cache_hit_marks_verified():
+    """캐시 적중(원문 해시 일치 = 변경 없음 확인)도 last_verified_at 을 갱신한다.
+    종전에는 신선 추출만 찍혀 '원문 불변' 이벤트가 수 주간 미검증으로 보였다."""
+    old = {"benefits": "순입금 1백만원 이상 → 1만원 (전원)", "conditions": "대상: 전체",
+           "extract_method": "ocr"}
+    ev = {}
+    normalize._reuse_cached(ev, old)
+    assert "last_verified_at" not in ev, ev      # 확인하지 못한 재사용은 갱신 안 함
+    ev2 = {}
+    normalize._reuse_cached(ev2, old, verified=True)
+    assert ev2.get("last_verified_at"), ev2
+    print("OK 캐시 적중 = 검증 (last_verified_at 갱신)")
+
+
+def test_retry_key_cooldown_bucket():
+    """M4 재시도 키에 쿨다운 버킷이 포함돼 한도가 영구 고착되지 않는다.
+    한투 id 78·79 가 3주째 review_retry_count=3 으로 혜택 0건에 굳은 사례."""
+    import datetime as _dt
+    assert normalize.RETRY_COOLDOWN_DAYS >= 1
+    bucket = lambda d: d.toordinal() // normalize.RETRY_COOLDOWN_DAYS
+    today = _dt.date.today()
+    # 같은 쿨다운 구간 안에서는 키가 동일 (한도가 유지돼 비용이 묶인다)
+    assert bucket(today) == bucket(today - _dt.timedelta(days=0))
+    # 쿨다운을 넘기면 키가 바뀐다 (= old 카운터가 0 으로 간주돼 재시도 재개)
+    assert bucket(today) != bucket(today + _dt.timedelta(
+        days=normalize.RETRY_COOLDOWN_DAYS))
+    print("OK M4 쿨다운 버킷 (영구 고착 방지)")
+
+
+if __name__ == "__main__":
+    test_samsungpop_anchor_fallback()
+    test_cache_hit_marks_verified()
+    test_retry_key_cooldown_bucket()
+    print("주간 점검 후속 회귀 3종 통과")
