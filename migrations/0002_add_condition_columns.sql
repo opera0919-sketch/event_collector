@@ -6,6 +6,11 @@
 CREATE TABLE IF NOT EXISTS public.pension_events_bak_conditions AS
 SELECT * FROM public.pension_events;
 
+-- Data API 권한 (2026-10-30 부터 public 신규 테이블은 자동 부여되지 않는다).
+-- 감사·롤백 전용 백업이라 service_role 만 준다 — 익명/로그인 사용자에게 과거 스냅샷을
+-- 노출할 이유가 없다. 재실행해도 무해하다.
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.pension_events_bak_conditions TO service_role;
+
 -- 컬럼 추가. 불리언 기본값은 NULL(미확인) — 문구가 확인될 때만 true/false.
 ALTER TABLE public.pension_events
   ADD COLUMN IF NOT EXISTS eligibility                 text,
