@@ -1685,6 +1685,41 @@ def test_p0_hash_input_instrumentation():
     print("OK P0-A1 해시 입력 계측 (본문/이미지 성분별 diff, 실패 실행은 직전 값 유지)")
 
 
+def test_p0_volatile_view_counter_excluded_from_hash():
+    """A1 계측으로 확정한 KB 해시 불안정의 원인 — '조회수: N' 줄은 해시에 넣지 않는다.
+    문자열은 2026-11-10 data/hash_inputs.json 의 실제 값."""
+    from pension_monitor.classify import hash_text_per_firm
+
+    def kb(views_a, views_b):
+        evs = [{"firm_name": "KB증권", "event_name": "IRP 무료 수수료 혜택 이벤트",
+                "_detail_text": f"IRP 무료 수수료 혜택 이벤트\n2026/10/12 16:04:56\n조회수: {views_a}",
+                "_image_urls": ["https://etcimg.kbsec.com/html/design/20261012144156/img_01.jpg"]},
+               {"firm_name": "KB증권", "event_name": "퇴직연금 DC, 첫 만남 이벤트",
+                "_detail_text": f"퇴직연금 DC, 첫 만남 이벤트\n2026/03/31 09:24:36\n조회수: {views_b}\n"
+                                "- 순입금 1천만원 이상 : 혜택 신세계이마트상품권 3만원"}]
+        hash_text_per_firm(evs)
+        return evs
+    a, b = kb("1,608", "6,846"), kb("1,611", "6,850")       # 조회수만 오른 다음 실행
+    assert [source_content_hash(e) for e in a] == [source_content_hash(e) for e in b]
+    assert "조회수" not in a[0]["_hash_text"] and "2026/10/12 16:04:56" in a[0]["_hash_text"]
+    assert "조회수: 1,608" in a[0]["_detail_text"], "LLM 입력 원문은 건드리지 않는다"
+    # 내용이 바뀌면 여전히 해시가 달라진다 (휘발 줄만 뺀 것이지 둔감해진 것이 아니다)
+    c = kb("1,611", "6,850")
+    c[1]["_detail_text"] = c[1]["_detail_text"].replace("3만원", "5만원")
+    hash_text_per_firm(c)
+    assert source_content_hash(c[1]) != source_content_hash(b[1])
+    # 수치가 든 일반 문장은 휘발 줄이 아니다
+    d = kb("1", "2")
+    d[1]["_detail_text"] += "\n조회수 1,000회 달성 시 추가 혜택"
+    hash_text_per_firm(d)
+    assert "달성 시 추가 혜택" in d[1]["_hash_text"]
+    # 증권사에 이벤트가 1건뿐이어도(공통 줄 제거 미적용 경로) 동일하게 뺀다
+    one = [{"firm_name": "X증권", "event_name": "e", "_detail_text": "본문\n조회수 : 12"}]
+    hash_text_per_firm(one)
+    assert one[0]["_hash_text"] == "본문"
+    print("OK P0-A1→A2 조회수 줄은 해시 입력에서 제외 (KB 매일 재추출의 원인)")
+
+
 def test_p0_fail_reason_streak_and_report():
     """B2/B3: 수집 실패 사유 분류, 연속 실패 횟수, 리포트·제목 표기."""
     import json as _json
@@ -1818,7 +1853,8 @@ if __name__ == "__main__":
     test_p0_signature_treats_none_and_false_alike()
     test_p0_transfer_hint_and_exclusion_precision()
     test_p0_hash_input_instrumentation()
+    test_p0_volatile_view_counter_excluded_from_hash()
     test_p0_fail_reason_streak_and_report()
     test_p0_miraeasset_parse_items()
     test_p0_kst_date_and_llm_reasons()
-    print("P0(2026-11) 회귀 9종 통과")
+    print("P0(2026-11) 회귀 10종 통과")

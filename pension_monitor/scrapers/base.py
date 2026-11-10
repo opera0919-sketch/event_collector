@@ -106,11 +106,7 @@ async def load_page(browser, url, wait_ms=6000, retries=3, timeout_ms=30000,
             landed_offsite = bool(stay_on_host) and page.url.startswith("http") \
                 and not _same_site(page.url, stay_on_host)
             if wait_selector and not landed_offsite:
-                try:
-                    await page.wait_for_selector(wait_selector, state="attached",
-                                                 timeout=selector_timeout_ms)
-                except Exception:
-                    pass
+                await _wait_for_list(page, wait_selector, selector_timeout_ms)
             await page.wait_for_timeout(wait_ms)
             return page
         except Exception as e:
@@ -122,6 +118,29 @@ async def load_page(browser, url, wait_ms=6000, retries=3, timeout_ms=30000,
                 raise OffsiteRedirect(blocked[0]) from e
             await asyncio.sleep(2 ** attempt)
     raise last
+
+
+# 타 도메인 이동을 막은 뒤에도 목록이 뜨는지 지켜보는 시간. 이 페이지는 '다른 곳으로 보내는'
+# 안내 문서일 가능성이 높으므로 상한(selector_timeout_ms)까지 기다리지 않는다.
+OFFSITE_GRACE_MS = 6000
+
+
+async def _wait_for_list(page, selector, timeout_ms):
+    """셀렉터가 나타날 때까지 대기. 타 도메인 이동이 차단된 뒤로는 OFFSITE_GRACE_MS 만 더 본다."""
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + timeout_ms / 1000
+    blocked_at = None
+    while loop.time() < deadline:
+        try:
+            await page.wait_for_selector(selector, state="attached", timeout=1000)
+            return True
+        except Exception:
+            pass
+        if offsite_attempts(page):
+            blocked_at = blocked_at or loop.time()
+            if loop.time() - blocked_at >= OFFSITE_GRACE_MS / 1000:
+                return False
+    return False
 
 
 class OffsiteRedirect(Exception):

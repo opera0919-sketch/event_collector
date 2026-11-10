@@ -99,6 +99,15 @@ def select_content_images(urls, limit=3):
     return pick_content_images([u for u in cands if _RASTER_RE.search(u)], limit)
 
 
+# 해시 입력에서 빼는 '휘발 줄' — 내용과 무관하게 방문할 때마다 바뀌는 값.
+# 계측(data/hash_inputs.json, 2026-11-10)으로 확정: KB 상세의 해시 본문은
+#   'IRP 무료 수수료 혜택 이벤트 / 2026/10/12 16:04:56 / 조회수: 1,608'
+# 처럼 제목·게시일시·조회수 세 줄뿐인 건이 4건이고(본문은 이미지), 나머지 2건도 같은 줄을
+# 포함한다. 조회수는 우리 수집 자체로도 오르므로 해시가 매 실행 달라졌다 — KB 전건이
+# 15일 중 14일 재추출된 원인. 페이지마다 값이 달라 '공통 줄 제거'로는 걸러지지 않았다.
+_VOLATILE_LINE_RE = re.compile(r"^조회\s*수?\s*[:：]?\s*[\d,]+\s*(?:회|건)?$")
+
+
 def hash_text_per_firm(events, min_events=2):
     """재추출 트리거 해시용 본문(`_hash_text`) — 같은 실행에서 같은 증권사의 상세
     페이지 2건 이상에 공통으로 나타나는 줄은 네비·푸터·'진행중 이벤트' 목록·광고 등
@@ -113,7 +122,8 @@ def hash_text_per_firm(events, min_events=2):
         if ev.get("_detail_text"):
             by_firm[ev.get("firm_name")].append(ev)
     for firm, evs in by_firm.items():
-        lines_of = {id(ev): [l.strip() for l in ev["_detail_text"].splitlines() if l.strip()]
+        lines_of = {id(ev): [l.strip() for l in ev["_detail_text"].splitlines()
+                             if l.strip() and not _VOLATILE_LINE_RE.match(l.strip())]
                     for ev in evs}
         if len(evs) < min_events:
             for ev in evs:

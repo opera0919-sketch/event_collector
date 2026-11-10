@@ -143,7 +143,7 @@ async def _run():
             await browser.close()
             site.shutdown()
             store.shutdown()
-    print("스크레이퍼 브라우저 검증 7종 통과")
+    print("스크레이퍼 브라우저 검증 8종 통과")
 
 
 if __name__ == "__main__":
