@@ -73,6 +73,18 @@ def _tier_sig(line: str) -> tuple:
     return (tuple(sorted(num_tokens(line))), m.group(1) if m else None)
 
 
+def _flag_sig(row: dict) -> tuple:
+    """파서 유래 판정의 비교 키. '명시 없음(None)'과 '아니오(False)'는 같은 것으로 본다.
+
+    LLM 이 "신청: 별도 이벤트 신청 없이 적용" 한 줄을 넣었다 뺐다 하면 apply_required 가
+    None ↔ False 로 바뀐다. 수치 토큰은 그대로인데 이 차이만으로 시그니처가 달라져, 같은
+    원문의 두 변이가 날마다 서로를 덮어썼다 (운영 2026-10~11: KB id 37 conditions 가
+    10-26·27, 11-02·04·05·06 에 정확히 교대). 요구 조건이 '생겼다/없어졌다'(True 경계)만
+    실질로 본다. 저장 값 자체는 건드리지 않는다 — 게이트가 '동일'이면 기존 값이 유지된다."""
+    return (bool(row.get("apply_required")), bool(row.get("marketing_consent_required")),
+            row.get("annual_cap_krw"))
+
+
 def benefit_signature(row: dict) -> tuple:
     """혜택 그룹의 사실 시그니처 (티어별 수치 토큰 + 지급방식 멀티셋)."""
     return tuple(sorted(_tier_sig(l) for l in _lines(row.get("benefits"))))
@@ -81,8 +93,7 @@ def benefit_signature(row: dict) -> tuple:
 def condition_signature(row: dict) -> tuple:
     """조건 그룹의 사실 시그니처 (조건 수치 토큰 멀티셋 + 파서 유래 판정)."""
     conds = tuple(sorted(num_tokens(" ".join(_lines(row.get("conditions"))))))
-    flags = (row.get("apply_required"), row.get("marketing_consent_required"),
-             row.get("annual_cap_krw"))
+    flags = _flag_sig(row)
     return (conds, flags)
 
 
@@ -111,8 +122,7 @@ def fact_signature(row: dict, multipliers=None) -> tuple:
     '동일'로 판정하면 기존 값을 그대로 유지하므로 데이터가 손실되진 않는다)."""
     tiers = tuple(sorted(_tier_sig(l) for l in _lines(row.get("benefits"))))
     conds = tuple(sorted(num_tokens(" ".join(_lines(row.get("conditions"))))))
-    flags = (row.get("apply_required"), row.get("marketing_consent_required"),
-             row.get("annual_cap_krw"))
+    flags = _flag_sig(row)
     mults = tuple(sorted(
         (str(m.get("source_type") or ""), _fmt(float(m.get("multiplier") or 0)),
          str(m.get("scope") or ""), int(m.get("min_threshold_krw") or 0))

@@ -2,7 +2,20 @@
 # -*- coding: utf-8 -*-
 """공통 설정: 대상 증권사, 연금 키워드, 환경변수."""
 
+import datetime as _dt
 import os
+
+# 업무 기준일은 한국 시간이다. 러너는 UTC 라서 dt.date.today() 를 쓰면 실행 시각에 따라
+# 날짜가 하루 어긋난다 (운영 실측: 22:30 UTC 예약이 지연 없이 돌던 8월에는 리포트가
+# 일요일 날짜(2026-08-23 등)로 저장됐고, 지연이 커진 뒤에는 월요일 날짜가 됐다).
+# 리포트 파일명·'종료' 판정·종료 임박 계산이 모두 이 날짜를 쓴다. 한국은 서머타임이 없다.
+KST = _dt.timezone(_dt.timedelta(hours=9), "KST")
+
+
+def today_kst() -> _dt.date:
+    """한국 시간 기준 오늘 날짜 (러너 시간대와 무관)."""
+    return _dt.datetime.now(KST).date()
+
 
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36")
@@ -45,4 +58,12 @@ MAIL_RECIPIENTS = [
     for x in (os.environ.get("MAIL_RECIPIENTS") or "opera0919@gmail.com").split(",")
     if x.strip()
 ]
-TRIGGER_TYPE = os.environ.get("TRIGGER_TYPE") or "manual"  # weekly | manual
+# 값은 weekly | manual 두 가지뿐이다. 'weekly' 는 이름과 달리 "예약(schedule) 실행"을
+# 뜻한다(현재 평일 매일). DB 의 monitoring_runs_trigger_type_check 제약이 이 두 값만
+# 허용하므로, 이름을 바꾸려면 제약 마이그레이션이 먼저다 — 값은 그대로 둔다.
+TRIGGER_TYPE = os.environ.get("TRIGGER_TYPE") or "manual"
+# 증권사 수집이 이 횟수만큼 연속 실패하면 잡을 실패(빨강)로 끝낸다 (산출물·메일은 유지).
+try:
+    FAIL_STREAK_ALERT = max(1, int(os.environ.get("FAIL_STREAK_ALERT") or 2))
+except ValueError:
+    FAIL_STREAK_ALERT = 2

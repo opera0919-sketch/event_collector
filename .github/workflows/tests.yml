@@ -12,11 +12,30 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Install deps
         run: pip install requests beautifulsoup4 openpyxl
       - name: Run offline test suite
         run: python tests/test_offline.py
+
+  # 스크레이퍼 브라우저 검증 — 로컬 가짜 사이트를 실제 Chromium 으로 연다 (외부 접속 없음).
+  # 목록 지연 주입·타 도메인 이동·빈 화면 등 운영에서 본 실패 모드의 재현과 사유 분류를 확인.
+  scraper-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install deps
+        run: |
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+      - name: Run scraper browser checks
+        env:
+          PYTHONUNBUFFERED: '1'
+        run: python tests/test_scraper_browser.py

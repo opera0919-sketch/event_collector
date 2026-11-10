@@ -21,7 +21,9 @@ from . import db, vision
 from .classify import (
     extract_period, suspicious_dates, weekday_conflicts, infer_end_from_hold,
     hold_period, source_content_hash, select_content_images, _TRANSFER_HINT, _MULT_HINT,
+    _EXCLUDED_SOURCE_RE,
 )
+from .config import today_kst
 
 # ── 예산 (Gemini 무료 티어 보호 — 기존 운영값 유지) ─────────────────
 STRUCT_BUDGET = 40       # 1회 실행 Gemini 호출 상한
@@ -38,6 +40,11 @@ TEXT_MIN = 200           # 이 길이 이상이면 본문 텍스트로 구조화
 REVIEW_RETRY_LIMIT = 3
 # M4 쿨다운: 이 일수마다 재시도 한도를 초기화한다 (영구 고착 방지).
 RETRY_COOLDOWN_DAYS = 7
+# A5: LLM 이 정상 응답했는데 쓸 수 있는 혜택 행이 0건인 시도가 같은 원문에 대해 이 횟수만큼
+# 이어지면 '이 원문에는 추출할 근거가 없다'고 확정하고 원문 해시를 저장한다 → 이후 캐시 적중.
+# 종전엔 해시가 신선 추출 성공 때만 저장돼, 근거가 없는 페이지는 영원히 캐시 미스였다
+# (운영: NH 「연금계좌3종 개설하기」가 매 실행 텍스트+OCR 2콜, last_verified_at NULL).
+EMPTY_CONFIRM_ATTEMPTS = 2
 
 # 목록의 기간 표기를 신뢰하는 증권사 (KB 는 게시일(idt) 혼입 이력 → 불신)
 TRUSTED_LIST_DATES = {"미래에셋증권", "NH투자증권", "한국투자증권", "삼성증권"}
@@ -53,6 +60,50 @@ JUNK_RE = re.compile(
 SUBSTANCE_RE = re.compile(
     r"[\d만천백십억,\.]+\s*원|\d+(\.\d+)?\s*%|무료|우대|면제|할인|상품권|쿠폰|포인트"
     r"|캐시백|수수료|지원금|교환권|기프트|커피|아메리카노|이자")
+
+
+# ── 검토 사유의 두 종류 (A4) ─────────────────────────────────────────────
+# 검토 표기는 사람에게 보내는 신호다. 그중 다수는 같은 원문을 다시 추출해도 똑같이 다시
+# 붙는 '결정론적' 사유라, 캐시를 막아 봐야 LLM 호출과 문장 요동만 늘린다 (운영 2026-11-09:
+# Gemini 12콜 중 4콜이 이 경로, 검토 필요 4~6건이 상시 유지). 아래 표식으로 시작·포함하는
+# 사유는 '정보성'으로 분류해 캐시를 허용한다. 표에 없는 사유(추출 실패·근거 불일치·
+# 목록 요약 폴백·유실 차단 등)는 종전대로 재추출 대상이다 — 새 사유를 추가했는데 여기
+# 분류를 빠뜨리면 보수적으로(= 종전 동작) 재추출된다.
+INFORMATIONAL_MARKERS = (
+    "기간 불일치(목록",                 # 목록 vs 상세 종료일 — 목록 우선 적용이 이미 결정
+    "요일 불일치",                      # 원문 표기 자체의 문제
+    "본문 기간 표기의 요일",
+    "종료일 추론(잔고유지기간",
+    "기간 미확인",
+    "기간 충돌(",
+    "대상계좌 미확인",
+    "조항 원문에 존재하나 추출 누락",   # G8 커버리지
+    "수집 제외 증권사",
+)
+# 캐시 적중 시에는 LLM 응답이 없어 다시 계산할 수 없는 정보성 사유 — 기존 행에서 이월한다.
+# (나머지 정보성 사유는 reconcile_period / apply_accounts / check_period_collisions 가
+#  캐시 경로에서도 매번 다시 계산하므로 이월하지 않는다: 이월하면 해소된 뒤에도 남는다.)
+_CARRY_PERIOD_MISMATCH = "기간 불일치(목록"
+_COVERAGE_SUFFIX = " 조항 원문에 존재하나 추출 누락"
+
+
+def review_parts(reason) -> list:
+    """' / ' 로 이어 붙인 검토 사유를 개별 사유로 나눈다."""
+    return [p.strip() for p in (reason or "").split(" / ") if p.strip()]
+
+
+def is_informational(part: str) -> bool:
+    return any(m in part for m in INFORMATIONAL_MARKERS)
+
+
+def blocks_cache(row) -> bool:
+    """이 행의 검토 표기가 재추출로 해소될 여지가 있는가 (= 캐시를 막아야 하는가).
+
+    검토 표기가 없으면 False. 사유가 비어 있거나 정보성이 아닌 사유가 하나라도 있으면 True."""
+    if not (row or {}).get("needs_review"):
+        return False
+    parts = review_parts(row.get("review_reason"))
+    return not parts or any(not is_informational(p) for p in parts)
 
 
 def _flag(ev, reason):
@@ -144,26 +195,62 @@ def clean_multipliers(res, source_kind="llm-text"):
     return out
 
 
-# G8: 이전 유치형 이벤트가 반드시 담고 있어야 할 조항 (원문엔 있는데 추출엔 없으면 결함)
+# G8: 이전 유치형 이벤트가 반드시 담고 있어야 할 조항 (원문엔 있는데 추출엔 없으면 결함).
+# 값은 (원문 존재 판정, 추출 존재 판정). 원문 쪽은 엄격하게(오탐 방지), 추출 쪽은 느슨하게
+# 본다 — 추출문이 "퇴직금 제외" 대신 "제외: 퇴직금" 처럼 써도 '있다'로 인정해야 하므로.
+# 이 조합은 종전보다 표기를 줄이기만 한다(원문 조건이 좁아지고 추출 조건은 그대로).
 _REQUIRED_WHEN_TRANSFER = {
-    "배수": _MULT_HINT,
-    "제외재원": re.compile(r"제외|불인정|인정되지"),
+    "배수": (_MULT_HINT, _MULT_HINT),
+    "제외재원": (_EXCLUDED_SOURCE_RE, re.compile(r"제외|불인정|인정되지|포함되지")),
 }
+
+
+def coverage_preconditions(ev) -> list:
+    """G8 의 전제(원문 쪽 조건)가 성립하는 조항 라벨 목록 — 이전 유치형이고 원문에 해당
+    조항이 있다. 추출 쪽 누락 여부는 보지 않는다 (check_coverage / 캐시 이월이 각각 판단)."""
+    src = ev.get("_detail_text", "") or ""
+    if not _TRANSFER_HINT.search((ev.get("event_name") or "") + "\n" + src):
+        return []
+    return [label for label, (src_rx, _) in _REQUIRED_WHEN_TRANSFER.items()
+            if src_rx.search(src)]
 
 
 def check_coverage(ev):
     """G8: '이전 유치형인데 배수·제외재원이 원문엔 있으나 추출엔 없다'를 결함으로 표기.
     → E1/E2(삼성 배수·제외재원 누락)를 첫 배치부터 needs_review 로 노출."""
-    src = ev.get("_detail_text", "") or ""
-    if not _TRANSFER_HINT.search((ev.get("event_name") or "") + src):
+    labels = coverage_preconditions(ev)
+    if not labels:
         return
     blob = " ".join(str(ev.get(k) or "") for k in
                     ("conditions", "cond_notes", "benefits", "eligibility", "exclusions"))
     if ev.get("multiplier_rows"):
         blob += " 배수 " + " ".join(f"{r['multiplier']}배" for r in ev["multiplier_rows"])
-    for label, rx in _REQUIRED_WHEN_TRANSFER.items():
-        if rx.search(src) and not rx.search(blob):
-            _flag(ev, f"{label} 조항 원문에 존재하나 추출 누락 — 원문 확인 필요")
+    for label in labels:
+        if label == "제외재원" and ev.get("exclusions"):
+            continue                      # 타입드 컬럼에 제외 대상이 이미 담겼다
+        if not _REQUIRED_WHEN_TRANSFER[label][1].search(blob):
+            _flag(ev, f"{label}{_COVERAGE_SUFFIX} — 원문 확인 필요")
+
+
+def _carry_info_flags(ev, old):
+    """캐시 적중 시, 다시 계산할 수 없는 정보성 검토 사유를 기존 행에서 이월한다 (A4).
+
+    - '기간 불일치(목록 vs 상세)': 상세 종료일은 LLM 응답에서만 나온다. 캐시 조건이 종료일·
+      원문 동일을 이미 보장하므로 그대로 유효하다.
+    - G8 '조항 … 추출 누락': 추출 결과는 그대로이므로 '누락'은 여전히 참이다. 다만 전제
+      (이전 유치형 + 원문에 조항 존재)는 현재 규칙으로 다시 확인한다 — 규칙이 정밀해져
+      더는 전제가 성립하지 않는 과거 오탐을 캐시가 영구 보존하지 않도록."""
+    if not old.get("needs_review"):
+        return
+    valid = None
+    for part in review_parts(old.get("review_reason")):
+        if _CARRY_PERIOD_MISMATCH in part:
+            _flag(ev, part)
+        elif _COVERAGE_SUFFIX in part:
+            if valid is None:
+                valid = coverage_preconditions(ev)
+            if part.split(_COVERAGE_SUFFIX, 1)[0].strip() in valid:
+                _flag(ev, part)
 
 
 def check_period_collisions(events):
@@ -254,7 +341,7 @@ def _sticky_period(ev, old, ps, pe, inferred_end=None, bad_dates=()):
 def reconcile_period(ev, res, old=None):
     """G4: 기간 신뢰원 규칙. 확신 없으면 비우고 검토 표기 (틀린 날짜 노출 금지).
     old(기존 DB 행)가 주어지면 비확정 출처는 기존 값을 덮지 못한다 (S4)."""
-    year = dt.date.today().year
+    year = today_kst().year
     text = ev.get("_detail_text", "")
     # G6: 본문의 'YYYY.MM.DD(요일)' 표기와 실제 요일이 어긋나면 표기 (기간 오추출 신호)
     bad_wd = weekday_conflicts(text)
@@ -485,12 +572,32 @@ def extraction_order(pension, idx):
     return [ev for _, ev in sorted(enumerate(pension), key=key)]
 
 
+def _miss_reason(old, ev, src_hash) -> str:
+    """캐시를 쓰지 못한 1차 사유 (관측용 — 판정은 normalize_events 의 cache_ok 가 한다).
+    여러 사유가 겹치면 '원문 쪽' 사유를 앞세운다: 원문이 바뀌었으면 플래그와 무관하게
+    재추출이 맞고, 원문이 같은데 재추출됐다면 그게 줄여야 할 낭비이기 때문."""
+    if old is None:
+        return "new"
+    if old.get("extract_schema_version") != vision.EXTRACT_SCHEMA_VERSION:
+        return "schema"
+    if not old.get("source_content_hash"):
+        return "never_extracted"
+    if old.get("source_content_hash") != src_hash:
+        return "hash_changed"
+    if old.get("end_date") != ev.get("end_date"):
+        return "period_changed"
+    if blocks_cache(old):
+        return "flag_retry"
+    return "untrusted_value"
+
+
 def normalize_events(pension, existing):
     """전 이벤트 정규화 오케스트레이션. Gemini 미설정 시 휴리스틱 값 유지 + 기간 규칙만 적용.
-    반환: 관측 통계 dict (llm_calls/cache_hits/retry_skips/fetch_failed)."""
+    반환: 관측 통계 dict (llm_calls/cache_hits/retry_skips/fetch_failed/llm_reasons)."""
     idx = db.build_index(existing)
     started = time.monotonic()
     n_call, n_cache, n_retry_skip, n_fetch_fail = 0, 0, 0, 0
+    reasons = {}             # 캐시 미스 사유 → Gemini 호출 수 (C3)
 
     def _may_call():
         return (vision.enabled() and not vision.blocked() and n_call < STRUCT_BUDGET
@@ -537,24 +644,27 @@ def normalize_events(pension, existing):
         # review_retry_count=3). 버킷이 바뀌면 카운터가 0 으로 간주돼 다시 최대 3회 시도한다
         # → 간헐 장애는 스스로 회복하고, 비용은 이벤트당 REVIEW_RETRY_LIMIT/쿨다운으로 묶인다.
         retry_key = (f"{src_hash}:{vision.EXTRACT_SCHEMA_VERSION}"
-                     f":{dt.date.today().toordinal() // RETRY_COOLDOWN_DAYS}")
+                     f":{today_kst().toordinal() // RETRY_COOLDOWN_DAYS}")
         old_retries = ((old.get("review_retry_count") or 0)
                        if (old and old.get("review_retry_key") == retry_key) else 0)
         # 캐시: 같은 이벤트 + 같은 종료일 + 원문/스키마 불변 + 기존 캐노니컬 양호 → 재호출 생략.
         # source_content_hash/extract_schema_version 불일치면(조항 변경·추출 개선)
         # 재추출을 유발한다. _is_trustworthy 로 old.benefits 정크 여부도 재검사.
+        # 검토 표기는 '재추출로 해소될 수 있는 사유'가 있을 때만 캐시를 막는다 (A4).
         cache_ok = (old
                     and fetch_ok
                     and old.get("end_date") == ev.get("end_date")
                     and old.get("source_content_hash") == src_hash
                     and old.get("extract_schema_version") == vision.EXTRACT_SCHEMA_VERSION
-                    and not old.get("needs_review")
+                    and not blocks_cache(old)
                     and _is_trustworthy(old.get("benefits")))
         if cache_ok:
             _reuse_cached(ev, old, verified=True)
             n_cache += 1
+            _carry_info_flags(ev, old)
             reconcile_period(ev, res, old)
             apply_accounts(ev, res)
+            ev["needs_review"] = bool(ev.get("needs_review"))
             continue
         # M4: 재발성 플래그(needs_review)로 캐시가 영영 미스인 이벤트의 재시도 상한.
         # 같은 원문·스키마에 대해 한도만큼 실패했으면 LLM 을 건너뛰고 기존 상태를
@@ -580,6 +690,8 @@ def normalize_events(pension, existing):
         b_rows, c_rows, grounded, mult_rows = [], [], True, []
         stackable = annual_claim_limit = None
         attempted = False    # M4: 이번 실행에서 이 이벤트에 LLM 호출이 실제로 있었는가
+        answered = False     # A5: LLM 이 (장애 없이) 구조화 응답을 돌려준 호출이 있었는가
+        calls_before = n_call
         text = (ev.get("_detail_text") or "").strip()
         # 1) 본문 텍스트 우선 (저비용 + 근거 대조 가능)
         if len(text) >= TEXT_MIN and _may_call():
@@ -588,6 +700,7 @@ def normalize_events(pension, existing):
             n_call += 1
             attempted = True
             res = vision.extract_from_text(text, hint=ev["event_name"])
+            answered = answered or bool(res)
             b_rows, c_rows, grounded = clean_rows(res, source_text=text, source_kind="llm-text")
             mult_rows = clean_multipliers(res, "llm-text")
             stackable = (res or {}).get("stackable")
@@ -606,6 +719,7 @@ def normalize_events(pension, existing):
                 attempted = True
                 res2 = vision.extract(imgs, referer=ev.get("event_url") or "",
                                       hint=ev["event_name"])
+                answered = answered or bool(res2)
                 b2, c2, _ = clean_rows(res2, source_kind="llm-ocr")
                 m2 = clean_multipliers(res2, "llm-ocr")
                 if b_rows:
@@ -622,6 +736,11 @@ def normalize_events(pension, existing):
                     stackable = (res2 or {}).get("stackable")
                     annual_claim_limit = (res2 or {}).get("annual_claim_limit")
 
+        if n_call > calls_before:
+            why = _miss_reason(old, ev, src_hash)
+            reasons[why] = reasons.get(why, 0) + (n_call - calls_before)
+            print(f"[추출] {ev['firm_name']} {ev['event_name'][:24]}: 사유={why} "
+                  f"{n_call - calls_before}콜 → {'혜택 ' + str(len(b_rows)) + '행' if b_rows else '행 없음'}")
         if b_rows:
             method = "text" if b_rows[0]["source"] == "llm-text" else "ocr"
             _apply_success(ev, b_rows, c_rows, grounded, method,
@@ -636,6 +755,11 @@ def normalize_events(pension, existing):
                 _reuse_cached(ev, old)
                 if old.get("needs_review"):
                     _flag(ev, old.get("review_reason") or "재검증 실패 — 원문 확인 필요")
+                # A5: LLM 은 응답했는데 쓸 행이 없다(장애 아님) + 기존 값은 양호 →
+                # '원문에 추출할 근거 없음' 확정 후보. 장애({} 반환)는 후보가 아니다 —
+                # 일시 오류로 원문 해시를 굳히면 실제 변경을 놓친다.
+                if answered:
+                    ev["_empty_answer"] = True
             elif _is_trustworthy(ev.get("benefits")):
                 ev["extract_method"] = "heuristic"   # Gemini 미설정/실패 시 휴리스틱 유지
             elif _is_trustworthy(ev.get("_benefits_hint"), require_substance=False):
@@ -649,8 +773,12 @@ def normalize_events(pension, existing):
 
         reconcile_period(ev, res, old)
         apply_accounts(ev, res)
-        # G8: 이전 유치형인데 배수·제외재원이 원문엔 있으나 추출엔 없으면 검토 표기
-        check_coverage(ev)
+        # G8: 이전 유치형인데 배수·제외재원이 원문엔 있으나 추출엔 없으면 검토 표기.
+        # 이번 실행에서 실제로 추출된 결과만 평가한다. 추출이 실패해 기존 값을 재사용한
+        # 경우 ev 에는 배수 자식 행이 없어 '배수 누락'이 거짓으로 붙는다(2026-11-10 검증
+        # 실행: Gemini 429 로 실패한 삼성 ISA 건). 기존 사유는 위에서 이미 물려받았다.
+        if ev.get("rows_fresh"):
+            check_coverage(ev)
         # DB NOT NULL 컬럼 — 플래그 미발생 시에도 명시적 False 로 적재 (null 금지)
         ev["needs_review"] = bool(ev.get("needs_review"))
         # M4: 시도 여부를 임시 키로 이월 — 카운터 확정은 G7 이후에 해야 한다
@@ -664,17 +792,45 @@ def normalize_events(pension, existing):
 
     # G7: 동일 증권사 시즌 간 기간 충돌 (이름 다른데 기간 동일) 일괄 검사
     check_period_collisions(pension)
-    # M4: 재시도 카운터 확정 — 시도했고 최종 클린이면 0 리셋, 여전히 플래그면 +1
+    # M4: 재시도 카운터 확정. 시도가 있었던 이벤트만 대상.
+    #  - 검토 표기가 남은 채 추출이 실패했거나, 재추출로 풀 수 있는 사유가 남았으면 +1
+    #    (종전 동작 — 한도 REVIEW_RETRY_LIMIT 로 시도 횟수가 묶인다)
+    #  - 검토 표기는 없지만 LLM 이 응답했는데 쓸 행이 없어 기존 값을 유지했으면 +1
+    #    (A5 — 종전엔 0 으로 리셋돼 '행 없음'만 반복되는 건에 한도도 확정도 안 걸렸다)
+    #  - 검토 표기 없이 장애로 응답을 못 받았으면 그대로 둔다 (일시 오류를 '근거 없음'
+    #    확인으로 세지 않는다)
+    #  - 신선 추출에 성공했고 풀 사유도 없으면 0 으로 리셋
     for ev in pension:
+        empty_answer = ev.pop("_empty_answer", False)
         if ev.pop("_retry_attempted", False):
-            ev["review_retry_count"] = (0 if not ev.get("needs_review")
-                                        else ev.get("_old_retries", 0) + 1)
+            retry_flag = blocks_cache(ev)
+            failed = not ev.get("rows_fresh")
+            prev = ev.get("_old_retries", 0)
+            if retry_flag or empty_answer or (failed and ev.get("needs_review")):
+                count = prev + 1
+            elif failed:
+                count = prev
+            else:
+                count = 0
+            ev["review_retry_count"] = count
             ev["review_retry_key"] = ev.get("_retry_key")
+            # A5: 근거 없음 확정 → db.sync 가 원문 해시·스키마 버전을 저장해 다음 실행부터
+            # 캐시 적중. 원문이 바뀌면 해시가 달라져 자동으로 다시 추출한다.
+            if empty_answer and not retry_flag and count >= EMPTY_CONFIRM_ATTEMPTS:
+                ev["empty_confirmed"] = True
+                ev["last_verified_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
+                print(f"[정규화] {ev['firm_name']} {ev['event_name'][:24]}: 쓸 수 있는 혜택 행 "
+                      f"없음 {count}회 확인 — 기존 값 유지, 원문 해시 저장(이후 캐시)")
         ev.pop("_old_retries", None)
         ev.pop("_retry_key", None)
         ev["needs_review"] = bool(ev.get("needs_review"))
 
-    print(f"[정규화] Gemini {n_call}건 호출, 캐시 재사용 {n_cache}건, "
+    print(f"[정규화] Gemini {n_call}건 호출(사유별 {reasons or '없음'}), 캐시 재사용 {n_cache}건, "
           f"재시도한도 스킵 {n_retry_skip}건, 상세 fetch 실패(기존값 유지) {n_fetch_fail}건")
     return {"llm_calls": n_call, "cache_hits": n_cache,
-            "retry_skips": n_retry_skip, "fetch_failed": n_fetch_fail}
+            "retry_skips": n_retry_skip, "fetch_failed": n_fetch_fail,
+            "llm_reasons": reasons,
+            # 호출 중 실패한 수(그중 429). 한도 소진으로 추출을 못 한 실행을 요약에서 구분한다
+            "llm_failed": vision.CALL_STATS["failed"],
+            "llm_rate_limited": vision.CALL_STATS["rate_limited"],
+            "llm_blocked": vision.blocked()}

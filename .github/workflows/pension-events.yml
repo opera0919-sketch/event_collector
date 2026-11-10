@@ -4,7 +4,11 @@ name: pension-events
 # 파이프라인 개선 PR 은 main 에 머지돼야 정기 실행에 반영된다 (REDESIGN.md §7).
 on:
   schedule:
-    - cron: '30 22 * * 0-4'   # 월~금 07:30 KST (= 일~목 22:30 UTC)
+    # 월~금 06:07 KST (= 일~목 21:07 UTC). 종전 '30 22'(07:30 KST)는 GitHub 예약 실행이
+    # 몰리는 시간대라 시작 지연 중앙값이 57분(7월) → 243분(11월)으로 늘어 리포트가 11:30
+    # 전후에 도착했다. 정시·30분을 피한 분으로 옮기고 지연 여유를 앞에 둔다.
+    # 날짜는 코드가 한국 시간으로 계산하므로(config.today_kst) UTC 로는 전날이어도 무방하다.
+    - cron: '7 21 * * 0-4'
   workflow_dispatch:
 
 permissions:
@@ -15,19 +19,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
       - name: Install dependencies
         run: |
-          pip install playwright requests beautifulsoup4 openpyxl
+          pip install -r requirements.txt
           playwright install --with-deps chromium
 
       - name: Run monitor
         env:
+          PYTHONUNBUFFERED: '1'   # 로그 줄마다 실제 시각이 찍히게 (버퍼링 시 전부 종료 시각)
+          # 'weekly' = 예약 실행(평일 매일). DB 제약이 weekly|manual 만 허용해 이름을 유지한다.
           TRIGGER_TYPE: ${{ github.event_name == 'schedule' && 'weekly' || 'manual' }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -58,7 +64,7 @@ jobs:
             if git diff --cached --quiet; then
               echo "변경 없음"; exit 0
             fi
-            git commit -q -m "chore: 연금 이벤트 수집 결과 $(date -u +%Y-%m-%d) (${{ github.event_name }})"
+            git commit -q -m "chore: 연금 이벤트 수집 결과 $(TZ=Asia/Seoul date +%Y-%m-%d) (${{ github.event_name }})"
             if git push origin "HEAD:$BR"; then
               echo "푸시 완료 (시도 $i)"; exit 0
             fi

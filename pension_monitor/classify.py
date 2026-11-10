@@ -10,7 +10,23 @@ from .config import (
 )
 
 # 이전 유치형/배수 조항 탐지용 공통 정규식 (normalize 의 OCR 조건·커버리지 게이트와 공유)
-_TRANSFER_HINT = re.compile(r"이전|가져오|수관|전환")
+# '이전 유치형' 판정. 종전 패턴(이전|가져오|수관|전환)은 낱말 단위라 "이벤트 이전 보유 중인"
+# (시점의 '이전'), "디폴트옵션 전환" 에도 맞아 유치형이 아닌 이벤트에 G8 검토 표기가 붙었다
+# (운영 2026-10~11: KB TDF&ETF 15일, 삼성 3건 4~10일). 자금 이동을 가리키는 명사구로 한정한다.
+_TRANSFER_HINT = re.compile(
+    r"순입금\s*\(\s*이전\s*\)"                                        # KB '순입금(이전)'
+    r"|타사(?:에서|로부터)?\s*(?:의\s*)?(?:연금|계좌|퇴직연금|IRP)?\s*이전"   # 타사(에서) 이전
+    r"|타\s*(?:금융)?기관[^\n]{0,10}이전"
+    r"|(?:연금|계좌|IRP|ISA)\s*이전(?!\s*(?:에|부터|까지|보유))"             # 연금 이전 (시점 표현 제외)
+    r"|이전\s*(?:금액|입금|신청|수관)"
+    r"|가져오기|수관"
+    r"|(?:만기|연금)\s*(?:자금\s*)?(?:연금\s*)?전환|전환\s*(?:입금|금액)")
+# 제외재원 조항의 '원문 존재' 판정. 종전엔 원문에 '제외' 한 단어만 있어도("혜택 지급대상에서
+# 제외") 조항이 있다고 봤다. 재원(퇴직금·이전·ISA·납입 등)과 같은 줄에 있을 때만 인정한다.
+_EXCLUDED_SOURCE_RE = re.compile(
+    r"(?:퇴직금|퇴직급여|이전|ISA|납입|입금|재원|이체|대체|수관|전환)[^\n]{0,40}"
+    r"(?:제외|불인정|인정되지|포함되지)"
+    r"|(?:제외|불인정)[^\n]{0,20}(?:퇴직금|재원|입금액|이전금)")
 _MULT_HINT = re.compile(r"\d(?:\.\d)?\s*배")
 
 # 콘텐츠 배너(래스터) 판별 — 장식용 gif 를 후순위로 밀어 OCR 입력을 안정화
@@ -83,6 +99,15 @@ def select_content_images(urls, limit=3):
     return pick_content_images([u for u in cands if _RASTER_RE.search(u)], limit)
 
 
+# 해시 입력에서 빼는 '휘발 줄' — 내용과 무관하게 방문할 때마다 바뀌는 값.
+# 계측(data/hash_inputs.json, 2026-11-10)으로 확정: KB 상세의 해시 본문은
+#   'IRP 무료 수수료 혜택 이벤트 / 2026/10/12 16:04:56 / 조회수: 1,608'
+# 처럼 제목·게시일시·조회수 세 줄뿐인 건이 4건이고(본문은 이미지), 나머지 2건도 같은 줄을
+# 포함한다. 조회수는 우리 수집 자체로도 오르므로 해시가 매 실행 달라졌다 — KB 전건이
+# 15일 중 14일 재추출된 원인. 페이지마다 값이 달라 '공통 줄 제거'로는 걸러지지 않았다.
+_VOLATILE_LINE_RE = re.compile(r"^조회\s*수?\s*[:：]?\s*[\d,]+\s*(?:회|건)?$")
+
+
 def hash_text_per_firm(events, min_events=2):
     """재추출 트리거 해시용 본문(`_hash_text`) — 같은 실행에서 같은 증권사의 상세
     페이지 2건 이상에 공통으로 나타나는 줄은 네비·푸터·'진행중 이벤트' 목록·광고 등
@@ -97,7 +122,8 @@ def hash_text_per_firm(events, min_events=2):
         if ev.get("_detail_text"):
             by_firm[ev.get("firm_name")].append(ev)
     for firm, evs in by_firm.items():
-        lines_of = {id(ev): [l.strip() for l in ev["_detail_text"].splitlines() if l.strip()]
+        lines_of = {id(ev): [l.strip() for l in ev["_detail_text"].splitlines()
+                             if l.strip() and not _VOLATILE_LINE_RE.match(l.strip())]
                     for ev in evs}
         if len(evs) < min_events:
             for ev in evs:
@@ -402,9 +428,69 @@ def source_content_hash(ev: dict) -> str:
     단, '의미 없는 휘발 성분'까지 반영하면 매 실행 캐시가 헛돌아 재추출·churn 이
     발생한다. 그래서 실질을 바꾸지 않는 차이만 정규화해 제거한다(안전 — 의미 변화는
     숨기지 못함): 본문 공백 축약, 이미지 URL 의 순서·캐시버스팅 쿼리스트링 제거."""
+    detail, imgs = hash_inputs(ev)
+    basis = detail + "|" + "|".join(imgs)
+    return hashlib.sha256(basis.encode("utf-8")).hexdigest()[:16]
+
+
+def hash_inputs(ev: dict):
+    """source_content_hash 의 입력 성분 (정규화 본문, 정렬된 이미지 URL 목록).
+
+    해시식과 계측(hash_input_record)이 같은 값을 보도록 한 곳에서 만든다 — 계측이 해시와
+    다른 입력을 보면 "무엇이 해시를 바꿨는가"에 답할 수 없다."""
     # _hash_text(런 내 공통 라인 제거본, hash_text_per_firm)가 있으면 그것을, 없으면 원문
     src_text = ev["_hash_text"] if "_hash_text" in ev else (ev.get("_detail_text") or "")
     detail = re.sub(r"\s+", " ", src_text or "").strip()
     imgs = sorted((u or "").split("?", 1)[0] for u in (ev.get("_image_urls") or []))
-    basis = detail + "|" + "|".join(imgs)
-    return hashlib.sha256(basis.encode("utf-8")).hexdigest()[:16]
+    return detail, imgs
+
+
+def _sha(s: str) -> str:
+    return hashlib.sha256(s.encode("utf-8")).hexdigest()[:16]
+
+
+def hash_input_record(ev: dict, text_limit: int = 6000) -> dict:
+    """해시 입력 계측 레코드 1건 (A1). data/hash_inputs.json 에 실행마다 덮어쓴다.
+
+    본문은 줄 단위 비교가 가능하도록 `_hash_text` 의 줄 구조를 보존해 싣는다(해시는 공백을
+    축약한 값으로 계산하지만, 사람이 diff 를 보려면 줄이 필요하다)."""
+    detail, imgs = hash_inputs(ev)
+    raw = ev["_hash_text"] if "_hash_text" in ev else (ev.get("_detail_text") or "")
+    lines = [l.strip() for l in (raw or "").splitlines() if l.strip()]
+    text = "\n".join(lines)
+    return {
+        "firm_name": ev.get("firm_name"),
+        "source_event_id": ev.get("source_event_id"),
+        "event_name": (ev.get("event_name") or "")[:60],
+        "detail_status": ev.get("_detail_status"),
+        "hash": _sha(detail + "|" + "|".join(imgs)),
+        "text_sha": _sha(detail),
+        "text_len": len(detail),
+        "imgs_sha": _sha("|".join(imgs)),
+        "n_imgs": len(imgs),
+        "imgs": imgs,
+        "text": text[:text_limit],
+        "text_truncated": len(text) > text_limit,
+    }
+
+
+def diff_hash_inputs(prev: dict, cur: dict, max_lines: int = 12) -> dict:
+    """직전 실행 레코드와 이번 레코드의 차이 — 해시를 바꾼 성분을 사람이 읽을 수 있게.
+
+    반환: {} (동일) 또는 {"text": {"removed": [...], "added": [...]},
+                          "imgs": {"removed": [...], "added": [...]}} 의 부분집합."""
+    out = {}
+    if not prev or prev.get("hash") == cur.get("hash"):
+        return out
+    if prev.get("text_sha") != cur.get("text_sha"):
+        p, c = (prev.get("text") or "").splitlines(), (cur.get("text") or "").splitlines()
+        ps, cs = set(p), set(c)
+        out["text"] = {"removed": [l[:160] for l in p if l not in cs][:max_lines],
+                       "added": [l[:160] for l in c if l not in ps][:max_lines],
+                       "len": [prev.get("text_len"), cur.get("text_len")]}
+    if prev.get("imgs_sha") != cur.get("imgs_sha"):
+        p, c = prev.get("imgs") or [], cur.get("imgs") or []
+        out["imgs"] = {"removed": [u for u in p if u not in c][:max_lines],
+                       "added": [u for u in c if u not in p][:max_lines],
+                       "n": [len(p), len(c)]}
+    return out

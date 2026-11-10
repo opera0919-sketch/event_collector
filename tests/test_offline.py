@@ -13,6 +13,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ.pop("GEMINI_API_KEY", None)  # 실호출 원천 차단
 
 from pension_monitor import db, normalize, report, vision
+from pension_monitor.config import today_kst   # 기준일은 한국 날짜 (생산 코드와 동일)
+
+# 오프라인 보장: 개별 테스트가 덮어쓰지 않은 DB 읽기(_multiplier_map 등)가 실제 Supabase 로
+# 나가지 않게 기본값을 빈 결과로 둔다 (종전엔 enabled 만 켠 테스트에서 실제 GET 이 나갔다).
+db._get = lambda path, params=None: []
 from pension_monitor.classify import (
     content_hash, detect_accounts, source_event_id, source_content_hash,
     clip_detail, weekday_conflicts, infer_end_from_hold,
@@ -65,7 +70,7 @@ def test_render():
 
 
 def test_reconcile_period():
-    year = dt.date.today().year
+    year = today_kst().year
     # 1) 신뢰 목록(미래에셋) → list 유지, LLM 불일치는 검토 플래그만
     ev = {"firm_name": "미래에셋증권", "start_date": f"{year}-07-01", "end_date": f"{year}-09-30"}
     normalize.reconcile_period(ev, {"period_start": f"{year}-07-01", "period_end": f"{year}-10-31"})
@@ -101,7 +106,7 @@ def test_accounts_conservative():
 
 
 def test_normalize_no_regression_and_cache():
-    year = dt.date.today().year
+    year = today_kst().year
     old = {"id": 7, "firm_name": "NH투자증권", "event_name": "IRP 이벤트",
            "start_date": f"{year}-05-01", "end_date": f"{year}-08-31",
            "source_event_id": "1000", "needs_review": False,
@@ -131,7 +136,7 @@ def test_normalize_rejects_junk_reused_from_old():
     가 '혜택 없음 (자료 없음)' 같은 정크로 재오염된 뒤, 오늘 실행의 신선 추출도
     실패하면 G3(무회귀)가 '비어있지 않다'는 이유만으로 그 정크를 영구 재사용했다.
     _is_trustworthy 재검사로 이 경로가 차단되고 정상적으로 미확인 처리돼야 한다."""
-    year = dt.date.today().year
+    year = today_kst().year
     old = {"id": 43, "firm_name": "한국투자증권", "event_name": "퇴직연금 DC 신규 입금 이벤트",
            "start_date": f"{year}-07-01", "end_date": f"{year}-09-30",
            "source_event_id": "6730", "needs_review": True,
@@ -150,11 +155,11 @@ def test_normalize_rejects_junk_reused_from_old():
 
 
 def test_sync_v2():
-    year = dt.date.today().year
-    today = dt.date.today().isoformat()
+    year = today_kst().year
+    today = today_kst().isoformat()
     # 진행중 판정(end_date >= today)이 리포트 '확인' 컬럼 검증의 전제 — 고정 월일
     # (올해-08-31)은 9월 이후 '종료'로 바뀌어 매년 재발하므로 오늘 기준 상대 날짜 사용
-    future_end = (dt.date.today() + dt.timedelta(days=60)).isoformat()
+    future_end = (today_kst() + dt.timedelta(days=60)).isoformat()
     calls = {"patch": [], "post": [], "delete": []}
     db.fetch_all_events = lambda: existing
     db.enabled = lambda: True
@@ -228,7 +233,7 @@ def test_review_reason_cleared_on_success():
 
     # 2) 캐시 재사용 경로 — old 가 검토 불필요(needs_review=False)인데 review_reason
     #    이 남아있는 레코드를 재사용할 때도 ev 에 그 사유를 물려주면 안 됨
-    year = dt.date.today().year
+    year = today_kst().year
     old = {"id": 39, "firm_name": "KB증권", "event_name": "IRP 무료 수수료 혜택 이벤트",
            "source_event_id": "10007688", "start_date": f"{year}-01-01", "end_date": f"{year}-12-31",
            "needs_review": False, "review_reason": "혜택 미확인(본문/이미지 추출 실패) — 원문 확인 필요",
@@ -245,7 +250,7 @@ def test_review_reason_cleared_on_success():
 
 def test_report_review_rollup_and_xlsx_sheets():
     """v2 리포트/xlsx 가 검증 메타·조건 타입드 컬럼·자식 테이블을 실제로 노출하는지."""
-    year = dt.date.today().year
+    year = today_kst().year
     active_ok = {"firm_name": "NH투자증권", "event_name": "정상 이벤트", "id": 1,
                  "start_date": f"{year}-05-01", "end_date": f"{year}-08-31", "status": "진행중",
                  "acct_pension": True, "acct_irp": False, "acct_dc": False, "acct_etc": None,
@@ -402,7 +407,7 @@ def test_cache_invalidation_on_schema_bump():
     낮으면 fast-cache 스킵이 아니라 재추출 경로를 타야 한다 (E3 누락 영구화 차단).
     vision 미설정이라 재추출은 실패하고 무회귀로 old 를 재사용하지만, 핵심은
     '캐시로 조용히 넘어가지 않고 재평가 대상이 된다'는 점이다."""
-    year = dt.date.today().year
+    year = today_kst().year
     old = {"id": 8, "firm_name": "삼성증권", "event_name": "연금 파워업",
            "source_event_id": "3808", "start_date": f"{year}-05-01", "end_date": f"{year}-07-31",
            "needs_review": False, "benefits": "이전 시 → 상품권 1만원 (전원)",
@@ -426,7 +431,7 @@ def test_cache_invalidation_on_schema_bump():
 def test_fast_cache_skips_extraction():
     """P0-5: 원문 해시 + 스키마 버전이 모두 일치하면 fast-cache 로 추출을 건너뛴다.
     (vision 을 활성화하고 호출 시 카운트 — 0 이어야 캐시 스킵 확인)."""
-    year = dt.date.today().year
+    year = today_kst().year
     det = "본문" * 100
     ev0 = {"_detail_text": det}
     old = {"id": 1, "firm_name": "NH투자증권", "event_name": "IRP", "source_event_id": "1",
@@ -476,7 +481,7 @@ def test_check_coverage_g8():
 
 def test_check_period_collisions_g7():
     """G7: 같은 증권사에서 이름(시즌)은 다른데 기간이 동일하면 오추출 의심 표기 (E6)."""
-    year = dt.date.today().year
+    year = today_kst().year
     evs = [
         {"firm_name": "KB증권", "event_name": "TDF&ETF 시즌2",
          "start_date": f"{year}-04-01", "end_date": f"{year}-06-30"},
@@ -550,7 +555,7 @@ def test_xlsx_multiplier_sheet():
 def test_excluded_firm_not_auto_closed():
     """P2-2: 수집 제외 증권사(키움)의 미만기 잔존 건은 '미노출 → 종료'가 아니라
     needs_review 표기 (E8). 만기 건은 종료하되 close_reason 을 남긴다."""
-    year = dt.date.today().year
+    year = today_kst().year
     calls = {"patch": []}
     db.fetch_all_events = lambda: existing
     db.enabled = lambda: True
@@ -649,7 +654,7 @@ def test_needs_ocr_when_no_rows():
 # ── M4 재시도 상한 (review_retry_count / review_retry_key) ──────────────
 def _retry_ev(det, **over):
     """M4 테스트용 표준 이벤트 (NH=신뢰 목록, 유효 기간 → 부가 플래그 없음)."""
-    year = dt.date.today().year
+    year = today_kst().year
     ev = {"firm_name": "NH투자증권", "event_name": "IRP 순입금 응원",
           "source_event_id": "7777", "start_date": f"{year}-05-01",
           "end_date": f"{year}-08-31", "acct_pension": False, "acct_irp": True,
@@ -663,11 +668,11 @@ def _retry_key_of(det):
     """생산 코드(normalize)와 동일한 M4 재시도 키. 쿨다운 버킷 포함."""
     return (f"{source_content_hash({'_detail_text': det})}"
             f":{vision.EXTRACT_SCHEMA_VERSION}"
-            f":{dt.date.today().toordinal() // normalize.RETRY_COOLDOWN_DAYS}")
+            f":{today_kst().toordinal() // normalize.RETRY_COOLDOWN_DAYS}")
 
 
 def _retry_old(det, count, key=None, **over):
-    year = dt.date.today().year
+    year = today_kst().year
     old = {"id": 70, "firm_name": "NH투자증권", "event_name": "IRP 순입금 응원",
            "source_event_id": "7777", "start_date": f"{year}-05-01",
            "end_date": f"{year}-08-31", "needs_review": True,
@@ -767,7 +772,7 @@ def test_retry_key_mismatch_resets():
 def test_retry_meta_not_sent_when_no_attempt():
     """시도 없음(vision 미설정) → ev 에 카운터 미탑재 → db.sync 가 기존 값을 안 건드림."""
     det = "본문" * 100
-    year = dt.date.today().year
+    year = today_kst().year
     calls = {"patch": []}
     old = _retry_old(det, count=2)
     existing = [dict(old, status="진행중", missed_count=0, content_hash="x",
@@ -848,7 +853,7 @@ if __name__ == "__main__":
 def test_s1_fetch_failure_keeps_existing():
     """상세 원문을 못 얻은 실행은 '내용 변경'이 아니다: 기존 캐노니컬·기간을 유지하고
     원문 해시/스키마 버전을 싣지 않으며(DB 메타 불변), LLM 재추출 대상도 아니다."""
-    year = dt.date.today().year
+    year = today_kst().year
     old = {"id": 48, "firm_name": "KB증권", "event_name": "2026 시즌3 연금저축 순입금(이전) 이벤트",
            "source_event_id": "10010044", "start_date": f"{year}-07-01",
            "end_date": f"{year}-09-30", "date_source": "detail", "needs_review": False,
@@ -892,7 +897,7 @@ def test_s1_fetch_failure_keeps_existing():
 def test_s4_sticky_period():
     """비확정 출처(LLM/추론/무응답)는 기존 기간을 덮지 못하고 빈 칸만 채운다.
     확정 출처(상세 본문 '기간' 정규식)는 종전대로 교체한다."""
-    year = dt.date.today().year
+    year = today_kst().year
     old = {"start_date": f"{year}-04-01", "end_date": f"{year}-12-31", "date_source": "llm"}
     # 1) KB(목록 불신) + 본문 없음 + LLM 무응답 → 기존 값 유지, 검토 플래그 없음
     ev = {"firm_name": "KB증권", "event_name": "x", "start_date": None, "end_date": None,
@@ -935,7 +940,7 @@ def test_s4_sticky_period():
 def test_s4_hold_period_rejected():
     """LLM 이 '잔고유지기간'을 이벤트 기간으로 돌려주면 거부한다 (KB 시즌3 재현)."""
     from pension_monitor.classify import hold_period
-    year = dt.date.today().year
+    year = today_kst().year
     yy = year % 100
     text = (f"연금저축 순입금 이벤트 안내. 잔고유지기간({yy}.10.1~10.31) 동안 출금 시 "
             f"혜택 지급 대상에서 제외됩니다.")
@@ -960,8 +965,8 @@ def test_s4_hold_period_rejected():
 
 def test_s4_db_sync_never_nulls_dates():
     """db.sync 방어선: 새 값이 None 이면 기존 start/end 를 지우지도, '변경'으로 기록하지도 않는다."""
-    year = dt.date.today().year
-    future_end = (dt.date.today() + dt.timedelta(days=90)).isoformat()
+    year = today_kst().year
+    future_end = (today_kst() + dt.timedelta(days=90)).isoformat()
     calls = {"patch": []}
     db.fetch_all_events = lambda: existing
     db.enabled = lambda: True
@@ -1106,8 +1111,8 @@ def test_fact_signature_equivalence():
 def test_sync_fact_gate_keeps_canonical():
     """S3: rows_fresh 라도 시그니처가 같으면 캐노니컬/타입드/자식 행을 유지하고 변경 로그도 없다.
     실질이 바뀌면(티어 추가) 종전대로 교체·기록·자식 교체."""
-    year = dt.date.today().year
-    future_end = (dt.date.today() + dt.timedelta(days=90)).isoformat()
+    year = today_kst().year
+    future_end = (today_kst() + dt.timedelta(days=90)).isoformat()
     calls = {"patch": [], "post": [], "delete": []}
     db.fetch_all_events = lambda: existing
     db.fetch_children = lambda table: []
@@ -1177,7 +1182,7 @@ if __name__ == "__main__":
 def test_extraction_order_prefers_stale():
     """전건 캐시 미스 실행에서 수집 순서를 그대로 따르면 앞 증권사가 예산을 다 쓰고
     뒤 증권사(KB·NH)가 통째로 누락된다. 신규 우선 → 재검증이 오래된 순으로 처리한다."""
-    year = dt.date.today().year
+    year = today_kst().year
     existing = [
         {"id": 1, "firm_name": "미래에셋증권", "event_name": "미래A", "source_event_id": "M1",
          "start_date": None, "end_date": None, "last_verified_at": f"{year}-09-04T07:35:00+00:00"},
@@ -1437,7 +1442,7 @@ def test_retry_key_cooldown_bucket():
     import datetime as _dt
     assert normalize.RETRY_COOLDOWN_DAYS >= 1
     bucket = lambda d: d.toordinal() // normalize.RETRY_COOLDOWN_DAYS
-    today = _dt.date.today()
+    today = today_kst()
     # 같은 쿨다운 구간 안에서는 키가 동일 (한도가 유지돼 비용이 묶인다)
     assert bucket(today) == bucket(today - _dt.timedelta(days=0))
     # 쿨다운을 넘기면 키가 바뀐다 (= old 카운터가 0 으로 간주돼 재시도 재개)
@@ -1451,3 +1456,481 @@ if __name__ == "__main__":
     test_cache_hit_marks_verified()
     test_retry_key_cooldown_bucket()
     print("주간 점검 후속 회귀 3종 통과")
+
+
+# ── 2026-11 P0: 캐시 차단 사유 분류·근거 없음 확정·시그니처 플래그·G8 정밀화·수집 경보·계측 ──
+# (docs/IMPROVEMENT_PLAN_2026-11.md §3~4. 문자열은 운영 DB/로그의 실제 값을 쓴다.)
+_EMPTY_ANSWER = {"is_pension": True, "evidence_missing": True, "period_start": "",
+                 "period_end": "", "benefits": [], "conditions": [],
+                 "acct_pension": False, "acct_irp": True, "acct_dc": False, "acct_etc": "",
+                 "multipliers": [], "stackable": False, "annual_claim_limit": 0}
+
+
+def _p0_old(det, **over):
+    """캐시 조건을 모두 만족하는 기존 행 (원문 해시·스키마 일치, 혜택 양호)."""
+    old = _retry_old(det, count=0, needs_review=False, review_reason=None,
+                     source_content_hash=source_content_hash({"_detail_text": det}),
+                     extract_schema_version=vision.EXTRACT_SCHEMA_VERSION)
+    old.update(over)
+    return old
+
+
+def test_p0_informational_flag_allows_cache():
+    """A4: 재추출해도 똑같이 붙는 '정보성' 검토 사유는 캐시를 막지 않는다.
+    운영(2026-11-09): 삼성 「2026 특별한 연금페스타」가 '기간 불일치' 표기 때문에 매일 2콜."""
+    det = "이벤트 안내 본문 " * 40
+    info = "기간 불일치(목록 2026-12-31 vs 상세 2026-10-31) — 목록 우선 적용"
+    ev = _retry_ev(det)
+    n = _run_with_vision([ev], [_p0_old(det, needs_review=True, review_reason=info)],
+                         lambda t, h: {})
+    assert n == 0, "정보성 사유만 있으면 LLM 을 부르지 않아야 함"
+    assert ev["needs_review"] is True and ev["review_reason"] == info, ev.get("review_reason")
+    assert ev.get("last_verified_at"), "캐시 적중 = 검증"
+    # 재추출로 풀릴 수 있는 사유는 종전대로 캐시를 막는다
+    for retry in ("근거 불일치(추출 수치가 원문과 대조 실패)",
+                  "목록 요약 폴백(상세 추출 실패) — 원문 확인 필요",
+                  "혜택 재추출이 기존 수치의 부분집합(유실만) — 기존 값 유지, 원문 확인 필요",
+                  "분류표에 없는 새 사유"):                       # 미분류 = 보수적으로 재추출
+        ev2 = _retry_ev(det)
+        n2 = _run_with_vision([ev2], [_p0_old(det, needs_review=True, review_reason=retry)],
+                              lambda t, h: {})
+        assert n2 == 1, retry
+    # 섞여 있으면 재추출 대상
+    assert normalize.blocks_cache({"needs_review": True,
+                                   "review_reason": f"{info} / 근거 불일치(x)"})
+    assert not normalize.blocks_cache({"needs_review": True, "review_reason": info})
+    assert normalize.blocks_cache({"needs_review": True, "review_reason": None})
+    assert not normalize.blocks_cache({"needs_review": False, "review_reason": "근거 불일치"})
+    print("OK P0-A4 정보성 검토 사유는 캐시 허용 (재추출 대상 사유는 종전대로 차단)")
+
+
+def test_p0_cache_hit_carries_only_valid_info_flags():
+    """A4: 캐시 적중 시 다시 계산할 수 없는 정보성 사유만 이월한다.
+    G8 사유는 '현재 규칙으로도 전제가 성립할 때'만 — 정밀화 이전의 오탐을 캐시가 영구
+    보존하면 안 된다. 다시 계산되는 사유(대상계좌 미확인 등)는 이월하지 않는다."""
+    g8 = "제외재원 조항 원문에 존재하나 추출 누락 — 원문 확인 필요"
+    # (1) 과거 오탐: 이전 유치형이 아님 ("이벤트 이전 보유" 의 '이전'은 시점)
+    det1 = ("순매수 금액은 이벤트 이전 보유 중인 대상 종목을 매도하는 경우도 매도금액으로 계산. "
+            "잔고유지조건 미충족시 혜택 지급대상에서 제외. ") * 5
+    ev1 = _retry_ev(det1, event_name="연금저축, TDF & ETF 굴려볼까? 시즌 4")
+    old1 = _p0_old(det1, event_name=ev1["event_name"], needs_review=True, review_reason=g8)
+    assert _run_with_vision([ev1], [old1], lambda t, h: {}) == 0
+    assert ev1["needs_review"] is False and not ev1.get("review_reason"), ev1.get("review_reason")
+    # (2) 진짜 누락: 이전 유치형 + 원문에 재원 제외 조항 → 이월
+    det2 = "타사 연금 이전 고객 대상. 순입금액 산정 시 퇴직금은 입금액에서 제외. " * 6
+    ev2 = _retry_ev(det2, event_name="타사 연금 이전 이벤트")
+    old2 = _p0_old(det2, event_name=ev2["event_name"], needs_review=True, review_reason=g8)
+    assert _run_with_vision([ev2], [old2], lambda t, h: {}) == 0
+    assert ev2["needs_review"] is True and g8 in ev2["review_reason"]
+    # (3) 다시 계산되는 사유는 이월하지 않는다: 계좌가 이제 확인되면 표기가 사라진다
+    det3 = "본문 " * 100
+    ev3 = _retry_ev(det3)                                    # acct_irp=True
+    old3 = _p0_old(det3, needs_review=True, review_reason="대상계좌 미확인")
+    assert _run_with_vision([ev3], [old3], lambda t, h: {}) == 0
+    assert ev3["needs_review"] is False, ev3.get("review_reason")
+    print("OK P0-A4 캐시 적중 시 유효한 정보성 사유만 이월 (과거 G8 오탐·해소된 사유 제거)")
+
+
+def test_p0_empty_answer_confirmed_then_cached():
+    """A5: LLM 이 정상 응답으로 '근거 없음'을 반복 확인하면 원문 해시를 저장해 캐시되게 한다.
+    운영: NH 「연금계좌3종 개설하기」가 매 실행 2콜(텍스트+OCR 모두 evidence_missing),
+    검토 표기가 없어 카운터는 0, 해시는 미저장이라 영원히 캐시 미스였다."""
+    det = "NH투자증권 연금계좌 개설 및 장점 안내 " * 20
+    base = dict(needs_review=False, review_reason=None, source_content_hash=None)
+    # 1회차: 시도했고 응답은 왔지만 행 없음 → 기존 값 유지, 카운터 1, 아직 미확정
+    ev1 = _retry_ev(det)
+    assert _run_with_vision([ev1], [_retry_old(det, count=0, **base)],
+                            lambda t, h: dict(_EMPTY_ANSWER)) == 1
+    assert ev1["benefits"] and ev1["needs_review"] is False
+    assert ev1["review_retry_count"] == 1 and not ev1.get("empty_confirmed")
+    # 2회차: 같은 원문에 다시 '근거 없음' → 확정
+    ev2 = _retry_ev(det)
+    assert _run_with_vision([ev2], [_retry_old(det, count=1, **base)],
+                            lambda t, h: dict(_EMPTY_ANSWER)) == 1
+    assert ev2.get("empty_confirmed") is True and ev2.get("last_verified_at")
+    assert ev2["source_content_hash"] == source_content_hash({"_detail_text": det})
+    # db.sync 는 확정 건의 원문 해시·스키마 버전을 저장한다 (rows_fresh 아님에도)
+    calls = []
+    db.fetch_all_events = lambda: [dict(_retry_old(det, count=1, **base), status="진행중",
+                                        missed_count=0, content_hash="x")]
+    db.fetch_children = lambda table: []
+    db.enabled = lambda: True
+    db._patch = lambda path, params, payload: calls.append((path, payload))
+    db._post = lambda path, payload, prefer=None: [{"id": 1}]
+    db._delete = lambda path, params: None
+    ev2["end_date"] = (today_kst() + dt.timedelta(days=30)).isoformat()
+    db.fetch_all_events = lambda: [dict(_retry_old(det, count=1, **base), status="진행중",
+                                        missed_count=0, content_hash="x",
+                                        end_date=ev2["end_date"])]
+    db.sync([ev2], firms_failed=[], trigger_type="manual")
+    upd = next(p for path, p in calls if path == "pension_events")
+    assert upd.get("source_content_hash") == ev2["source_content_hash"], upd
+    assert upd.get("extract_schema_version") == vision.EXTRACT_SCHEMA_VERSION
+    assert "benefits" not in upd, "기존 혜택은 건드리지 않는다"
+    # 3회차: 해시가 저장됐으므로 캐시 적중 — LLM 0콜
+    ev3 = _retry_ev(det)
+    assert _run_with_vision([ev3], [_p0_old(det)], lambda t, h: dict(_EMPTY_ANSWER)) == 0
+    # 장애({} 반환)는 '근거 없음'이 아니다 — 카운터도 확정도 올라가지 않는다
+    ev4 = _retry_ev(det)
+    assert _run_with_vision([ev4], [_retry_old(det, count=1, **base)], lambda t, h: {}) == 1
+    assert ev4["review_retry_count"] == 1 and not ev4.get("empty_confirmed")
+    print("OK P0-A5 근거 없음 2회 확인 → 해시 저장 → 캐시 (장애는 확인으로 세지 않음)")
+
+
+# 운영 DB event_changes 의 실제 값 (KB id 37, 2026-10-26 ~ 11-06 에 6회 교대)
+_KB37_A = ("대상: 비대면 채널을 통해 개설한 KB증권 연금저축 최초 1계좌\n"
+           "주민등록번호 기준 최초 1개의 연금저축계좌에만 적용\n"
+           "영업점에서 개설한 연금저축 계좌를 보유한 고객이 비대면으로 추가 개설하는 경우 혜택 적용 불가")
+_KB37_B = ("대상: 비대면 채널을 통해 개설한 KB증권 연금저축 최초 1계좌\n"
+           "신청: 별도 이벤트 신청 없이 적용\n"
+           "주민등록번호 기준 KB증권 비대면 채널로 개설된 최초 1개의 연금저축계좌에만 이벤트 혜택 적용\n"
+           "영업점에서 개설한 연금저축 계좌를 보유한 고객이 비대면으로 추가 개설하는 경우 혜택 적용 불가")
+
+
+def test_p0_signature_treats_none_and_false_alike():
+    """A7: 파서 판정의 None(명시 없음)과 False(아니오)는 같은 시그니처.
+    두 변이는 수치 토큰이 같고 apply_required 만 None ↔ False 로 달랐다."""
+    from src.backfill_conditions import parse_conditions
+    from pension_monitor import facts
+    ben = "신연금저축계좌에서 온라인으로 ETF 거래 시 → ETF 수수료 0.0050483% (전원)"
+
+    def row(cond):
+        t = parse_conditions(cond)
+        return {"benefits": ben, "conditions": cond, "apply_required": t["apply_required"],
+                "marketing_consent_required": t["marketing_consent_required"],
+                "annual_cap_krw": t["annual_cap_krw"]}
+    a, b = row(_KB37_A), row(_KB37_B)
+    assert (a["apply_required"], b["apply_required"]) == (None, False)   # 전제: 파서가 다르게 본다
+    assert facts.condition_signature(a) == facts.condition_signature(b)
+    for old, new in ((a, b), (b, a)):                    # 교대 양방향 모두 '실질 아님'
+        v = db._group_verdicts(old, dict(new, multiplier_rows=[]), [])
+        assert v == {"benefits": False, "conditions": False}, v
+    # 요구 조건이 실제로 생기면(True) 여전히 실질 변경
+    c = dict(a, apply_required=True)
+    assert facts.condition_signature(a) != facts.condition_signature(c)
+    assert facts.fact_signature(a) != facts.fact_signature(c)
+    print("OK P0-A7 시그니처: None≡False (KB id 37 교대 변이가 실질 변경으로 판정되지 않음)")
+
+
+def test_p0_transfer_hint_and_exclusion_precision():
+    """A8: 이전 유치형·제외재원 판정을 명사구/재원 문맥으로 한정 (G8 오탐 제거)."""
+    from pension_monitor.classify import _TRANSFER_HINT, _EXCLUDED_SOURCE_RE
+    for s in ("IRP 순입금(이전) 이벤트 시즌4", "타사 연금 이전 이벤트", "타사에서 이전 시 실적 1.5배 인정",
+              "ISA 만기자금 연금전환 이벤트", "중개형ISA 연금전환 이벤트 (26.11~27.1)",
+              "DC & IRP 연금 이전 이벤트", "타사 연금 가져오기", "타사연금 이전, 당사/타사 ISA 만기전환"):
+        assert _TRANSFER_HINT.search(s), s
+    for s in ("이벤트 이전 보유 중인 대상 종목을 매도하는 경우", "디폴트옵션 전환",
+              "이벤트 기간 내 전환신청 후 2027년 2월 28일까지 개설 완료",
+              "이벤트 시작일 이전에 가입한 고객", "[연금] DC 신규가입 이벤트 (26.11~27.1)"):
+        assert not _TRANSFER_HINT.search(s), s
+    for s in ("순입금액 산정 시 퇴직금은 입금액에서 제외", "퇴직금은 제외됩니다.",
+              "당사 내 계좌 간 이전 금액은 실적에서 제외"):
+        assert _EXCLUDED_SOURCE_RE.search(s), s
+    for s in ("잔고유지조건 미충족시 혜택 지급대상에서 제외", "이벤트4 대상상품: 국내주식형펀드 (MMF, ETF 대상 제외)"):
+        assert not _EXCLUDED_SOURCE_RE.search(s), s
+    # 운영에서 15일 연속 오탐이던 KB TDF&ETF: 이전 유치형이 아니므로 표기 없음
+    ev = {"firm_name": "KB증권", "event_name": "연금저축, TDF & ETF 굴려볼까? 시즌 4",
+          "_detail_text": "순매수 금액은 이벤트 이전 보유 중인 대상 종목을 매도하는 경우도 "
+                          "매도금액으로 계산됩니다.\n잔고유지조건 미충족시 혜택 지급대상에서 제외",
+          "benefits": "TDF 순매수 100만원 이상 → 쿠폰 (전원)", "conditions": "대상: 연금저축 고객"}
+    normalize.check_coverage(ev)
+    assert not ev.get("needs_review"), ev.get("review_reason")
+    # 이전 유치형이어도 원문의 '제외'가 재원 문맥이 아니면 표기 없음
+    ev2 = {"firm_name": "KB증권", "event_name": "연금저축 순입금(이전) 이벤트 시즌4",
+           "_detail_text": "잔고유지조건 미충족시 혜택 지급대상에서 제외",
+           "benefits": "순입금 1백만원 이상 → 쿠폰", "conditions": "대상: 고객"}
+    normalize.check_coverage(ev2)
+    assert not ev2.get("needs_review"), ev2.get("review_reason")
+    # 타입드 컬럼(exclusions)에 제외 대상이 담겼으면 '추출됨'으로 본다
+    ev3 = {"firm_name": "삼성증권", "event_name": "타사 연금 이전 이벤트",
+           "_detail_text": "순입금액 산정 시 퇴직금은 입금액에서 제외",
+           "benefits": "이전 → 상품권", "conditions": "대상: 고객", "exclusions": "퇴직금"}
+    normalize.check_coverage(ev3)
+    assert not ev3.get("needs_review"), ev3.get("review_reason")
+    print("OK P0-A8 이전 유치형·제외재원 판정 정밀화 (진양성은 test_check_coverage_g8 가 보장)")
+
+
+def test_p0_hash_input_instrumentation():
+    """A1: 해시 입력 성분을 남기고 직전 실행 대비 바뀐 성분을 돌려준다."""
+    import json as _json
+    import tempfile
+    from pension_monitor import main as pm
+    path = os.path.join(tempfile.mkdtemp(), "hash_inputs.json")
+
+    def evs(view, imgs):
+        return [{"firm_name": "KB증권", "event_name": "연금저축 순입금(이전) 이벤트 시즌4",
+                 "source_event_id": "10010422", "_detail_status": "ok",
+                 "_detail_text": f"이벤트 안내\n조회수 {view}\n유의사항",
+                 "_hash_text": f"이벤트 안내\n조회수 {view}\n유의사항",
+                 "_image_urls": imgs},
+                {"firm_name": "NH투자증권", "event_name": "안정 이벤트", "source_event_id": "1",
+                 "_detail_status": "ok", "_detail_text": "변하지 않는 본문 " * 20}]
+    img = ["https://etcimg.kbsec.com/html/design/1/img_01.jpg?v=1",
+           "https://etcimg.kbsec.com/html/design/1/img_02.jpg"]
+    assert pm.write_hash_inputs(evs(1234, img), path) == []          # 첫 실행: 비교 대상 없음
+    rec = _json.load(open(path, encoding="utf-8"))["events"][0]
+    assert rec["hash"] == source_content_hash(evs(1234, img)[0]), "계측 해시 = 실제 해시"
+    assert rec["n_imgs"] == 2 and rec["imgs"][0].endswith("img_01.jpg")   # 쿼리스트링 제거
+    # 둘째 실행: 조회수만 바뀜 → 본문 1줄 교체로 잡힌다. 이미지·다른 이벤트는 변동 없음
+    ch = pm.write_hash_inputs(evs(1240, img), path)
+    assert len(ch) == 1 and ch[0][0] == "KB증권", ch
+    d = ch[0][2]
+    assert d["text"]["removed"] == ["조회수 1234"] and d["text"]["added"] == ["조회수 1240"], d
+    assert "imgs" not in d
+    # 셋째 실행: 이미지 1장이 덜 수집됨 → 이미지 성분으로 잡힌다
+    ch = pm.write_hash_inputs(evs(1240, img[:1]), path)
+    assert len(ch) == 1 and ch[0][2]["imgs"]["n"] == [2, 1] and "text" not in ch[0][2], ch
+    # 원문 미확보 실행은 직전 레코드를 유지한다 (빈 값으로 덮지 않음)
+    failed = evs(1240, img[:1])
+    failed[0].update(_detail_status="error", _detail_text="", _hash_text="", _image_urls=[])
+    assert pm.write_hash_inputs(failed, path) == []
+    kept = _json.load(open(path, encoding="utf-8"))["events"][0]
+    assert kept.get("stale") is True and kept["n_imgs"] == 1 and "조회수 1240" in kept["text"]
+    print("OK P0-A1 해시 입력 계측 (본문/이미지 성분별 diff, 실패 실행은 직전 값 유지)")
+
+
+def test_p0_volatile_view_counter_excluded_from_hash():
+    """A1 계측으로 확정한 KB 해시 불안정의 원인 — '조회수: N' 줄은 해시에 넣지 않는다.
+    문자열은 2026-11-10 data/hash_inputs.json 의 실제 값."""
+    from pension_monitor.classify import hash_text_per_firm
+
+    def kb(views_a, views_b):
+        evs = [{"firm_name": "KB증권", "event_name": "IRP 무료 수수료 혜택 이벤트",
+                "_detail_text": f"IRP 무료 수수료 혜택 이벤트\n2026/10/12 16:04:56\n조회수: {views_a}",
+                "_image_urls": ["https://etcimg.kbsec.com/html/design/20261012144156/img_01.jpg"]},
+               {"firm_name": "KB증권", "event_name": "퇴직연금 DC, 첫 만남 이벤트",
+                "_detail_text": f"퇴직연금 DC, 첫 만남 이벤트\n2026/03/31 09:24:36\n조회수: {views_b}\n"
+                                "- 순입금 1천만원 이상 : 혜택 신세계이마트상품권 3만원"}]
+        hash_text_per_firm(evs)
+        return evs
+    a, b = kb("1,608", "6,846"), kb("1,611", "6,850")       # 조회수만 오른 다음 실행
+    assert [source_content_hash(e) for e in a] == [source_content_hash(e) for e in b]
+    assert "조회수" not in a[0]["_hash_text"] and "2026/10/12 16:04:56" in a[0]["_hash_text"]
+    assert "조회수: 1,608" in a[0]["_detail_text"], "LLM 입력 원문은 건드리지 않는다"
+    # 내용이 바뀌면 여전히 해시가 달라진다 (휘발 줄만 뺀 것이지 둔감해진 것이 아니다)
+    c = kb("1,611", "6,850")
+    c[1]["_detail_text"] = c[1]["_detail_text"].replace("3만원", "5만원")
+    hash_text_per_firm(c)
+    assert source_content_hash(c[1]) != source_content_hash(b[1])
+    # 수치가 든 일반 문장은 휘발 줄이 아니다
+    d = kb("1", "2")
+    d[1]["_detail_text"] += "\n조회수 1,000회 달성 시 추가 혜택"
+    hash_text_per_firm(d)
+    assert "달성 시 추가 혜택" in d[1]["_hash_text"]
+    # 증권사에 이벤트가 1건뿐이어도(공통 줄 제거 미적용 경로) 동일하게 뺀다
+    one = [{"firm_name": "X증권", "event_name": "e", "_detail_text": "본문\n조회수 : 12"}]
+    hash_text_per_firm(one)
+    assert one[0]["_hash_text"] == "본문"
+    print("OK P0-A1→A2 조회수 줄은 해시 입력에서 제외 (KB 매일 재추출의 원인)")
+
+
+def test_p0_fail_reason_streak_and_report():
+    """B2/B3: 수집 실패 사유 분류, 연속 실패 횟수, 리포트·제목 표기."""
+    import json as _json
+    import tempfile
+    from pension_monitor import main as pm
+    from pension_monitor.scrapers import base as sb
+
+    class _T(Exception):
+        pass
+    _T.__name__ = "TimeoutError"
+    assert pm.classify_exception(_T()) == "timeout"
+    assert pm.classify_exception(sb.OffsiteRedirect("https://play.google.com/x")) == "redirected"
+    assert pm.classify_exception(ValueError("x")) == "error"
+    # DB 이력 기준: 최신 실행부터 끊기지 않고 이어진 실패만 센다 (+ 이번 실행)
+    orig = (db.enabled, db.recent_failed_firms)
+    try:
+        db.enabled = lambda: True
+        db.recent_failed_firms = lambda limit=15: [{"미래에셋증권"}, {"미래에셋증권"},
+                                                   {"미래에셋증권", "삼성증권"}, set(),
+                                                   {"미래에셋증권"}]
+        assert pm.fail_streaks(["미래에셋증권", "삼성증권"]) == {"미래에셋증권": 4, "삼성증권": 1}
+        assert pm.fail_streaks([]) == {}
+        # DB 이력을 못 읽으면 직전 요약 파일의 값을 이어 센다
+        db.recent_failed_firms = lambda limit=15: None
+        path = os.path.join(tempfile.mkdtemp(), "s.json")
+        _json.dump({"fail_streak": {"미래에셋증권": 2}}, open(path, "w", encoding="utf-8"))
+        assert pm.fail_streaks(["미래에셋증권", "KB증권"], path) == {"미래에셋증권": 3, "KB증권": 1}
+        assert pm.fail_streaks(["KB증권"], path + ".none") == {"KB증권": 1}
+    finally:
+        db.enabled, db.recent_failed_firms = orig
+    # failed_firms 문자열("A, B" / NULL) 파싱
+    orig_get, orig_en = db._get, db.enabled
+    try:
+        db.enabled = lambda: True
+        db._get = lambda path, params=None: [{"failed_firms": "미래에셋증권, 삼성증권"},
+                                             {"failed_firms": None}]
+        assert db.recent_failed_firms() == [{"미래에셋증권", "삼성증권"}, set()]
+        def _boom(path, params=None):
+            raise RuntimeError("down")
+        db._get = _boom
+        assert db.recent_failed_firms() is None
+    finally:
+        db._get, db.enabled = orig_get, orig_en
+    pm._RUN_STATS["fail_reasons"] = {"미래에셋증권": "redirected"}
+    assert pm._fail_label(["미래에셋증권"], {"미래에셋증권": 4}) == "미래에셋증권(4회 연속·redirected)"
+    md = report.build_report({"new": [], "closed": [], "changed": [], "active": []},
+                             ["미래에셋증권"],
+                             fail_info={"미래에셋증권": {"reason": "redirected", "streak": 4}})
+    assert "미래에셋증권(4회 연속 · 다른 사이트로 이동됨)" in md, md[:300]
+    assert "수집 실패: 삼성증권 —" in report.build_report(
+        {"new": [], "closed": [], "changed": [], "active": []}, ["삼성증권"])   # fail_info 없이도 동작
+    assert pm.FAIL_STREAK_ALERT >= 1
+    print("OK P0-B2/B3 실패 사유 분류·연속 실패 횟수·리포트 표기")
+
+
+def test_p0_miraeasset_parse_items():
+    """B1: 목록 항목 파싱(순수 함수) — detailView 인자에서 상세 URL 구성."""
+    from pension_monitor.scrapers import miraeasset as ma
+    items = [{"onclick": "detailView('202609012','1','null','O')",
+              "subject": "「투자하는 연금」 2026년 개인연금 입금 이벤트",
+              "date": "2026.10.01 ~ 2026.12.31", "text": "", "alt": "null", "src": ""},
+             {"onclick": "", "subject": "", "date": "", "alt": "",
+              "text": "진행중 배너만 있는 이벤트 2026.11.01 ~ 2026.11.30",
+              "src": "/public/mw/event/202611003/a.jpg"},
+             {"onclick": "detailView('1','1','null','O')", "subject": "기간 없는 항목",
+              "date": "", "text": "기간 없는 항목", "alt": "", "src": ""}]
+    got = ma.parse_items(items)
+    assert [e["event_name"] for e in got] == ["「투자하는 연금」 2026년 개인연금 입금 이벤트",
+                                               "배너만 있는 이벤트"], got
+    assert "cs_ecis_id=202609012" in got[0]["event_url"] and "pub_sect=O" in got[0]["event_url"]
+    assert (got[0]["start_date"], got[0]["end_date"]) == ("2026-10-01", "2026-12-31")
+    assert "cs_ecis_id=202611003" in got[1]["event_url"]
+    assert ma.parse_items([]) == []
+    print("OK P0-B1 미래에셋 목록 항목 파싱")
+
+
+def test_p0_miraeasset_api_and_pc_sources():
+    """B1: 모바일 목록이 앱 전용이 된 뒤의 대체 경로 — 목록 API 와 PC 목록 파싱.
+    입력은 2026-11-10 탐침(data/probe_mirae.json)에서 받은 실제 응답 조각."""
+    import asyncio
+    from pension_monitor.scrapers import base as sb, miraeasset as ma
+    api_rows = [
+        {"end_day": "20261231", "list_m_img": "1790672130560.jpg", "expl": None,
+         "pub_edt": "202612312359", "pub_chnl": "PM", "evnt_ctns_m_url": None,
+         "ctns_expl": "<p><br></p>", "s_title": "「투자하는 연금」 2026년 개인연금 입금 이벤트",
+         "strt_day": "20261001", "evnt_sect": "1", "cs_ecis_id": "202609012",
+         "r_cs_ecis_id": None, "pub_sect": "O", "pub_sdt": "202610010000"},
+        {"cs_ecis_id": "202609012", "s_title": "중복 ID 는 한 번만", "strt_day": "20261001",
+         "end_day": "20261231"},
+        {"cs_ecis_id": "202611001", "s_title": "외부 페이지형 이벤트", "strt_day": None,
+         "end_day": None, "pub_sdt": "202611010000", "pub_edt": "202611302359",
+         "evnt_sect": "2", "evnt_ctns_m_url": "https://event.example.com/x", "pub_sect": "O"},
+        {"cs_ecis_id": "202611002", "s_title": "기간 없는 항목"},
+    ]
+    got = ma.parse_api_items(api_rows)
+    assert [e["event_name"] for e in got] == ["「투자하는 연금」 2026년 개인연금 입금 이벤트",
+                                               "외부 페이지형 이벤트"], got
+    assert (got[0]["start_date"], got[0]["end_date"]) == ("2026-10-01", "2026-12-31")
+    # 상세 URL·식별자가 기존 DB 행과 같은 형식이어야 이력이 이어진다
+    assert got[0]["event_url"] == ("https://securities.miraeasset.com/mw/mki/mki7000/v01.do"
+                                   "?cs_ecis_id=202609012&pub_sect=O&mod=S"
+                                   "&returnURL=/mw/mki/mki7000/r01.do")
+    assert source_event_id(got[0]) == "202609012"
+    assert (got[1]["start_date"], got[1]["end_date"]) == ("2026-11-01", "2026-11-30")   # pub_* 폴백
+    assert got[1]["_content_url"] == "https://event.example.com/x" and source_event_id(got[1]) == "202611001"
+    pc_html = (
+        '<ul class="split col3 eventLstWrap"> <li class="colSec"> <dl class="eventCont"> <dt> '
+        '<a href="javascript:doView(\'202609012\',\'1\',\'\')"> <img src="/public/mw/event/202609012/'
+        '1790672130546.jpg" alt="" class="spot"> </a> </dt> <!-- FLAG 적용 --> <dd class="evLabel"> '
+        '<span class="ico_label ev ev03"><em>진행중</em></span> </dd> <dd class="evTit">「투자하는 연금」 '
+        '2026년 개인연금 입금 이벤트</dd> <dd class="evDate">2026.10.01 ~ 2026.12.31</dd> </dl> </li>'
+        '<li class="colSec"> <dl class="eventCont"> <dt> <a href="javascript:doView(\'202609013\',\'5\','
+        '\'\')"> <img src="/public/mw/event/202609013/1790666689428.png" alt="" class="spot"> </a> </dt> '
+        '<dd class="evTit">「투자하는 연금」2026년 퇴직연금 DC 이벤트</dd> '
+        '<dd class="evDate">2026.10.01 ~ 2026.12.31</dd> </dl> </li></ul>')
+    pc = ma.parse_pc_html(pc_html)
+    assert [source_event_id(e) for e in pc] == ["202609012", "202609013"], pc
+    assert pc[0]["event_url"] == got[0]["event_url"], "두 경로가 같은 상세 URL 을 만든다"
+    assert pc[1]["event_name"] == "「투자하는 연금」2026년 퇴직연금 DC 이벤트"
+    assert ma.parse_pc_html("<html>이벤트 없음</html>") == [] and ma.parse_api_items(None) == []
+    # 경로 순서: API 실패 → PC 목록으로 수집, 실패 사유는 남지 않는다
+    orig = (ma.fetch_api, ma.fetch_pc)
+    try:
+        def _down():
+            raise RuntimeError("api down")
+        ma.fetch_api, ma.fetch_pc = _down, (lambda: pc)
+        sb.note_failure(ma.FIRM, "redirected")
+        assert asyncio.run(ma.scrape(None)) == pc and ma.FIRM not in sb.FAIL_REASONS
+        ma.fetch_api = lambda: api_rows                      # API 가 되면 API 결과
+        assert len(asyncio.run(ma.scrape(None))) == 2
+        ma.fetch_api, ma.fetch_pc = (lambda: []), (lambda: [])   # 전부 0건 + 브라우저 없음
+        assert asyncio.run(ma.scrape(None)) == [] and sb.FAIL_REASONS.get(ma.FIRM) == "error"
+    finally:
+        ma.fetch_api, ma.fetch_pc = orig
+        sb.clear_failure(ma.FIRM)
+    print("OK P0-B1 미래에셋 대체 경로 (목록 API·PC 목록 파싱, 경로 순서, 식별자 연속성)")
+
+
+def test_p0_kst_date_and_llm_reasons():
+    """C1: 기준일은 한국 날짜. C3: Gemini 호출을 캐시 미스 사유별로 집계."""
+    from pension_monitor import config
+    assert today_kst() == dt.datetime.now(dt.timezone(dt.timedelta(hours=9))).date()
+    # '종료' 판정이 러너 날짜가 아니라 today_kst 를 쓴다
+    calls = []
+    orig = (db.fetch_all_events, db.fetch_children, db.enabled, db._patch, db._post,
+            db._delete, db.today_kst)
+    try:
+        db.fetch_all_events = lambda: []
+        db.fetch_children = lambda table: []
+        db.enabled = lambda: True
+        db._patch = lambda path, params, payload: None
+        db._post = lambda path, payload, prefer=None: (calls.append((path, payload)), [{"id": 5}])[1]
+        db._delete = lambda path, params: None
+        ev = {"firm_name": "NH투자증권", "event_name": "연말 이벤트", "source_event_id": "55",
+              "start_date": "2026-10-01", "end_date": "2026-12-31", "benefits": "a → 상품권 1만원"}
+        db.today_kst = lambda: dt.date(2026, 12, 31)          # 종료일 당일 = 진행중
+        db.sync([dict(ev)], firms_failed=[], trigger_type="manual")
+        db.today_kst = lambda: dt.date(2027, 1, 1)            # 한국 날짜로 다음 날 = 종료
+        db.sync([dict(ev)], firms_failed=[], trigger_type="manual")
+        st = [p["status"] for path, p in calls if path == "pension_events"]
+        assert st == ["진행중", "종료"], st
+    finally:
+        (db.fetch_all_events, db.fetch_children, db.enabled, db._patch, db._post,
+         db._delete, db.today_kst) = orig
+    assert config.TRIGGER_TYPE in ("weekly", "manual")        # DB 제약이 허용하는 값만
+    # 사유 집계: 신규 1건(1콜), 원문 변경 1건(1콜)
+    det = "이벤트 안내: 순입금 1백만원 이상 시 상품권 1만원 지급 " + "본문" * 100
+    ok = {"is_pension": True, "evidence_missing": False, "period_start": "", "period_end": "",
+          "benefits": [{"condition": "순입금 1백만원 이상", "reward": "상품권 1만원",
+                        "method": "전원", "limit_count": 0}],
+          "conditions": [{"label": "대상", "value": "IRP 계좌 보유 고객"}],
+          "acct_pension": False, "acct_irp": True, "acct_dc": False, "acct_etc": "",
+          "multipliers": [], "stackable": None, "annual_claim_limit": 0}
+    new_ev = _retry_ev(det, source_event_id="8888", event_name="새 이벤트")
+    chg_ev = _retry_ev(det)
+    orig_v = (vision.enabled, vision.blocked, vision.extract_from_text, normalize.PACE_SEC)
+    vision.enabled, vision.blocked = (lambda: True), (lambda: False)
+    vision.extract_from_text = lambda t, hint="": dict(ok)
+    normalize.PACE_SEC = 0
+    try:
+        stats = normalize.normalize_events(
+            [new_ev, chg_ev], [_p0_old(det, source_content_hash="DIFFERENT")])
+    finally:
+        vision.enabled, vision.blocked, vision.extract_from_text, normalize.PACE_SEC = orig_v
+    assert stats["llm_calls"] == 2 and stats["llm_reasons"] == {"new": 1, "hash_changed": 1}, stats
+    assert {"llm_failed", "llm_rate_limited", "llm_blocked"} <= set(stats), stats
+    # 추출이 실패해 기존 값을 재사용한 실행에서는 G8 을 새로 평가하지 않는다
+    # (ev 에 배수 자식 행이 없어 '배수 누락'이 거짓으로 붙던 문제 — 2026-11-10 검증 실행)
+    det2 = "타사 연금 이전 고객 대상. 이전 금액은 실적 2배 인정. " * 8
+    ev = _retry_ev(det2, event_name="타사 연금 이전 이벤트")
+    old = _retry_old(det2, count=0, event_name=ev["event_name"], needs_review=False,
+                     review_reason=None, benefits="타사 이전 1천만원 이상 → 상품권 1만원 (전원)")
+    assert _run_with_vision([ev], [old], lambda t, h: {}) == 1     # 장애로 추출 실패
+    assert ev["needs_review"] is False, ev.get("review_reason")
+    print("OK P0-C1/C3 한국 날짜 기준 종료 판정 · LLM 호출 사유 집계")
+
+
+if __name__ == "__main__":
+    test_p0_informational_flag_allows_cache()
+    test_p0_cache_hit_carries_only_valid_info_flags()
+    test_p0_empty_answer_confirmed_then_cached()
+    test_p0_signature_treats_none_and_false_alike()
+    test_p0_transfer_hint_and_exclusion_precision()
+    test_p0_hash_input_instrumentation()
+    test_p0_volatile_view_counter_excluded_from_hash()
+    test_p0_fail_reason_streak_and_report()
+    test_p0_miraeasset_parse_items()
+    test_p0_miraeasset_api_and_pc_sources()
+    test_p0_kst_date_and_llm_reasons()
+    print("P0(2026-11) 회귀 11종 통과")

@@ -9,11 +9,15 @@
 import datetime as dt
 import io
 
-from .config import FIRMS
+from .config import FIRMS, today_kst
 
 _EXTRACT_LABELS = {"text": "본문 추출", "ocr": "이미지 OCR", "heuristic": "휴리스틱",
                    "hint": "목록 요약", "none": "미확인"}
 _DATE_SRC_LABELS = {"list": "목록", "detail": "상세본문", "llm": "AI 추출"}
+# 수집 실패 사유(scrapers.base) → 리포트 표기
+_FAIL_REASON_LABELS = {"redirected": "다른 사이트로 이동됨", "empty_shell": "목록 미표시(빈 화면)",
+                       "selector_zero": "목록 구조 변경 의심", "zero_items": "0건",
+                       "timeout": "응답 지연", "error": "오류"}
 
 
 def _tri_label(v, yes, no):
@@ -182,8 +186,10 @@ def _bucket(reason):
     return "기타"
 
 
-def build_report(diff: dict, firms_failed: list) -> str:
-    today = dt.date.today()
+def build_report(diff: dict, firms_failed: list, fail_info: dict = None) -> str:
+    """fail_info: {증권사: {"reason": 사유|None, "streak": 연속 실패 횟수}} (선택).
+    주어지면 수집 실패 줄에 연속 횟수와 사유를 함께 적는다."""
+    today = today_kst()
     active = sorted(diff["active"], key=lambda e: (e["firm_name"], e.get("end_date") or "9999"))
     lines = [
         f"# 연금 이벤트 리포트 ({today.isoformat()} 기준)",
@@ -194,8 +200,16 @@ def build_report(diff: dict, firms_failed: list) -> str:
         "",
     ]
     if firms_failed:
-        lines += [f"⚠️ 수집 실패: {', '.join(firms_failed)} — 직전 수집분을 아래 표에 유지 "
-                  f"(⚠ 최종확인일 표기)", ""]
+        def _label(firm):
+            info = (fail_info or {}).get(firm) or {}
+            bits = []
+            if (info.get("streak") or 1) > 1:
+                bits.append(f"{info['streak']}회 연속")
+            if info.get("reason"):
+                bits.append(_FAIL_REASON_LABELS.get(info["reason"], info["reason"]))
+            return firm + (f"({' · '.join(bits)})" if bits else "")
+        lines += [f"⚠️ 수집 실패: {', '.join(_label(f) for f in firms_failed)} — 직전 수집분을 "
+                  f"아래 표에 유지 (⚠ 최종확인일 표기)", ""]
 
     # 데이터 신뢰도 롤업 — 검증 게이트(needs_review) 결과를 사유별로 집계해
     # 표를 한 줄씩 읽지 않아도 이번 리포트의 신뢰 수준을 바로 가늠하게 한다.
