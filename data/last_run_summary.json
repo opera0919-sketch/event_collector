@@ -1,5 +1,5 @@
 {
- "run_at": "2026-11-10T04:58:03.387595+00:00",
+ "run_at": "2026-11-10T05:06:10.443061+00:00",
  "trigger": "manual",
  "active": 25,
  "by_firm": {
@@ -19,10 +19,10 @@
   "미래에셋증권": "redirected"
  },
  "timings": {
-  "list_sec": 230,
-  "detail_sec": 107,
+  "list_sec": 159,
+  "detail_sec": 100,
   "normalize_sec": 0,
-  "total_sec": 337
+  "total_sec": 260
  },
  "llm_calls": 0,
  "cache_hits": 0,
@@ -31,11 +31,11 @@
  "llm_reasons": {},
  "detail_fetch_failed": [],
  "fail_streak": {
-  "미래에셋증권": 1
+  "미래에셋증권": 2
  },
- "hash_changed": 0,
+ "hash_changed": 6,
  "hash_changed_parts": {
-  "text": 0,
+  "text": 6,
   "imgs": 0
  },
  "review_count": 21
