@@ -3,18 +3,21 @@
   {
    "name": "mw_list",
    "url": "https://securities.miraeasset.com/mw/mki/mki7000/r01.do",
+   "method": "GET",
    "error": "ConnectTimeout: HTTPConnectionPool(host='securities.miraeasset.com', port=80): Max retries exceeded with url: /public/mts/html/AppLink.html?id=event (Caused by ConnectTimeoutEr",
    "ua": "desktop"
   },
   {
    "name": "mw_list",
    "url": "https://securities.miraeasset.com/mw/mki/mki7000/r01.do",
+   "method": "GET",
    "error": "ConnectTimeout: HTTPConnectionPool(host='securities.miraeasset.com', port=80): Max retries exceeded with url: /public/mts/html/AppLink.html?id=event (Caused by ConnectTimeoutEr",
    "ua": "mobile"
   },
   {
    "name": "mw_detail",
    "url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
+   "method": "GET",
    "status": 200,
    "final_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
    "redirects": [],
@@ -64,11 +67,24 @@
    "period_hits": [
     "2026.10.01 ~ 2026.12.31"
    ],
+   "snippets": {
+    "cs_ecis_id": [
+     "tion = '/mw/mki/mki7000/r01.do'; if(common.mod == \"E\") f.action = '/mw/mki/mki7000/r02.do'; if(common.mod == \"A\") f.action = '/mw/mki/mki7000/r03.do'; f.submit(); } function goRepContent(id,mod){ location.href = '/mw/mki/mki7000/v01.do?cs_ecis_id='+id+'&mod='+mod; } function goLogin(mod){ var tabs = \"&tabs=1\"; if(mod == \"2\") tabs = \"&tabs=2\"; v3_start(\"/mw/login.do?url=\"+location.pathname+location.search+tabs); } function applyCheck(){ var today = '20261110'; if(Number(today)<Number(\"20261001\") || Number(today)> Number(\"20261231\")) { alertMsg('이벤트신청기간이 아닙니다.'); return false; } var confirmparams = {",
+     "</script> <!--// Header e --> <div class=\"container fundList\"> <div class=\"content\"> <!-- content s --> <section class=\"banner_area\" data-banner=\"hide\"> </section> <form name=\"f\" method=\"post\"> <input type=\"hidden\" name=\"cs_ecis_id\" value=\"202609012\" /> <input type=\"hidden\" name=\"mod\" value=\"S\" /> <input type=\"hidden\" name=\"sns_title_img\" id=\"sns_title_img\" value=\"/public/mw/event/202609012/1790672130560.jpg\" /> </form> <!-- list --> <section class=\"list_bbs eventLstWrap\"> <dl class=\"bbsView eventView\"> <dt class=\"evInfo\"> <div class=\"labelSet\"> <span class=\"ico_label ev3\"><em>진행중</em"
+    ],
+    "e04.json": [
+     "}, error : function(request, status, error) { alertMsg(\"조회 중 오류가 발생하였습니다.\"); } }); } // 다이렉트 구분 체크 2021.01 by OSH function chkDirectCD(typ) { if(applyCheck()) { $.ajax({ url : \"/hki/hki7000/e04.json\", data : { custExerId : \"202609012\" }, success : function(data) { if(\"MB3891\" == data.msgCd){ alert('본 이벤트는 다이렉트 계좌를 보유한 고객님만 신청이 가능합니다.'); } else if (\"MB5277\" == data.msg_no) { // 다이렉트 비대면,방문 계좌 alert('본 이벤트는 비대면 다이렉트 계좌를 보유한 고객님만 신청이 가능합니다.'); } else if (\"MB5278\" == data.msg_no) { // 다이렉트 NDirect alert('본 이벤",
+     "alertMsg(\"조회 중 오류가 발생하였습니다.\"); } , errchk : true, load : false }); } } function evTargetDirectChk(typ){ //다이렉트 계좌보유 여부 체크 if(applyCheck()){ callAjaxObj({ type : \"POST\", url : \"/mw/mki/mki7000/e04.json\", data : { custExerId : \"202609012\" }, success : function(data) { if(\"MB3891\" == data.msgCd){ alert('본 이벤트는 다이렉트 계좌를 보유한 고객님만 신청이 가능합니다.\\n이벤트 신청을 원하실 경우 다이렉트 계좌개설 후 신청해주시기 바랍니다.'); } else if(\"MA2795\" == data.msgCd || \"MA5291\" == data.msgCd){ evtDirectChk = true; if(typ == 2){ goJoinEvent(); }else{ alertMsg(\"이벤트 신청이 가능합니",
+     "{ type : \"POST\", url : \"/mw/mki/mki7000/e02.json\", data : { custExerId : \"202609012\" }, success : function(data) { if(data.obj_yn == \"\"){ callAjaxObj({ type : \"POST\", url : \"/mw/mki/mki7000/e04.json\", data : { custExerId : \"202609012\" }, success : function(data) { if(\"MB3891\" == data.msgCd){ alert('본 이벤트는 다이렉트 계좌를 보유한 고객님만 신청이 가능합니다.\\n이벤트 신청을 원하실 경우 다이렉트 계좌개설 후 신청해주시기 바랍니다.'); } else if(\"MA2795\" == data.msgCd || \"MA5291\" == data.msgCd){ evtMemChk = true; evtDirectChk = true; if(typ == 3){ go"
+    ]
+   },
+   "raw_head": null,
    "ua": "desktop"
   },
   {
    "name": "mw_detail",
    "url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
+   "method": "GET",
    "status": 200,
    "final_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
    "redirects": [],
@@ -118,11 +134,24 @@
    "period_hits": [
     "2026.10.01 ~ 2026.12.31"
    ],
+   "snippets": {
+    "cs_ecis_id": [
+     "tion = '/mw/mki/mki7000/r01.do'; if(common.mod == \"E\") f.action = '/mw/mki/mki7000/r02.do'; if(common.mod == \"A\") f.action = '/mw/mki/mki7000/r03.do'; f.submit(); } function goRepContent(id,mod){ location.href = '/mw/mki/mki7000/v01.do?cs_ecis_id='+id+'&mod='+mod; } function goLogin(mod){ var tabs = \"&tabs=1\"; if(mod == \"2\") tabs = \"&tabs=2\"; v3_start(\"/mw/login.do?url=\"+location.pathname+location.search+tabs); } function applyCheck(){ var today = '20261110'; if(Number(today)<Number(\"20261001\") || Number(today)> Number(\"20261231\")) { alertMsg('이벤트신청기간이 아닙니다.'); return false; } var confirmparams = {",
+     "</script> <!--// Header e --> <div class=\"container fundList\"> <div class=\"content\"> <!-- content s --> <section class=\"banner_area\" data-banner=\"hide\"> </section> <form name=\"f\" method=\"post\"> <input type=\"hidden\" name=\"cs_ecis_id\" value=\"202609012\" /> <input type=\"hidden\" name=\"mod\" value=\"S\" /> <input type=\"hidden\" name=\"sns_title_img\" id=\"sns_title_img\" value=\"/public/mw/event/202609012/1790672130560.jpg\" /> </form> <!-- list --> <section class=\"list_bbs eventLstWrap\"> <dl class=\"bbsView eventView\"> <dt class=\"evInfo\"> <div class=\"labelSet\"> <span class=\"ico_label ev3\"><em>진행중</em"
+    ],
+    "e04.json": [
+     "}, error : function(request, status, error) { alertMsg(\"조회 중 오류가 발생하였습니다.\"); } }); } // 다이렉트 구분 체크 2021.01 by OSH function chkDirectCD(typ) { if(applyCheck()) { $.ajax({ url : \"/hki/hki7000/e04.json\", data : { custExerId : \"202609012\" }, success : function(data) { if(\"MB3891\" == data.msgCd){ alert('본 이벤트는 다이렉트 계좌를 보유한 고객님만 신청이 가능합니다.'); } else if (\"MB5277\" == data.msg_no) { // 다이렉트 비대면,방문 계좌 alert('본 이벤트는 비대면 다이렉트 계좌를 보유한 고객님만 신청이 가능합니다.'); } else if (\"MB5278\" == data.msg_no) { // 다이렉트 NDirect alert('본 이벤",
+     "alertMsg(\"조회 중 오류가 발생하였습니다.\"); } , errchk : true, load : false }); } } function evTargetDirectChk(typ){ //다이렉트 계좌보유 여부 체크 if(applyCheck()){ callAjaxObj({ type : \"POST\", url : \"/mw/mki/mki7000/e04.json\", data : { custExerId : \"202609012\" }, success : function(data) { if(\"MB3891\" == data.msgCd){ alert('본 이벤트는 다이렉트 계좌를 보유한 고객님만 신청이 가능합니다.\\n이벤트 신청을 원하실 경우 다이렉트 계좌개설 후 신청해주시기 바랍니다.'); } else if(\"MA2795\" == data.msgCd || \"MA5291\" == data.msgCd){ evtDirectChk = true; if(typ == 2){ goJoinEvent(); }else{ alertMsg(\"이벤트 신청이 가능합니",
+     "{ type : \"POST\", url : \"/mw/mki/mki7000/e02.json\", data : { custExerId : \"202609012\" }, success : function(data) { if(data.obj_yn == \"\"){ callAjaxObj({ type : \"POST\", url : \"/mw/mki/mki7000/e04.json\", data : { custExerId : \"202609012\" }, success : function(data) { if(\"MB3891\" == data.msgCd){ alert('본 이벤트는 다이렉트 계좌를 보유한 고객님만 신청이 가능합니다.\\n이벤트 신청을 원하실 경우 다이렉트 계좌개설 후 신청해주시기 바랍니다.'); } else if(\"MA2795\" == data.msgCd || \"MA5291\" == data.msgCd){ evtMemChk = true; evtDirectChk = true; if(typ == 3){ go"
+    ]
+   },
+   "raw_head": null,
    "ua": "mobile"
   },
   {
    "name": "applink",
    "url": "https://securities.miraeasset.com/public/mts/html/AppLink.html?id=event",
+   "method": "GET",
    "status": 200,
    "final_url": "https://securities.miraeasset.com/public/mts/html/AppLink.html?id=event",
    "redirects": [],
@@ -134,12 +163,15 @@
    "event_links": [],
    "do_urls_in_js": [],
    "period_hits": [],
+   "snippets": {},
+   "raw_head": "<html lang=\"ko\">\r\n<head>\r\n    <title>미래에셋증권 MAPS </title>\r\n    <meta charset=\"euc-kr\">\r\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />\r\n    <meta http-equiv=\"Pragma\" content=\"no-cache\" />\r\n    <meta http-equiv=\"Expires\" content=\"-1\" />\r\n    <meta http-equiv=\"cache-control\" content=\"no-store\" />\r\n    <link rel=\"shortcut icon\" href=\"https://img.securities.miraeasset.com/new2016/layout/favicon.ico\" />\r\n    <style>\r\n        html,\r\n        body {\r\n            height: 100%;\r\n            width: 100%;\r\n        }\r\n\r\n        body {\r\n            background: #F5F6F8;\r\n            font-size: 16px;\r\n            font-family: 'Open Sans', sans-serif;\r\n            color: #2C3E51;\r\n        }\r\n\r\n ",
    "html_head": "<html lang=\"ko\">\r\n<head>\r\n    <title>미래에셋증권 MAPS </title>\r\n    <meta charset=\"euc-kr\">\r\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />\r\n    <meta http-equiv=\"Pragma\" content=\"no-cache\" />\r\n    <meta http-equiv=\"Expires\" content=\"-1\" />\r\n    <meta http-equiv=\"cache-control\" content=\"no-store\" />\r\n    <link rel=\"shortcut icon\" href=\"https://img.securities.miraeasset.com/new2016/layout/favicon.ico\" />\r\n    <style>\r\n        html,\r\n        body {\r\n            height: 100%;\r\n            width: 100%;\r\n        }\r\n\r\n        body {\r\n            background: #F5F6F8;\r\n            font-size: 16px;\r\n            font-family: 'Open Sans', sans-serif;\r\n            color: #2C3E51;\r\n        }\r\n\r\n        .main {\r\n            display: flex;\r\n            align-items: center;\r\n            justify-content: center;\r\n            height: 100vh;\r\n        }\r\n\r\n        .main>div>div,\r\n        .main>div>span {\r\n            text-align: center;\r\n        }\r\n\r\n        .main span {\r\n            display: block;\r\n            padding: 40px 0 170px;\r\n            font-size: 3rem;\r\n        }\r\n\r\n        .main .app img {\r\n            position: absolute;\r\n            bottom: 30px;\r\n            left: 50%;\r\n            transform: translate(-50%, -50%);\r\n            width: 300px;\r\n        }\r\n    </style>\r\n    <!-- Google Tag Manager -->\r\n    <script>\r\n        var pageviewObj = new Object();\r\n        pageviewObj.dimension12=\"mobileweb\";\r\n        dataLayer=[pageviewObj];\r\n        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-P38XR3M');\r\n    </script>\r\n    <!-- End Google Tag Manager -->\r\n</head>\r\n<body>\r\n<div class=\"main\">\r\n    <div class=\"workarea\">\r\n        <div id=\"logo\" class=\"logo\">\r\n            <img src=\"/public/mts/images/ico_m_stock.jpg?v=2\" style=\"width:250px;height:250px;border-radius:20px;\" onerror=\"this.style.display='none'\"/>\r\n        </div>\r\n        <span id=\"app_name\">미래에셋증권 MAPS</span>\r\n        <div id=\"app_logo\" class=\"app\" style=\"display:none;\">\r\n            <img src=\"/public/mts/images/app_store_badge.png\" onclick=\"redirect_to_store()\" />\r\n        </div>\r\n    </div>\r\n</div>\r\n<script>\r\n    // 유저에트\r\n    let useragent = navigator.userAgent.toLowerCase();\r\n    let os = (/iphone|ipad|ipod/i.test(useragent)) ? \"ios\" : (/android/i.test(useragent))? \"android\" : \"etc\";\r\n    console.log(\"os : \" + os);\r\n\r\n    // 앱 링크 상세경로\r\n    let app_link_scheme = 'miraeassetTrade://';\r\n    let app_link_path = 'content?menuId=home';\r\n    let app_link_path_reg_exp = /path=/;\t// applink full 인코딩 된 경로, ex) path=content%3FmenuId%3Dhome\r\n    let app_link_short_path_reg_exp = /id=/; // applink 사용하는 메뉴 id,\t  ex) id=home\r\n    let app_link_short_path_reg_exp2 = /data=/; // applink 사용하는 메뉴 id,\t  ex) id=home\r\n    let app_link_short_path_reg_exp3 = /cd=/; // applink 사용하는 메뉴 id,\t  ex) id=home\r\n    let app_link_short_path_reg_exp4 = /pmi=/;\r\n    if(location.search.replace(\"?\",\"\")) {\r\n        let urlParams = location.search.replace(\"?\", \"\").split(\"&\");\r\n        if(app_link_path_reg_exp.test(location.search)) {\r\n            let encoded_app_link_path = urlParams.find(e => app_link_path_reg_exp.test(e)).replace(app_link_path_reg_exp, \"\");\r\n            if(encoded_app_link_path) app_link_path = decodeURIComponent(encoded_app",
    "ua": "desktop"
   },
   {
    "name": "applink",
    "url": "https://securities.miraeasset.com/public/mts/html/AppLink.html?id=event",
+   "method": "GET",
    "status": 200,
    "final_url": "https://securities.miraeasset.com/public/mts/html/AppLink.html?id=event",
    "redirects": [],
@@ -151,50 +183,239 @@
    "event_links": [],
    "do_urls_in_js": [],
    "period_hits": [],
+   "snippets": {},
+   "raw_head": "<html lang=\"ko\">\r\n<head>\r\n    <title>미래에셋증권 MAPS </title>\r\n    <meta charset=\"euc-kr\">\r\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />\r\n    <meta http-equiv=\"Pragma\" content=\"no-cache\" />\r\n    <meta http-equiv=\"Expires\" content=\"-1\" />\r\n    <meta http-equiv=\"cache-control\" content=\"no-store\" />\r\n    <link rel=\"shortcut icon\" href=\"https://img.securities.miraeasset.com/new2016/layout/favicon.ico\" />\r\n    <style>\r\n        html,\r\n        body {\r\n            height: 100%;\r\n            width: 100%;\r\n        }\r\n\r\n        body {\r\n            background: #F5F6F8;\r\n            font-size: 16px;\r\n            font-family: 'Open Sans', sans-serif;\r\n            color: #2C3E51;\r\n        }\r\n\r\n ",
    "html_head": "<html lang=\"ko\">\r\n<head>\r\n    <title>미래에셋증권 MAPS </title>\r\n    <meta charset=\"euc-kr\">\r\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />\r\n    <meta http-equiv=\"Pragma\" content=\"no-cache\" />\r\n    <meta http-equiv=\"Expires\" content=\"-1\" />\r\n    <meta http-equiv=\"cache-control\" content=\"no-store\" />\r\n    <link rel=\"shortcut icon\" href=\"https://img.securities.miraeasset.com/new2016/layout/favicon.ico\" />\r\n    <style>\r\n        html,\r\n        body {\r\n            height: 100%;\r\n            width: 100%;\r\n        }\r\n\r\n        body {\r\n            background: #F5F6F8;\r\n            font-size: 16px;\r\n            font-family: 'Open Sans', sans-serif;\r\n            color: #2C3E51;\r\n        }\r\n\r\n        .main {\r\n            display: flex;\r\n            align-items: center;\r\n            justify-content: center;\r\n            height: 100vh;\r\n        }\r\n\r\n        .main>div>div,\r\n        .main>div>span {\r\n            text-align: center;\r\n        }\r\n\r\n        .main span {\r\n            display: block;\r\n            padding: 40px 0 170px;\r\n            font-size: 3rem;\r\n        }\r\n\r\n        .main .app img {\r\n            position: absolute;\r\n            bottom: 30px;\r\n            left: 50%;\r\n            transform: translate(-50%, -50%);\r\n            width: 300px;\r\n        }\r\n    </style>\r\n    <!-- Google Tag Manager -->\r\n    <script>\r\n        var pageviewObj = new Object();\r\n        pageviewObj.dimension12=\"mobileweb\";\r\n        dataLayer=[pageviewObj];\r\n        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-P38XR3M');\r\n    </script>\r\n    <!-- End Google Tag Manager -->\r\n</head>\r\n<body>\r\n<div class=\"main\">\r\n    <div class=\"workarea\">\r\n        <div id=\"logo\" class=\"logo\">\r\n            <img src=\"/public/mts/images/ico_m_stock.jpg?v=2\" style=\"width:250px;height:250px;border-radius:20px;\" onerror=\"this.style.display='none'\"/>\r\n        </div>\r\n        <span id=\"app_name\">미래에셋증권 MAPS</span>\r\n        <div id=\"app_logo\" class=\"app\" style=\"display:none;\">\r\n            <img src=\"/public/mts/images/app_store_badge.png\" onclick=\"redirect_to_store()\" />\r\n        </div>\r\n    </div>\r\n</div>\r\n<script>\r\n    // 유저에트\r\n    let useragent = navigator.userAgent.toLowerCase();\r\n    let os = (/iphone|ipad|ipod/i.test(useragent)) ? \"ios\" : (/android/i.test(useragent))? \"android\" : \"etc\";\r\n    console.log(\"os : \" + os);\r\n\r\n    // 앱 링크 상세경로\r\n    let app_link_scheme = 'miraeassetTrade://';\r\n    let app_link_path = 'content?menuId=home';\r\n    let app_link_path_reg_exp = /path=/;\t// applink full 인코딩 된 경로, ex) path=content%3FmenuId%3Dhome\r\n    let app_link_short_path_reg_exp = /id=/; // applink 사용하는 메뉴 id,\t  ex) id=home\r\n    let app_link_short_path_reg_exp2 = /data=/; // applink 사용하는 메뉴 id,\t  ex) id=home\r\n    let app_link_short_path_reg_exp3 = /cd=/; // applink 사용하는 메뉴 id,\t  ex) id=home\r\n    let app_link_short_path_reg_exp4 = /pmi=/;\r\n    if(location.search.replace(\"?\",\"\")) {\r\n        let urlParams = location.search.replace(\"?\", \"\").split(\"&\");\r\n        if(app_link_path_reg_exp.test(location.search)) {\r\n            let encoded_app_link_path = urlParams.find(e => app_link_path_reg_exp.test(e)).replace(app_link_path_reg_exp, \"\");\r\n            if(encoded_app_link_path) app_link_path = decodeURIComponent(encoded_app",
    "ua": "mobile"
   },
   {
-   "name": "pc_home",
-   "url": "https://securities.miraeasset.com/",
+   "name": "pc_list_r05",
+   "url": "https://securities.miraeasset.com/hki/hki7000/r05.do",
+   "method": "GET",
    "status": 200,
-   "final_url": "https://securities.miraeasset.com/",
+   "final_url": "https://securities.miraeasset.com/hki/hki7000/r05.do",
    "redirects": [],
-   "len": 4281,
-   "title": "미래에셋증권 - 글로벌 투자 파트너",
-   "text_head": "미래에셋증권 - 글로벌 투자 파트너 -->",
+   "len": 57499,
+   "title": "이벤트 글목록 | 진행중인 이벤트 | 공지/이벤트 | 미래에셋증권",
+   "text_head": "이벤트 글목록 | 진행중인 이벤트 | 공지/이벤트 | 미래에셋증권 --> --> 본문 내용 바로가기 주 메뉴 바로가기 HTS 다운로드 --> HTS 다운로드 트레이딩 인증서/OTP 자주하는 질문 AI챗봇 원격지원 금융소비자포털 상품공시실 로그인 계좌개설 회원가입 MY자산 뱅킹/대출/청약 금융상품 연금자산 투자정보 서비스 신청/변경 이용안내/문의 검색창 열기 삭제 검색 의 메뉴가 있습니다. 더보기 닫기 --> 추천검색어 #추천상품 #수수료 #카이로스다운로드 #OTP 월간 추천상품 더보기 검색창 닫기 전체메뉴 열기 진행중 「투자하는 연",
    "n_detailView": 0,
-   "n_cs_ecis_id": 0,
-   "event_links": [],
-   "do_urls_in_js": [
-    "/session_update.jsp",
-    "/wtsform.jsp"
+   "n_cs_ecis_id": 3,
+   "event_links": [
+    "/hki/hki7000/r05.do",
+    "/hki/hki7000/v05.do?cs_ecis_id=",
+    "/public/mw/event/202605010/1-4_PC_list_292x292[2].jpg",
+    "/public/mw/event/202605013/1-4_PC_list_292x292.jpg",
+    "/public/mw/event/202606002/1-4_PC_list_292x292.jpg",
+    "/public/mw/event/202606003/1-4_PC_list_292x292.jpg",
+    "/public/mw/event/202609002/1-4_PC_list_292x292.png",
+    "/public/mw/event/202609005/1-4_PC_list_292x292.png",
+    "/public/mw/event/202609012/1790672130546.jpg",
+    "/public/mw/event/202609013/1790666689428.png",
+    "/public/mw/event/202609014/1790665202161.png"
    ],
-   "period_hits": [],
+   "do_urls_in_js": [
+    "/advancement/jsp/common/allMenuPopup.jsp",
+    "/advancement/jsp/common/mkaPopup.jsp",
+    "/bbs/board/message/list.do?categoryId=1296",
+    "/bbs/main/research/index.do",
+    "/directMain.do",
+    "/hkd/hkd1001/r01.do",
+    "/hkd/hkd1005/r01.do",
+    "/hki/hki3016/n01.do",
+    "/hki/hki3016/n04.do",
+    "/hki/hki3031/a00.do",
+    "/hki/hki3040/a00.do",
+    "/hki/hki3040/a00.do?getCode=/hki/hki3040/n04.do",
+    "/hki/hki3043/n01.do",
+    "/hki/hki3062/n03.do?clasCd=5",
+    "/hki/hki3062/n04.do",
+    "/hki/hki3062/n05.do",
+    "/hki/hki3096/r01.do",
+    "/hki/hki7000/r05.do",
+    "/hki/hki7000/v05.do?cs_ecis_id=",
+    "/hkp/hkp1002/r01.do",
+    "/hkp/hkp1003/r01.do",
+    "/hkp/hkp1004/n01.do",
+    "/hkp/hkp1004/n05.do",
+    "/hkp/hkp1004/n06.do",
+    "/hkp/hkp2001/r01.do",
+    "/hkp/hkp2002/r01.do",
+    "/hkp/hkp2007/n01.do",
+    "/hkp/hkp2009/c01.do",
+    "/hkp/hkp2010/p01.do",
+    "/hks/hks4000/n02.do",
+    "/hks/hks4000/n02_1.do",
+    "/hks/hks4000/n06.do",
+    "/hks/hks4022/n02_2.do",
+    "/hks/hks4023/n01_1.do",
+    "/hks/hks4033/n01.do",
+    "/hks/hks4033/n02.do",
+    "/hks/hks4036/r01.do",
+    "/hks/hks4041/n01.do",
+    "/hks/hks4048/r05.do",
+    "/hks/hks4054/v03.do",
+    "/hks/hks4113/n02.do",
+    "/hks/hks4116/r01.do",
+    "/hks/hks4125/n11.do",
+    "/hks/hks4200/n01.do",
+    "/hks/hks4318/n01.do",
+    "/hks/hks4318/n11.do",
+    "/hks/hks4323/n05.do",
+    "/hku/hku2001/c07.do",
+    "/hku/hku2001/t01.do",
+    "/hku/hku2001/t02.do",
+    "/hku/hku3005/u01.do",
+    "/hku/hku3013/r01.do",
+    "/hku/hku3014/u01.do",
+    "/hku/hku3020/n02.do",
+    "/hku/hku4010/r01.do",
+    "/hku/hku4013/r02.do",
+    "/hku/hku4196/n01.do",
+    "/imf/100/imf101.do",
+    "/imf/200/imf101.do",
+    "/imf/200/imf101.do#wrap-collapse1-01"
+   ],
+   "period_hits": [
+    "2026.10.01 ~ 2026.12.31",
+    "2026.10.01 ~ 2026.12.31",
+    "2026.10.01 ~ 2026.12.31",
+    "2026.09.28 ~ 2026.11.30",
+    "2026.09.07 ~ 2026.11.20",
+    "2026.07.01 ~ 2027.06.30",
+    "2026.10.02~2027.07.02",
+    "2026.07.01 ~ 2027.03.31"
+   ],
+   "snippets": {
+    "cs_ecis_id": [
+     "f(sect == \"2\"){ location.href = evnt_ctns_m_url; //window.open(\"about:blank\").location.href = evnt_ctns_m_url; //window.open(evnt_ctns_m_url, 'popup', 'scrollbars=yes,location=0,status=0'); }else{ location.href = '/hki/hki7000/v05.do?cs_ecis_id='+id+'&strEnd=S'; } } function paging(page) { var f = document.f; f.method = \"GET\"; f.currentPage.value = page; f.submit(); } function doSearch(){ var f = document.f; if(!searchConfirm()) { $(\"#searchName\").focus(); return; } f.action = \"/hki/hki7000/r05.do\"; f.submit(); } </script> </head> <body> <!-- [S]Skip Menu --",
+     "n'); } else { $(this).parent().removeClass('on'); } }); }); //]]> </script> <div id=\"contents\"> <form name=\"f\" action=\"#\" method=\"post\"> <input type=\"hidden\" name=\"currentPage\" value=\"\" /> <input type=\"hidden\" name=\"cs_ecis_id\" id=\"cs_ecis_id\" /> </form> <!-- 여기서부터 내용 start --> <div class=\"dep01Sec\"> <h1 class=\"tit depth01\"><img src=\"https://img.securities.miraeasset.com/notice/h2_1102_01.gif\" alt=\"진행중인 이벤트\" /></h1> </div> <ul class=\"split col3 eventLstWrap\"> <li class=\"colSec\"> <dl class=\"eventCont\"> <dt> <a href=\"javascript:doView('202609012','1",
+     "else { $(this).parent().removeClass('on'); } }); }); //]]> </script> <div id=\"contents\"> <form name=\"f\" action=\"#\" method=\"post\"> <input type=\"hidden\" name=\"currentPage\" value=\"\" /> <input type=\"hidden\" name=\"cs_ecis_id\" id=\"cs_ecis_id\" /> </form> <!-- 여기서부터 내용 start --> <div class=\"dep01Sec\"> <h1 class=\"tit depth01\"><img src=\"https://img.securities.miraeasset.com/notice/h2_1102_01.gif\" alt=\"진행중인 이벤트\" /></h1> </div> <ul class=\"split col3 eventLstWrap\"> <li class=\"colSec\"> <dl class=\"eventCont\"> <dt> <a href=\"javascript:doView('202609012','1','')\">"
+    ],
+    "r05.do": [
+     "\", \"/hkp/hkp2001/r01.do\", \"/hkd/hkd1005/r01.do\", \"/hks/hks4116/r01.do\", \"/hks/hks4023/n01_1.do\", \"/hks/hks4022/n02_2.do\", \"/hks/hks4048/r05.do\", \"/hks/hks4113/n02.do\", \"/hks/hks4036/r01.do\", \"/hks/hks4054/v03.do\", \"/hks/hks4033/n01.do\", \"/hks/hks4033/n02.do\", \"/hks/hks4318/n01.do\", \"/hks/hks4323/n05.do\", \"/hks/hks4041/n01.do\", \"/hks/hks4125/n11.do\",",
+     "\"/hks/hks4318/n11.do\", \"/hku/hku4196/n01.do\", \"/hku/hku3014/u01.do\", \"/hku/hku4010/r01.do\", \"/hku/hku4013/r02.do\", \"/hki/hki7000/r05.do\", \"/hki/hki3096/r01.do\" ]; var urlArrayMobile = [ \"/mw/mku/mku3014/u01.do\", \"/mw/mku/mku2001/n01.do\", \"/mw/mku/mku2001/n01.do\", \"/mw/mki/mki3001/r01.do\", \"/mw/mkd/mkd1001/r01.do\",",
+     ".f; f.method = \"GET\"; f.currentPage.value = page; f.submit(); } function doSearch(){ var f = document.f; if(!searchConfirm()) { $(\"#searchName\").focus(); return; } f.action = \"/hki/hki7000/r05.do\"; f.submit(); } </script> </head> <body> <!-- [S]Skip Menu --> <div title=\"스킵메뉴\" class=\"skipMenu\"> <a href=\"#contents\">본문 내용 바로가기</a> <a href=\"#gnb\">주 메뉴 바로가기</a> </div> <div id=\"wrap\"> <div id=\"dvContainer\"> <script type=\"text/javascript\" src=\"/srh/autoComplete/dqAutoCompleteCommon.js\"></script> <script type=\"text/javascript\" src=\"/advancement/html/com/js/cm.GNB.ui.js\">"
+    ]
+   },
+   "raw_head": null,
    "ua": "desktop"
   },
   {
-   "name": "pc_home",
-   "url": "https://securities.miraeasset.com/",
+   "name": "pc_list_r05",
+   "url": "https://securities.miraeasset.com/hki/hki7000/r05.do",
+   "method": "GET",
    "status": 200,
-   "final_url": "https://securities.miraeasset.com/",
+   "final_url": "https://securities.miraeasset.com/hki/hki7000/r05.do",
    "redirects": [],
-   "len": 4281,
-   "title": "미래에셋증권 - 글로벌 투자 파트너",
-   "text_head": "미래에셋증권 - 글로벌 투자 파트너 -->",
+   "len": 57564,
+   "title": "이벤트 글목록 | 진행중인 이벤트 | 공지/이벤트 | 미래에셋증권",
+   "text_head": "이벤트 글목록 | 진행중인 이벤트 | 공지/이벤트 | 미래에셋증권 --> --> 본문 내용 바로가기 주 메뉴 바로가기 HTS 다운로드 --> HTS 다운로드 트레이딩 인증서/OTP 자주하는 질문 AI챗봇 원격지원 금융소비자포털 상품공시실 로그인 계좌개설 회원가입 MY자산 뱅킹/대출/청약 금융상품 연금자산 투자정보 서비스 신청/변경 이용안내/문의 검색창 열기 삭제 검색 의 메뉴가 있습니다. 더보기 닫기 --> 추천검색어 #추천상품 #수수료 #카이로스다운로드 #OTP 월간 추천상품 더보기 검색창 닫기 전체메뉴 열기 진행중 「투자하는 연",
    "n_detailView": 0,
-   "n_cs_ecis_id": 0,
-   "event_links": [],
-   "do_urls_in_js": [
-    "/session_update.jsp",
-    "/wtsform.jsp"
+   "n_cs_ecis_id": 3,
+   "event_links": [
+    "/hki/hki7000/r05.do",
+    "/hki/hki7000/v05.do?cs_ecis_id=",
+    "/public/mw/event/202605010/1-4_PC_list_292x292[2].jpg",
+    "/public/mw/event/202605013/1-4_PC_list_292x292.jpg",
+    "/public/mw/event/202606002/1-4_PC_list_292x292.jpg",
+    "/public/mw/event/202606003/1-4_PC_list_292x292.jpg",
+    "/public/mw/event/202609002/1-4_PC_list_292x292.png",
+    "/public/mw/event/202609005/1-4_PC_list_292x292.png",
+    "/public/mw/event/202609012/1790672130546.jpg",
+    "/public/mw/event/202609013/1790666689428.png",
+    "/public/mw/event/202609014/1790665202161.png"
    ],
-   "period_hits": [],
+   "do_urls_in_js": [
+    "/advancement/jsp/common/allMenuPopup.jsp",
+    "/advancement/jsp/common/mkaPopup.jsp",
+    "/bbs/board/message/list.do?categoryId=1296",
+    "/bbs/main/research/index.do",
+    "/directMain.do",
+    "/hkd/hkd1001/r01.do",
+    "/hkd/hkd1005/r01.do",
+    "/hki/hki3016/n01.do",
+    "/hki/hki3016/n04.do",
+    "/hki/hki3031/a00.do",
+    "/hki/hki3040/a00.do",
+    "/hki/hki3040/a00.do?getCode=/hki/hki3040/n04.do",
+    "/hki/hki3043/n01.do",
+    "/hki/hki3062/n03.do?clasCd=5",
+    "/hki/hki3062/n04.do",
+    "/hki/hki3062/n05.do",
+    "/hki/hki3096/r01.do",
+    "/hki/hki7000/r05.do",
+    "/hki/hki7000/v05.do?cs_ecis_id=",
+    "/hkp/hkp1002/r01.do",
+    "/hkp/hkp1003/r01.do",
+    "/hkp/hkp1004/n01.do",
+    "/hkp/hkp1004/n05.do",
+    "/hkp/hkp1004/n06.do",
+    "/hkp/hkp2001/r01.do",
+    "/hkp/hkp2002/r01.do",
+    "/hkp/hkp2007/n01.do",
+    "/hkp/hkp2009/c01.do",
+    "/hkp/hkp2010/p01.do",
+    "/hkp/hkp2010/p02.do",
+    "/hks/hks4000/n02.do",
+    "/hks/hks4000/n02_1.do",
+    "/hks/hks4000/n06.do",
+    "/hks/hks4022/n02_2.do",
+    "/hks/hks4023/n01_1.do",
+    "/hks/hks4033/n01.do",
+    "/hks/hks4033/n02.do",
+    "/hks/hks4036/r01.do",
+    "/hks/hks4041/n01.do",
+    "/hks/hks4048/r05.do",
+    "/hks/hks4054/v03.do",
+    "/hks/hks4113/n02.do",
+    "/hks/hks4116/r01.do",
+    "/hks/hks4125/n11.do",
+    "/hks/hks4200/n01.do",
+    "/hks/hks4318/n01.do",
+    "/hks/hks4318/n11.do",
+    "/hks/hks4323/n05.do",
+    "/hku/hku2001/c07.do",
+    "/hku/hku2001/t01.do",
+    "/hku/hku2001/t02.do",
+    "/hku/hku3005/u01.do",
+    "/hku/hku3013/r01.do",
+    "/hku/hku3014/u01.do",
+    "/hku/hku3020/n02.do",
+    "/hku/hku4010/r01.do",
+    "/hku/hku4013/r02.do",
+    "/hku/hku4196/n01.do",
+    "/imf/100/imf101.do",
+    "/imf/200/imf101.do"
+   ],
+   "period_hits": [
+    "2026.10.01 ~ 2026.12.31",
+    "2026.10.01 ~ 2026.12.31",
+    "2026.10.01 ~ 2026.12.31",
+    "2026.09.28 ~ 2026.11.30",
+    "2026.09.07 ~ 2026.11.20",
+    "2026.07.01 ~ 2027.06.30",
+    "2026.10.02~2027.07.02",
+    "2026.07.01 ~ 2027.03.31"
+   ],
+   "snippets": {
+    "cs_ecis_id": [
+     "f(sect == \"2\"){ location.href = evnt_ctns_m_url; //window.open(\"about:blank\").location.href = evnt_ctns_m_url; //window.open(evnt_ctns_m_url, 'popup', 'scrollbars=yes,location=0,status=0'); }else{ location.href = '/hki/hki7000/v05.do?cs_ecis_id='+id+'&strEnd=S'; } } function paging(page) { var f = document.f; f.method = \"GET\"; f.currentPage.value = page; f.submit(); } function doSearch(){ var f = document.f; if(!searchConfirm()) { $(\"#searchName\").focus(); return; } f.action = \"/hki/hki7000/r05.do\"; f.submit(); } </script> </head> <body> <!-- [S]Skip Menu --",
+     "n'); } else { $(this).parent().removeClass('on'); } }); }); //]]> </script> <div id=\"contents\"> <form name=\"f\" action=\"#\" method=\"post\"> <input type=\"hidden\" name=\"currentPage\" value=\"\" /> <input type=\"hidden\" name=\"cs_ecis_id\" id=\"cs_ecis_id\" /> </form> <!-- 여기서부터 내용 start --> <div class=\"dep01Sec\"> <h1 class=\"tit depth01\"><img src=\"https://img.securities.miraeasset.com/notice/h2_1102_01.gif\" alt=\"진행중인 이벤트\" /></h1> </div> <ul class=\"split col3 eventLstWrap\"> <li class=\"colSec\"> <dl class=\"eventCont\"> <dt> <a href=\"javascript:doView('202609012','1",
+     "else { $(this).parent().removeClass('on'); } }); }); //]]> </script> <div id=\"contents\"> <form name=\"f\" action=\"#\" method=\"post\"> <input type=\"hidden\" name=\"currentPage\" value=\"\" /> <input type=\"hidden\" name=\"cs_ecis_id\" id=\"cs_ecis_id\" /> </form> <!-- 여기서부터 내용 start --> <div class=\"dep01Sec\"> <h1 class=\"tit depth01\"><img src=\"https://img.securities.miraeasset.com/notice/h2_1102_01.gif\" alt=\"진행중인 이벤트\" /></h1> </div> <ul class=\"split col3 eventLstWrap\"> <li class=\"colSec\"> <dl class=\"eventCont\"> <dt> <a href=\"javascript:doView('202609012','1','')\">"
+    ],
+    "r05.do": [
+     "\", \"/hkp/hkp2001/r01.do\", \"/hkd/hkd1005/r01.do\", \"/hks/hks4116/r01.do\", \"/hks/hks4023/n01_1.do\", \"/hks/hks4022/n02_2.do\", \"/hks/hks4048/r05.do\", \"/hks/hks4113/n02.do\", \"/hks/hks4036/r01.do\", \"/hks/hks4054/v03.do\", \"/hks/hks4033/n01.do\", \"/hks/hks4033/n02.do\", \"/hks/hks4318/n01.do\", \"/hks/hks4323/n05.do\", \"/hks/hks4041/n01.do\", \"/hks/hks4125/n11.do\",",
+     "\"/hks/hks4318/n11.do\", \"/hku/hku4196/n01.do\", \"/hku/hku3014/u01.do\", \"/hku/hku4010/r01.do\", \"/hku/hku4013/r02.do\", \"/hki/hki7000/r05.do\", \"/hki/hki3096/r01.do\" ]; var urlArrayMobile = [ \"/mw/mku/mku3014/u01.do\", \"/mw/mku/mku2001/n01.do\", \"/mw/mku/mku2001/n01.do\", \"/mw/mki/mki3001/r01.do\", \"/mw/mkd/mkd1001/r01.do\",",
+     ".f; f.method = \"GET\"; f.currentPage.value = page; f.submit(); } function doSearch(){ var f = document.f; if(!searchConfirm()) { $(\"#searchName\").focus(); return; } f.action = \"/hki/hki7000/r05.do\"; f.submit(); } </script> </head> <body> <!-- [S]Skip Menu --> <div title=\"스킵메뉴\" class=\"skipMenu\"> <a href=\"#contents\">본문 내용 바로가기</a> <a href=\"#gnb\">주 메뉴 바로가기</a> </div> <div id=\"wrap\"> <div id=\"dvContainer\"> <script type=\"text/javascript\" src=\"/srh/autoComplete/dqAutoCompleteCommon.js\"></script> <script type=\"text/javascript\" src=\"/advancement/html/com/js/cm.GNB.ui.js\">"
+    ]
+   },
+   "raw_head": null,
    "ua": "mobile"
   },
   {
-   "name": "pc_list_hki",
+   "name": "pc_list_r01",
    "url": "https://securities.miraeasset.com/hki/hki7000/r01.do",
+   "method": "GET",
    "status": 200,
    "final_url": "https://securities.miraeasset.com/hki/hki7000/r01.do",
    "redirects": [],
@@ -269,11 +490,19 @@
     "/imf/200/imf601.do"
    ],
    "period_hits": [],
+   "snippets": {
+    "r05.do": [
+     "\", \"/hkp/hkp2001/r01.do\", \"/hkd/hkd1005/r01.do\", \"/hks/hks4116/r01.do\", \"/hks/hks4023/n01_1.do\", \"/hks/hks4022/n02_2.do\", \"/hks/hks4048/r05.do\", \"/hks/hks4113/n02.do\", \"/hks/hks4036/r01.do\", \"/hks/hks4054/v03.do\", \"/hks/hks4033/n01.do\", \"/hks/hks4033/n02.do\", \"/hks/hks4318/n01.do\", \"/hks/hks4323/n05.do\", \"/hks/hks4041/n01.do\", \"/hks/hks4125/n11.do\",",
+     "\"/hks/hks4318/n11.do\", \"/hku/hku4196/n01.do\", \"/hku/hku3014/u01.do\", \"/hku/hku4010/r01.do\", \"/hku/hku4013/r02.do\", \"/hki/hki7000/r05.do\", \"/hki/hki3096/r01.do\" ]; var urlArrayMobile = [ \"/mw/mku/mku3014/u01.do\", \"/mw/mku/mku2001/n01.do\", \"/mw/mku/mku2001/n01.do\", \"/mw/mki/mki3001/r01.do\", \"/mw/mkd/mkd1001/r01.do\","
+    ]
+   },
+   "raw_head": null,
    "ua": "desktop"
   },
   {
-   "name": "pc_list_hki",
+   "name": "pc_list_r01",
    "url": "https://securities.miraeasset.com/hki/hki7000/r01.do",
+   "method": "GET",
    "status": 200,
    "final_url": "https://securities.miraeasset.com/hki/hki7000/r01.do",
    "redirects": [],
@@ -348,165 +577,19 @@
     "/imf/200/imf601.do"
    ],
    "period_hits": [],
-   "ua": "mobile"
-  },
-  {
-   "name": "pc_list_hki3",
-   "url": "https://securities.miraeasset.com/hki/hki3028/r01.do",
-   "status": 200,
-   "final_url": "https://securities.miraeasset.com/hki/hki3028/r01.do",
-   "redirects": [],
-   "len": 154079,
-   "title": "증권용어사전 | 미래에셋대우",
-   "text_head": "증권용어사전 | 미래에셋대우 검색어 가 나 다 라 마 바 사 아 자 차 카 타 파 하 찾으시는 단어를 검색창에 입력하시거나 목록을 선택하시면 용어 의미를 찾으실 수 있습니다. CD(certificates of deposit) DR(Depository Receipts) IMC (IMC (Integrated Marketing Communications )) M 0 (Merger 0) MMF(Money Market Fund) (Money Market Fund ) NYSE (New York Stick Exchange) OBV지표(On Ba",
-   "n_detailView": 0,
-   "n_cs_ecis_id": 0,
-   "event_links": [],
-   "do_urls_in_js": [
-    "/bbs/board/message/list.do?categoryId=1296",
-    "/hkd/hkd1001/r01.do",
-    "/hkd/hkd1005/r01.do",
-    "/hki/hki3028/r01.do#seq_",
-    "/hki/hki3096/r01.do",
-    "/hki/hki7000/r05.do",
-    "/hkp/hkp1002/r01.do",
-    "/hkp/hkp1003/r01.do",
-    "/hkp/hkp1004/n01.do",
-    "/hkp/hkp1004/n05.do",
-    "/hkp/hkp1004/n06.do",
-    "/hkp/hkp2001/r01.do",
-    "/hkp/hkp2002/r01.do",
-    "/hkp/hkp2007/n01.do",
-    "/hkp/hkp2009/c01.do",
-    "/hks/hks4000/n02_1.do",
-    "/hks/hks4000/n06.do",
-    "/hks/hks4022/n02_2.do",
-    "/hks/hks4023/n01_1.do",
-    "/hks/hks4033/n01.do",
-    "/hks/hks4033/n02.do",
-    "/hks/hks4036/r01.do",
-    "/hks/hks4041/n01.do",
-    "/hks/hks4048/r05.do",
-    "/hks/hks4054/v03.do",
-    "/hks/hks4113/n02.do",
-    "/hks/hks4116/r01.do",
-    "/hks/hks4125/n11.do",
-    "/hks/hks4318/n01.do",
-    "/hks/hks4318/n11.do",
-    "/hks/hks4323/n05.do",
-    "/hku/hku2001/c07.do",
-    "/hku/hku2001/t01.do",
-    "/hku/hku3005/u01.do",
-    "/hku/hku3014/u01.do",
-    "/hku/hku4010/r01.do",
-    "/hku/hku4013/r02.do",
-    "/hku/hku4196/n01.do",
-    "/imf/100/imf101.do",
-    "/imf/200/imf101.do",
-    "/imf/400/imf201.do",
-    "/imf/500/imf101.do",
-    "/imf/600/imf401.do",
-    "/imf/700/imf101.do",
-    "/mw/mkd/mkd1001/r01.do",
-    "/mw/mkd/mkd1001/r03.do",
-    "/mw/mkd/mkd1001/r04.do",
-    "/mw/mki/mki3001/r01.do",
-    "/mw/mki/mki3096/r01.do",
-    "/mw/mki/mki7000/r01.do",
-    "/mw/mkp/mkp1003/r01.do",
-    "/mw/mkp/mkp1004/n01.do",
-    "/mw/mkp/mkp1004/n02.do",
-    "/mw/mkp/mkp1004/n03.do",
-    "/mw/mkp/mkp2002/r01.do",
-    "/mw/mkp/mkp2007/n01.do",
-    "/mw/mkp/mkp2009/c02.do",
-    "/mw/mkr/mkr1001/r02.do",
-    "/mw/mks/mks4000/r01.do",
-    "/mw/mks/mks4022/r01.do"
-   ],
-   "period_hits": [],
-   "ua": "desktop"
-  },
-  {
-   "name": "pc_list_hki3",
-   "url": "https://securities.miraeasset.com/hki/hki3028/r01.do",
-   "status": 200,
-   "final_url": "https://securities.miraeasset.com/hki/hki3028/r01.do",
-   "redirects": [],
-   "len": 154079,
-   "title": "증권용어사전 | 미래에셋대우",
-   "text_head": "증권용어사전 | 미래에셋대우 검색어 가 나 다 라 마 바 사 아 자 차 카 타 파 하 찾으시는 단어를 검색창에 입력하시거나 목록을 선택하시면 용어 의미를 찾으실 수 있습니다. CD(certificates of deposit) DR(Depository Receipts) IMC (IMC (Integrated Marketing Communications )) M 0 (Merger 0) MMF(Money Market Fund) (Money Market Fund ) NYSE (New York Stick Exchange) OBV지표(On Ba",
-   "n_detailView": 0,
-   "n_cs_ecis_id": 0,
-   "event_links": [],
-   "do_urls_in_js": [
-    "/bbs/board/message/list.do?categoryId=1296",
-    "/hkd/hkd1001/r01.do",
-    "/hkd/hkd1005/r01.do",
-    "/hki/hki3028/r01.do#seq_",
-    "/hki/hki3096/r01.do",
-    "/hki/hki7000/r05.do",
-    "/hkp/hkp1002/r01.do",
-    "/hkp/hkp1003/r01.do",
-    "/hkp/hkp1004/n01.do",
-    "/hkp/hkp1004/n05.do",
-    "/hkp/hkp1004/n06.do",
-    "/hkp/hkp2001/r01.do",
-    "/hkp/hkp2002/r01.do",
-    "/hkp/hkp2007/n01.do",
-    "/hkp/hkp2009/c01.do",
-    "/hks/hks4000/n02_1.do",
-    "/hks/hks4000/n06.do",
-    "/hks/hks4022/n02_2.do",
-    "/hks/hks4023/n01_1.do",
-    "/hks/hks4033/n01.do",
-    "/hks/hks4033/n02.do",
-    "/hks/hks4036/r01.do",
-    "/hks/hks4041/n01.do",
-    "/hks/hks4048/r05.do",
-    "/hks/hks4054/v03.do",
-    "/hks/hks4113/n02.do",
-    "/hks/hks4116/r01.do",
-    "/hks/hks4125/n11.do",
-    "/hks/hks4318/n01.do",
-    "/hks/hks4318/n11.do",
-    "/hks/hks4323/n05.do",
-    "/hku/hku2001/c07.do",
-    "/hku/hku2001/t01.do",
-    "/hku/hku3005/u01.do",
-    "/hku/hku3014/u01.do",
-    "/hku/hku4010/r01.do",
-    "/hku/hku4013/r02.do",
-    "/hku/hku4196/n01.do",
-    "/imf/100/imf101.do",
-    "/imf/200/imf101.do",
-    "/imf/400/imf201.do",
-    "/imf/500/imf101.do",
-    "/imf/600/imf401.do",
-    "/imf/700/imf101.do",
-    "/mw/mkd/mkd1001/r01.do",
-    "/mw/mkd/mkd1001/r03.do",
-    "/mw/mkd/mkd1001/r04.do",
-    "/mw/mki/mki3001/r01.do",
-    "/mw/mki/mki3096/r01.do",
-    "/mw/mki/mki7000/r01.do",
-    "/mw/mkp/mkp1003/r01.do",
-    "/mw/mkp/mkp1004/n01.do",
-    "/mw/mkp/mkp1004/n02.do",
-    "/mw/mkp/mkp1004/n03.do",
-    "/mw/mkp/mkp2002/r01.do",
-    "/mw/mkp/mkp2007/n01.do",
-    "/mw/mkp/mkp2009/c02.do",
-    "/mw/mkr/mkr1001/r02.do",
-    "/mw/mks/mks4000/r01.do",
-    "/mw/mks/mks4022/r01.do"
-   ],
-   "period_hits": [],
+   "snippets": {
+    "r05.do": [
+     "\", \"/hkp/hkp2001/r01.do\", \"/hkd/hkd1005/r01.do\", \"/hks/hks4116/r01.do\", \"/hks/hks4023/n01_1.do\", \"/hks/hks4022/n02_2.do\", \"/hks/hks4048/r05.do\", \"/hks/hks4113/n02.do\", \"/hks/hks4036/r01.do\", \"/hks/hks4054/v03.do\", \"/hks/hks4033/n01.do\", \"/hks/hks4033/n02.do\", \"/hks/hks4318/n01.do\", \"/hks/hks4323/n05.do\", \"/hks/hks4041/n01.do\", \"/hks/hks4125/n11.do\",",
+     "\"/hks/hks4318/n11.do\", \"/hku/hku4196/n01.do\", \"/hku/hku3014/u01.do\", \"/hku/hku4010/r01.do\", \"/hku/hku4013/r02.do\", \"/hki/hki7000/r05.do\", \"/hki/hki3096/r01.do\" ]; var urlArrayMobile = [ \"/mw/mku/mku3014/u01.do\", \"/mw/mku/mku2001/n01.do\", \"/mw/mku/mku2001/n01.do\", \"/mw/mki/mki3001/r01.do\", \"/mw/mkd/mkd1001/r01.do\","
+    ]
+   },
+   "raw_head": null,
    "ua": "mobile"
   },
   {
    "name": "pc_detail_hki",
    "url": "https://securities.miraeasset.com/hki/hki7000/v01.do?cs_ecis_id=202609012",
+   "method": "GET",
    "status": 200,
    "final_url": "https://securities.miraeasset.com/hki/hki7000/v01.do?cs_ecis_id=202609012",
    "redirects": [],
@@ -582,11 +665,19 @@
     "/imf/200/imf101.do"
    ],
    "period_hits": [],
+   "snippets": {
+    "r05.do": [
+     "\", \"/hkp/hkp2001/r01.do\", \"/hkd/hkd1005/r01.do\", \"/hks/hks4116/r01.do\", \"/hks/hks4023/n01_1.do\", \"/hks/hks4022/n02_2.do\", \"/hks/hks4048/r05.do\", \"/hks/hks4113/n02.do\", \"/hks/hks4036/r01.do\", \"/hks/hks4054/v03.do\", \"/hks/hks4033/n01.do\", \"/hks/hks4033/n02.do\", \"/hks/hks4318/n01.do\", \"/hks/hks4323/n05.do\", \"/hks/hks4041/n01.do\", \"/hks/hks4125/n11.do\",",
+     "\"/hks/hks4318/n11.do\", \"/hku/hku4196/n01.do\", \"/hku/hku3014/u01.do\", \"/hku/hku4010/r01.do\", \"/hku/hku4013/r02.do\", \"/hki/hki7000/r05.do\", \"/hki/hki3096/r01.do\" ]; var urlArrayMobile = [ \"/mw/mku/mku3014/u01.do\", \"/mw/mku/mku2001/n01.do\", \"/mw/mku/mku2001/n01.do\", \"/mw/mki/mki3001/r01.do\", \"/mw/mkd/mkd1001/r01.do\","
+    ]
+   },
+   "raw_head": null,
    "ua": "desktop"
   },
   {
    "name": "pc_detail_hki",
    "url": "https://securities.miraeasset.com/hki/hki7000/v01.do?cs_ecis_id=202609012",
+   "method": "GET",
    "status": 200,
    "final_url": "https://securities.miraeasset.com/hki/hki7000/v01.do?cs_ecis_id=202609012",
    "redirects": [],
@@ -662,11 +753,19 @@
     "/imf/200/imf101.do"
    ],
    "period_hits": [],
+   "snippets": {
+    "r05.do": [
+     "\", \"/hkp/hkp2001/r01.do\", \"/hkd/hkd1005/r01.do\", \"/hks/hks4116/r01.do\", \"/hks/hks4023/n01_1.do\", \"/hks/hks4022/n02_2.do\", \"/hks/hks4048/r05.do\", \"/hks/hks4113/n02.do\", \"/hks/hks4036/r01.do\", \"/hks/hks4054/v03.do\", \"/hks/hks4033/n01.do\", \"/hks/hks4033/n02.do\", \"/hks/hks4318/n01.do\", \"/hks/hks4323/n05.do\", \"/hks/hks4041/n01.do\", \"/hks/hks4125/n11.do\",",
+     "\"/hks/hks4318/n11.do\", \"/hku/hku4196/n01.do\", \"/hku/hku3014/u01.do\", \"/hku/hku4010/r01.do\", \"/hku/hku4013/r02.do\", \"/hki/hki7000/r05.do\", \"/hki/hki3096/r01.do\" ]; var urlArrayMobile = [ \"/mw/mku/mku3014/u01.do\", \"/mw/mku/mku2001/n01.do\", \"/mw/mku/mku2001/n01.do\", \"/mw/mki/mki3001/r01.do\", \"/mw/mkd/mkd1001/r01.do\","
+    ]
+   },
+   "raw_head": null,
    "ua": "mobile"
   },
   {
    "name": "mw_home",
    "url": "https://securities.miraeasset.com/mw/main.do",
+   "method": "GET",
    "status": 200,
    "final_url": "https://securities.miraeasset.com/mw/main.do",
    "redirects": [],
@@ -699,11 +798,33 @@
     "/mw/search.do?query="
    ],
    "period_hits": [],
+   "snippets": {
+    "detailView": [
+     "}); } function getEventListComplete(data) { var dataObj = data.list; var objLen = dataObj.length; var html = \"\"; if(objLen > 0){ for(var i = 0; i < objLen; i++){ obj = dataObj[i]; html += '<li onClick=\"detailView(\\''+obj.cs_ecis_id+'\\',\\''+obj.evnt_sect+'\\',\\''+obj.evnt_ctns_m_url+'\\')\">'; html += ' <div class=\"benefit_box delay_' + (i+1) + 's\">'; html += ' <span class=\"img\"><img src=\"/public/mw/event/'+obj.cs_ecis_id+'/'+obj.list_m_img+'\" alt=\"'+obj.s_title+'\"></span>'; html += ' <a href=\"javascript:detailView(\\''+obj.cs_ecis_id+'\\');\" class=\"cont\" title=\"상세보기\">'; html += ' <strong class=",
+     "tns_m_url+'\\')\">'; html += ' <div class=\"benefit_box delay_' + (i+1) + 's\">'; html += ' <span class=\"img\"><img src=\"/public/mw/event/'+obj.cs_ecis_id+'/'+obj.list_m_img+'\" alt=\"'+obj.s_title+'\"></span>'; html += ' <a href=\"javascript:detailView(\\''+obj.cs_ecis_id+'\\');\" class=\"cont\" title=\"상세보기\">'; html += ' <strong class=\"tit\">'+obj.s_title+'</strong>'; html += ' <span class=\"txt\">'+dateFormat(obj.pub_sdt, \"yyyy.MM.dd\")+' ~ '+dateFormat(obj.pub_edt, \"yyyy.MM.dd\")+'</span>'; html += ' </a>'; html += ' </div>'; html += '</li> '; } $(\"#eventList\").html(html); } viewEvent = true; mainAddBen",
+     "y.MM.dd\")+'</span>'; html += ' </a>'; html += ' </div>'; html += '</li> '; } $(\"#eventList\").html(html); } viewEvent = true; mainAddBenefit(); $(\".main_add_benefit > .btn_view\").click(); } function detailView(id,sect,evnt_ctns_m_url){ if(sect == \"2\"){ window.open(evnt_ctns_m_url, 'popup', 'scrollbars=yes,location=0,status=0'); }else{ location.href = '/mw/mki/mki7000/v01.do?cs_ecis_id='+id+'&mod=S'; } } function fnEventMore() { getEventList(); $(\".main_add_benefit > .btn_view\").click(); } </script> <style> /* footer : 링크 추가로 간격 수정 */ .main .footerLinks a { margin:0 0.5em;} </s"
+    ],
+    "a01.json": [
+     "bbsHtml); }); function getEventList() { if (viewEvent) return; var param = { currentPage : 1, searchName:\"\", strEnd : \"S\", pub_chnl:\"M\", searchColumn:\"all\", maxPage:\"20\" }; callAjaxObj({ url : \"/mw/mki/mki7000/a01.json\", data : param, success : getEventListComplete }); } function getEventListComplete(data) { var dataObj = data.list; var objLen = dataObj.length; var html = \"\"; if(objLen > 0){ for(var i = 0; i < objLen; i++){ obj = dataObj[i]; html += '<li onClick=\"detailView(\\''+obj.cs_ecis_id+'\\',\\''+obj.evnt_sect+'\\',\\''+obj.evnt_ctns_m_url+'\\')\">'; ht"
+    ],
+    "getEventList": [
+     "roundXL(Number(\"\"), 2); //오늘투자수익률 ivst_ern_r = (\"-999999.00\" == ivst_ern_r) ? \"※\" : numberFormatWN(ivst_ern_r, \"###,###.00\")+\"%\"; $(\"#ivst_ern_r\").html(ivst_ern_r); } else { $(\"#myStatus1\").show(); $(\"#myStatus2\").hide(); } //getEventList(); // main banner if (_mwMainBannerList != null && _mwMainBannerList != undefined && typeof(_mwMainBannerList) != 'undefined') { if (_mwMainBannerList.length > 0) { var mainBanner = \"\"; var strLink = \"\"; var strTarget = \"\"; if (_mwMainBannerList[0].link_type == 'E') { strLink = \"#\" } else { strLink = \"\"; if (_mwMainBannerList[0].link_type == 'T') strLink += \"t",
+     "f='/bbs/board/message/view.do?categoryId=1490&messageId=\" + _mw_main_BBS[0].message_id + \"&vf_headerTitle=공지사항' class='txt'>\"; bbsHtml += _mw_main_BBS[0].title + \"</a>\"; } } bbsHtml += \"</p>\"; $(\"#bbsInfo\").html(bbsHtml); }); function getEventList() { if (viewEvent) return; var param = { currentPage : 1, searchName:\"\", strEnd : \"S\", pub_chnl:\"M\", searchColumn:\"all\", maxPage:\"20\" }; callAjaxObj({ url : \"/mw/mki/mki7000/a01.json\", data : param, success : getEventListComplete }); } function getEventListComplete(data) { var dataObj = data.list; var objLen = dataObj.length; var html",
+     "if (viewEvent) return; var param = { currentPage : 1, searchName:\"\", strEnd : \"S\", pub_chnl:\"M\", searchColumn:\"all\", maxPage:\"20\" }; callAjaxObj({ url : \"/mw/mki/mki7000/a01.json\", data : param, success : getEventListComplete }); } function getEventListComplete(data) { var dataObj = data.list; var objLen = dataObj.length; var html = \"\"; if(objLen > 0){ for(var i = 0; i < objLen; i++){ obj = dataObj[i]; html += '<li onClick=\"detailView(\\''+obj.cs_ecis_id+'\\',\\''+obj.evnt_sect+'\\',\\''+obj.evnt_ctns_m_url+'\\')\">'; html += ' <div class=\"benefit_box delay_' + (i+1) + 's\""
+    ],
+    "cs_ecis_id": [
+     "function getEventListComplete(data) { var dataObj = data.list; var objLen = dataObj.length; var html = \"\"; if(objLen > 0){ for(var i = 0; i < objLen; i++){ obj = dataObj[i]; html += '<li onClick=\"detailView(\\''+obj.cs_ecis_id+'\\',\\''+obj.evnt_sect+'\\',\\''+obj.evnt_ctns_m_url+'\\')\">'; html += ' <div class=\"benefit_box delay_' + (i+1) + 's\">'; html += ' <span class=\"img\"><img src=\"/public/mw/event/'+obj.cs_ecis_id+'/'+obj.list_m_img+'\" alt=\"'+obj.s_title+'\"></span>'; html += ' <a href=\"javascript:detailView(\\''+obj.cs_ecis_id+'\\');\" class=\"cont\" title=\"상세보기\">'; html += ' <strong class=\"tit\">'+obj.s_title",
+     "html += '<li onClick=\"detailView(\\''+obj.cs_ecis_id+'\\',\\''+obj.evnt_sect+'\\',\\''+obj.evnt_ctns_m_url+'\\')\">'; html += ' <div class=\"benefit_box delay_' + (i+1) + 's\">'; html += ' <span class=\"img\"><img src=\"/public/mw/event/'+obj.cs_ecis_id+'/'+obj.list_m_img+'\" alt=\"'+obj.s_title+'\"></span>'; html += ' <a href=\"javascript:detailView(\\''+obj.cs_ecis_id+'\\');\" class=\"cont\" title=\"상세보기\">'; html += ' <strong class=\"tit\">'+obj.s_title+'</strong>'; html += ' <span class=\"txt\">'+dateFormat(obj.pub_sdt, \"yyyy.MM.dd\")+' ~ '+dateFormat(obj.pub_edt, \"yyyy.MM.dd\")+'</span>'; html += ' </a>'; html += ' </div>';",
+     "html += ' <div class=\"benefit_box delay_' + (i+1) + 's\">'; html += ' <span class=\"img\"><img src=\"/public/mw/event/'+obj.cs_ecis_id+'/'+obj.list_m_img+'\" alt=\"'+obj.s_title+'\"></span>'; html += ' <a href=\"javascript:detailView(\\''+obj.cs_ecis_id+'\\');\" class=\"cont\" title=\"상세보기\">'; html += ' <strong class=\"tit\">'+obj.s_title+'</strong>'; html += ' <span class=\"txt\">'+dateFormat(obj.pub_sdt, \"yyyy.MM.dd\")+' ~ '+dateFormat(obj.pub_edt, \"yyyy.MM.dd\")+'</span>'; html += ' </a>'; html += ' </div>'; html += '</li> '; } $(\"#eventList\").html(html); } viewEvent = true; mainAddBenefit(); $(\".main"
+    ]
+   },
+   "raw_head": null,
    "ua": "desktop"
   },
   {
    "name": "mw_home",
    "url": "https://securities.miraeasset.com/mw/main.do",
+   "method": "GET",
    "status": 200,
    "final_url": "https://securities.miraeasset.com/mw/main.do",
    "redirects": [],
@@ -736,35 +857,139 @@
     "/mw/search.do?query="
    ],
    "period_hits": [],
+   "snippets": {
+    "detailView": [
+     "}); } function getEventListComplete(data) { var dataObj = data.list; var objLen = dataObj.length; var html = \"\"; if(objLen > 0){ for(var i = 0; i < objLen; i++){ obj = dataObj[i]; html += '<li onClick=\"detailView(\\''+obj.cs_ecis_id+'\\',\\''+obj.evnt_sect+'\\',\\''+obj.evnt_ctns_m_url+'\\')\">'; html += ' <div class=\"benefit_box delay_' + (i+1) + 's\">'; html += ' <span class=\"img\"><img src=\"/public/mw/event/'+obj.cs_ecis_id+'/'+obj.list_m_img+'\" alt=\"'+obj.s_title+'\"></span>'; html += ' <a href=\"javascript:detailView(\\''+obj.cs_ecis_id+'\\');\" class=\"cont\" title=\"상세보기\">'; html += ' <strong class=",
+     "tns_m_url+'\\')\">'; html += ' <div class=\"benefit_box delay_' + (i+1) + 's\">'; html += ' <span class=\"img\"><img src=\"/public/mw/event/'+obj.cs_ecis_id+'/'+obj.list_m_img+'\" alt=\"'+obj.s_title+'\"></span>'; html += ' <a href=\"javascript:detailView(\\''+obj.cs_ecis_id+'\\');\" class=\"cont\" title=\"상세보기\">'; html += ' <strong class=\"tit\">'+obj.s_title+'</strong>'; html += ' <span class=\"txt\">'+dateFormat(obj.pub_sdt, \"yyyy.MM.dd\")+' ~ '+dateFormat(obj.pub_edt, \"yyyy.MM.dd\")+'</span>'; html += ' </a>'; html += ' </div>'; html += '</li> '; } $(\"#eventList\").html(html); } viewEvent = true; mainAddBen",
+     "y.MM.dd\")+'</span>'; html += ' </a>'; html += ' </div>'; html += '</li> '; } $(\"#eventList\").html(html); } viewEvent = true; mainAddBenefit(); $(\".main_add_benefit > .btn_view\").click(); } function detailView(id,sect,evnt_ctns_m_url){ if(sect == \"2\"){ window.open(evnt_ctns_m_url, 'popup', 'scrollbars=yes,location=0,status=0'); }else{ location.href = '/mw/mki/mki7000/v01.do?cs_ecis_id='+id+'&mod=S'; } } function fnEventMore() { getEventList(); $(\".main_add_benefit > .btn_view\").click(); } </script> <style> /* footer : 링크 추가로 간격 수정 */ .main .footerLinks a { margin:0 0.5em;} </s"
+    ],
+    "a01.json": [
+     "bbsHtml); }); function getEventList() { if (viewEvent) return; var param = { currentPage : 1, searchName:\"\", strEnd : \"S\", pub_chnl:\"M\", searchColumn:\"all\", maxPage:\"20\" }; callAjaxObj({ url : \"/mw/mki/mki7000/a01.json\", data : param, success : getEventListComplete }); } function getEventListComplete(data) { var dataObj = data.list; var objLen = dataObj.length; var html = \"\"; if(objLen > 0){ for(var i = 0; i < objLen; i++){ obj = dataObj[i]; html += '<li onClick=\"detailView(\\''+obj.cs_ecis_id+'\\',\\''+obj.evnt_sect+'\\',\\''+obj.evnt_ctns_m_url+'\\')\">'; ht"
+    ],
+    "getEventList": [
+     "roundXL(Number(\"\"), 2); //오늘투자수익률 ivst_ern_r = (\"-999999.00\" == ivst_ern_r) ? \"※\" : numberFormatWN(ivst_ern_r, \"###,###.00\")+\"%\"; $(\"#ivst_ern_r\").html(ivst_ern_r); } else { $(\"#myStatus1\").show(); $(\"#myStatus2\").hide(); } //getEventList(); // main banner if (_mwMainBannerList != null && _mwMainBannerList != undefined && typeof(_mwMainBannerList) != 'undefined') { if (_mwMainBannerList.length > 0) { var mainBanner = \"\"; var strLink = \"\"; var strTarget = \"\"; if (_mwMainBannerList[0].link_type == 'E') { strLink = \"#\" } else { strLink = \"\"; if (_mwMainBannerList[0].link_type == 'T') strLink += \"t",
+     "f='/bbs/board/message/view.do?categoryId=1490&messageId=\" + _mw_main_BBS[0].message_id + \"&vf_headerTitle=공지사항' class='txt'>\"; bbsHtml += _mw_main_BBS[0].title + \"</a>\"; } } bbsHtml += \"</p>\"; $(\"#bbsInfo\").html(bbsHtml); }); function getEventList() { if (viewEvent) return; var param = { currentPage : 1, searchName:\"\", strEnd : \"S\", pub_chnl:\"M\", searchColumn:\"all\", maxPage:\"20\" }; callAjaxObj({ url : \"/mw/mki/mki7000/a01.json\", data : param, success : getEventListComplete }); } function getEventListComplete(data) { var dataObj = data.list; var objLen = dataObj.length; var html",
+     "if (viewEvent) return; var param = { currentPage : 1, searchName:\"\", strEnd : \"S\", pub_chnl:\"M\", searchColumn:\"all\", maxPage:\"20\" }; callAjaxObj({ url : \"/mw/mki/mki7000/a01.json\", data : param, success : getEventListComplete }); } function getEventListComplete(data) { var dataObj = data.list; var objLen = dataObj.length; var html = \"\"; if(objLen > 0){ for(var i = 0; i < objLen; i++){ obj = dataObj[i]; html += '<li onClick=\"detailView(\\''+obj.cs_ecis_id+'\\',\\''+obj.evnt_sect+'\\',\\''+obj.evnt_ctns_m_url+'\\')\">'; html += ' <div class=\"benefit_box delay_' + (i+1) + 's\""
+    ],
+    "cs_ecis_id": [
+     "function getEventListComplete(data) { var dataObj = data.list; var objLen = dataObj.length; var html = \"\"; if(objLen > 0){ for(var i = 0; i < objLen; i++){ obj = dataObj[i]; html += '<li onClick=\"detailView(\\''+obj.cs_ecis_id+'\\',\\''+obj.evnt_sect+'\\',\\''+obj.evnt_ctns_m_url+'\\')\">'; html += ' <div class=\"benefit_box delay_' + (i+1) + 's\">'; html += ' <span class=\"img\"><img src=\"/public/mw/event/'+obj.cs_ecis_id+'/'+obj.list_m_img+'\" alt=\"'+obj.s_title+'\"></span>'; html += ' <a href=\"javascript:detailView(\\''+obj.cs_ecis_id+'\\');\" class=\"cont\" title=\"상세보기\">'; html += ' <strong class=\"tit\">'+obj.s_title",
+     "html += '<li onClick=\"detailView(\\''+obj.cs_ecis_id+'\\',\\''+obj.evnt_sect+'\\',\\''+obj.evnt_ctns_m_url+'\\')\">'; html += ' <div class=\"benefit_box delay_' + (i+1) + 's\">'; html += ' <span class=\"img\"><img src=\"/public/mw/event/'+obj.cs_ecis_id+'/'+obj.list_m_img+'\" alt=\"'+obj.s_title+'\"></span>'; html += ' <a href=\"javascript:detailView(\\''+obj.cs_ecis_id+'\\');\" class=\"cont\" title=\"상세보기\">'; html += ' <strong class=\"tit\">'+obj.s_title+'</strong>'; html += ' <span class=\"txt\">'+dateFormat(obj.pub_sdt, \"yyyy.MM.dd\")+' ~ '+dateFormat(obj.pub_edt, \"yyyy.MM.dd\")+'</span>'; html += ' </a>'; html += ' </div>';",
+     "html += ' <div class=\"benefit_box delay_' + (i+1) + 's\">'; html += ' <span class=\"img\"><img src=\"/public/mw/event/'+obj.cs_ecis_id+'/'+obj.list_m_img+'\" alt=\"'+obj.s_title+'\"></span>'; html += ' <a href=\"javascript:detailView(\\''+obj.cs_ecis_id+'\\');\" class=\"cont\" title=\"상세보기\">'; html += ' <strong class=\"tit\">'+obj.s_title+'</strong>'; html += ' <span class=\"txt\">'+dateFormat(obj.pub_sdt, \"yyyy.MM.dd\")+' ~ '+dateFormat(obj.pub_edt, \"yyyy.MM.dd\")+'</span>'; html += ' </a>'; html += ' </div>'; html += '</li> '; } $(\"#eventList\").html(html); } viewEvent = true; mainAddBenefit(); $(\".main"
+    ]
+   },
+   "raw_head": null,
    "ua": "mobile"
   },
   {
-   "name": "list_img_dir",
-   "url": "https://securities.miraeasset.com/public/mw/event/202609012/",
+   "name": "mw_a01_json",
+   "url": "https://securities.miraeasset.com/mw/mki/mki7000/a01.json",
+   "method": "GET",
    "status": 200,
-   "final_url": "https://securities.miraeasset.com/error_404.html",
-   "redirects": [
-    "/error_404.html"
-   ],
-   "len": 1,
+   "final_url": "https://securities.miraeasset.com/mw/mki/mki7000/a01.json",
+   "redirects": [],
+   "len": 85695,
    "title": null,
-   "text_head": "",
+   "text_head": "{\"list\":[{\"end_day\":\"20261231\",\"list_m_img\":\"1790672130560.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"direct_chk_yn\":null,\"pub_chnl\":\"PM\",\"evnt_ctns_m_url\":null,\"ctns_expl\":\" \",\"s_title\":\"「투자하는 연금」 2026년 개인연금 입금 이벤트\",\"strt_day\":\"20261001\",\"evnt_sect\":\"1\",\"cs_chk_yn\":\"Y\",\"cs_ecis_id\":\"202609012\",\"che",
    "n_detailView": 0,
-   "n_cs_ecis_id": 0,
+   "n_cs_ecis_id": 20,
    "event_links": [],
    "do_urls_in_js": [],
-   "period_hits": [],
+   "period_hits": [
+    "2026.06.30~2026.12.31",
+    "2026.05.22~2026.12.31",
+    "2026.06.29~2026.12.31",
+    "2026.09.28~2026.11.30",
+    "2026.09.03~2026.11.30",
+    "2026.09.03~2026.11.30",
+    "2026.07.01~2027.06.30",
+    "2026.07.01~2027.06.30"
+   ],
+   "snippets": {
+    "cs_ecis_id": [
+     "0261231\",\"list_m_img\":\"1790672130560.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"direct_chk_yn\":null,\"pub_chnl\":\"PM\",\"evnt_ctns_m_url\":null,\"ctns_expl\":\"<p><br></p>\",\"s_title\":\"「투자하는 연금」 2026년 개인연금 입금 이벤트\",\"strt_day\":\"20261001\",\"evnt_sect\":\"1\",\"cs_chk_yn\":\"Y\",\"cs_ecis_id\":\"202609012\",\"checked\":\"3\",\"obj_yn\":null,\"sns_m_img\":\"1790673666979.jpg\",\"inq_cnt\":3666,\"r_cs_ecis_id\":null,\"pub_yn\":\"PMA\",\"pub_sect\":\"O\",\"apply_levl\":\"2\",\"pub_sdt\":\"202610010000\",\"dlbred\":\"미래에셋증권 준법감시인 심사필\",\"list_pc_img\":\"1790672130546.jpg\",\"evnt_ctns_pc_url\":null,\"dlbred_dt\":\"제26-1552호(2026.06.30~2026.12.31)\"},{\"end_day\":\"20261231\",\"list_m_img\":\"1790665202176.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"direct_chk_y",
+     "ub_chnl\":\"PM\",\"evnt_ctns_m_url\":null,\"ctns_expl\":\"<p><br></p>\",\"s_title\":\"「투자하는 연금」 2026년 개인연금 입금 이벤트\",\"strt_day\":\"20261001\",\"evnt_sect\":\"1\",\"cs_chk_yn\":\"Y\",\"cs_ecis_id\":\"202609012\",\"checked\":\"3\",\"obj_yn\":null,\"sns_m_img\":\"1790673666979.jpg\",\"inq_cnt\":3666,\"r_cs_ecis_id\":null,\"pub_yn\":\"PMA\",\"pub_sect\":\"O\",\"apply_levl\":\"2\",\"pub_sdt\":\"202610010000\",\"dlbred\":\"미래에셋증권 준법감시인 심사필\",\"list_pc_img\":\"1790672130546.jpg\",\"evnt_ctns_pc_url\":null,\"dlbred_dt\":\"제26-1552호(2026.06.30~2026.12.31)\"},{\"end_day\":\"20261231\",\"list_m_img\":\"1790665202176.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"direct_chk_yn\":null,\"pub_chnl\":\"PM\",\"evnt_ctns_m_url\":null,\"ctns_expl\":\"<p><br></p>\",\"s_title\":\"「투자하는 연금」2026년 IRP",
+     "\"20261231\",\"list_m_img\":\"1790665202176.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"direct_chk_yn\":null,\"pub_chnl\":\"PM\",\"evnt_ctns_m_url\":null,\"ctns_expl\":\"<p><br></p>\",\"s_title\":\"「투자하는 연금」2026년 IRP 입금 이벤트\",\"strt_day\":\"20261001\",\"evnt_sect\":\"1\",\"cs_chk_yn\":\"Y\",\"cs_ecis_id\":\"202609014\",\"checked\":\"3\",\"obj_yn\":null,\"sns_m_img\":null,\"inq_cnt\":21084,\"r_cs_ecis_id\":null,\"pub_yn\":\"PMA\",\"pub_sect\":\"O\",\"apply_levl\":\"2\",\"pub_sdt\":\"202610010000\",\"dlbred\":\"미래에셋증권 준법감시인 심사필\",\"list_pc_img\":\"1790665202161.png\",\"evnt_ctns_pc_url\":null,\"dlbred_dt\":\"제 26 - 1211호 (2026.05.22~2026.12.31)\"},{\"end_day\":\"20261231\",\"list_m_img\":\"1790666689444.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"direct_chk_yn\":null,\"p"
+    ]
+   },
+   "raw_head": "{\"list\":[{\"end_day\":\"20261231\",\"list_m_img\":\"1790672130560.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"direct_chk_yn\":null,\"pub_chnl\":\"PM\",\"evnt_ctns_m_url\":null,\"ctns_expl\":\"<p><br></p>\",\"s_title\":\"「투자하는 연금」 2026년 개인연금 입금 이벤트\",\"strt_day\":\"20261001\",\"evnt_sect\":\"1\",\"cs_chk_yn\":\"Y\",\"cs_ecis_id\":\"202609012\",\"checked\":\"3\",\"obj_yn\":null,\"sns_m_img\":\"1790673666979.jpg\",\"inq_cnt\":3666,\"r_cs_ecis_id\":null,\"pub_yn\":\"PMA\",\"pub_sect\":\"O\",\"apply_levl\":\"2\",\"pub_sdt\":\"202610010000\",\"dlbred\":\"미래에셋증권 준법감시인 심사필\",\"list_pc_img\":\"1790672130546.jpg\",\"evnt_ctns_pc_url\":null,\"dlbred_dt\":\"제26-1552호(2026.06.30~2026.12.31)\"},{\"end_day\":\"20261231\",\"list_m_img\":\"1790665202176.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"",
    "ua": "desktop"
   },
   {
-   "name": "list_img_dir",
-   "url": "https://securities.miraeasset.com/public/mw/event/202609012/",
+   "name": "mw_a01_json:POST",
+   "url": "https://securities.miraeasset.com/mw/mki/mki7000/a01.json",
+   "method": "POST",
    "status": 200,
-   "final_url": "https://securities.miraeasset.com/error_404.html",
-   "redirects": [
-    "/error_404.html"
+   "final_url": "https://securities.miraeasset.com/mw/mki/mki7000/a01.json",
+   "redirects": [],
+   "len": 85695,
+   "title": null,
+   "text_head": "{\"list\":[{\"end_day\":\"20261231\",\"list_m_img\":\"1790672130560.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"direct_chk_yn\":null,\"pub_chnl\":\"PM\",\"evnt_ctns_m_url\":null,\"ctns_expl\":\" \",\"s_title\":\"「투자하는 연금」 2026년 개인연금 입금 이벤트\",\"strt_day\":\"20261001\",\"evnt_sect\":\"1\",\"cs_chk_yn\":\"Y\",\"cs_ecis_id\":\"202609012\",\"che",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 20,
+   "event_links": [],
+   "do_urls_in_js": [],
+   "period_hits": [
+    "2026.06.30~2026.12.31",
+    "2026.05.22~2026.12.31",
+    "2026.06.29~2026.12.31",
+    "2026.09.28~2026.11.30",
+    "2026.09.03~2026.11.30",
+    "2026.09.03~2026.11.30",
+    "2026.07.01~2027.06.30",
+    "2026.07.01~2027.06.30"
    ],
-   "len": 1,
+   "snippets": {
+    "cs_ecis_id": [
+     "0261231\",\"list_m_img\":\"1790672130560.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"direct_chk_yn\":null,\"pub_chnl\":\"PM\",\"evnt_ctns_m_url\":null,\"ctns_expl\":\"<p><br></p>\",\"s_title\":\"「투자하는 연금」 2026년 개인연금 입금 이벤트\",\"strt_day\":\"20261001\",\"evnt_sect\":\"1\",\"cs_chk_yn\":\"Y\",\"cs_ecis_id\":\"202609012\",\"checked\":\"3\",\"obj_yn\":null,\"sns_m_img\":\"1790673666979.jpg\",\"inq_cnt\":3666,\"r_cs_ecis_id\":null,\"pub_yn\":\"PMA\",\"pub_sect\":\"O\",\"apply_levl\":\"2\",\"pub_sdt\":\"202610010000\",\"dlbred\":\"미래에셋증권 준법감시인 심사필\",\"list_pc_img\":\"1790672130546.jpg\",\"evnt_ctns_pc_url\":null,\"dlbred_dt\":\"제26-1552호(2026.06.30~2026.12.31)\"},{\"end_day\":\"20261231\",\"list_m_img\":\"1790665202176.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"direct_chk_y",
+     "ub_chnl\":\"PM\",\"evnt_ctns_m_url\":null,\"ctns_expl\":\"<p><br></p>\",\"s_title\":\"「투자하는 연금」 2026년 개인연금 입금 이벤트\",\"strt_day\":\"20261001\",\"evnt_sect\":\"1\",\"cs_chk_yn\":\"Y\",\"cs_ecis_id\":\"202609012\",\"checked\":\"3\",\"obj_yn\":null,\"sns_m_img\":\"1790673666979.jpg\",\"inq_cnt\":3666,\"r_cs_ecis_id\":null,\"pub_yn\":\"PMA\",\"pub_sect\":\"O\",\"apply_levl\":\"2\",\"pub_sdt\":\"202610010000\",\"dlbred\":\"미래에셋증권 준법감시인 심사필\",\"list_pc_img\":\"1790672130546.jpg\",\"evnt_ctns_pc_url\":null,\"dlbred_dt\":\"제26-1552호(2026.06.30~2026.12.31)\"},{\"end_day\":\"20261231\",\"list_m_img\":\"1790665202176.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"direct_chk_yn\":null,\"pub_chnl\":\"PM\",\"evnt_ctns_m_url\":null,\"ctns_expl\":\"<p><br></p>\",\"s_title\":\"「투자하는 연금」2026년 IRP",
+     "\"20261231\",\"list_m_img\":\"1790665202176.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"direct_chk_yn\":null,\"pub_chnl\":\"PM\",\"evnt_ctns_m_url\":null,\"ctns_expl\":\"<p><br></p>\",\"s_title\":\"「투자하는 연금」2026년 IRP 입금 이벤트\",\"strt_day\":\"20261001\",\"evnt_sect\":\"1\",\"cs_chk_yn\":\"Y\",\"cs_ecis_id\":\"202609014\",\"checked\":\"3\",\"obj_yn\":null,\"sns_m_img\":null,\"inq_cnt\":21084,\"r_cs_ecis_id\":null,\"pub_yn\":\"PMA\",\"pub_sect\":\"O\",\"apply_levl\":\"2\",\"pub_sdt\":\"202610010000\",\"dlbred\":\"미래에셋증권 준법감시인 심사필\",\"list_pc_img\":\"1790665202161.png\",\"evnt_ctns_pc_url\":null,\"dlbred_dt\":\"제 26 - 1211호 (2026.05.22~2026.12.31)\"},{\"end_day\":\"20261231\",\"list_m_img\":\"1790666689444.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"direct_chk_yn\":null,\"p"
+    ]
+   },
+   "raw_head": "{\"list\":[{\"end_day\":\"20261231\",\"list_m_img\":\"1790672130560.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"direct_chk_yn\":null,\"pub_chnl\":\"PM\",\"evnt_ctns_m_url\":null,\"ctns_expl\":\"<p><br></p>\",\"s_title\":\"「투자하는 연금」 2026년 개인연금 입금 이벤트\",\"strt_day\":\"20261001\",\"evnt_sect\":\"1\",\"cs_chk_yn\":\"Y\",\"cs_ecis_id\":\"202609012\",\"checked\":\"3\",\"obj_yn\":null,\"sns_m_img\":\"1790673666979.jpg\",\"inq_cnt\":3666,\"r_cs_ecis_id\":null,\"pub_yn\":\"PMA\",\"pub_sect\":\"O\",\"apply_levl\":\"2\",\"pub_sdt\":\"202610010000\",\"dlbred\":\"미래에셋증권 준법감시인 심사필\",\"list_pc_img\":\"1790672130546.jpg\",\"evnt_ctns_pc_url\":null,\"dlbred_dt\":\"제26-1552호(2026.06.30~2026.12.31)\"},{\"end_day\":\"20261231\",\"list_m_img\":\"1790665202176.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"",
+   "ua": "desktop"
+  },
+  {
+   "name": "mw_a01_json",
+   "url": "https://securities.miraeasset.com/mw/mki/mki7000/a01.json",
+   "method": "GET",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/mw/mki/mki7000/a01.json",
+   "redirects": [],
+   "len": 85695,
+   "title": null,
+   "text_head": "{\"list\":[{\"end_day\":\"20261231\",\"list_m_img\":\"1790672130560.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"direct_chk_yn\":null,\"pub_chnl\":\"PM\",\"evnt_ctns_m_url\":null,\"ctns_expl\":\" \",\"s_title\":\"「투자하는 연금」 2026년 개인연금 입금 이벤트\",\"strt_day\":\"20261001\",\"evnt_sect\":\"1\",\"cs_chk_yn\":\"Y\",\"cs_ecis_id\":\"202609012\",\"che",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 20,
+   "event_links": [],
+   "do_urls_in_js": [],
+   "period_hits": [
+    "2026.06.30~2026.12.31",
+    "2026.05.22~2026.12.31",
+    "2026.06.29~2026.12.31",
+    "2026.09.28~2026.11.30",
+    "2026.09.03~2026.11.30",
+    "2026.09.03~2026.11.30",
+    "2026.07.01~2027.06.30",
+    "2026.07.01~2027.06.30"
+   ],
+   "snippets": {
+    "cs_ecis_id": [
+     "0261231\",\"list_m_img\":\"1790672130560.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"direct_chk_yn\":null,\"pub_chnl\":\"PM\",\"evnt_ctns_m_url\":null,\"ctns_expl\":\"<p><br></p>\",\"s_title\":\"「투자하는 연금」 2026년 개인연금 입금 이벤트\",\"strt_day\":\"20261001\",\"evnt_sect\":\"1\",\"cs_chk_yn\":\"Y\",\"cs_ecis_id\":\"202609012\",\"checked\":\"3\",\"obj_yn\":null,\"sns_m_img\":\"1790673666979.jpg\",\"inq_cnt\":3666,\"r_cs_ecis_id\":null,\"pub_yn\":\"PMA\",\"pub_sect\":\"O\",\"apply_levl\":\"2\",\"pub_sdt\":\"202610010000\",\"dlbred\":\"미래에셋증권 준법감시인 심사필\",\"list_pc_img\":\"1790672130546.jpg\",\"evnt_ctns_pc_url\":null,\"dlbred_dt\":\"제26-1552호(2026.06.30~2026.12.31)\"},{\"end_day\":\"20261231\",\"list_m_img\":\"1790665202176.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"direct_chk_y",
+     "ub_chnl\":\"PM\",\"evnt_ctns_m_url\":null,\"ctns_expl\":\"<p><br></p>\",\"s_title\":\"「투자하는 연금」 2026년 개인연금 입금 이벤트\",\"strt_day\":\"20261001\",\"evnt_sect\":\"1\",\"cs_chk_yn\":\"Y\",\"cs_ecis_id\":\"202609012\",\"checked\":\"3\",\"obj_yn\":null,\"sns_m_img\":\"1790673666979.jpg\",\"inq_cnt\":3666,\"r_cs_ecis_id\":null,\"pub_yn\":\"PMA\",\"pub_sect\":\"O\",\"apply_levl\":\"2\",\"pub_sdt\":\"202610010000\",\"dlbred\":\"미래에셋증권 준법감시인 심사필\",\"list_pc_img\":\"1790672130546.jpg\",\"evnt_ctns_pc_url\":null,\"dlbred_dt\":\"제26-1552호(2026.06.30~2026.12.31)\"},{\"end_day\":\"20261231\",\"list_m_img\":\"1790665202176.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"direct_chk_yn\":null,\"pub_chnl\":\"PM\",\"evnt_ctns_m_url\":null,\"ctns_expl\":\"<p><br></p>\",\"s_title\":\"「투자하는 연금」2026년 IRP",
+     "\"20261231\",\"list_m_img\":\"1790665202176.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"direct_chk_yn\":null,\"pub_chnl\":\"PM\",\"evnt_ctns_m_url\":null,\"ctns_expl\":\"<p><br></p>\",\"s_title\":\"「투자하는 연금」2026년 IRP 입금 이벤트\",\"strt_day\":\"20261001\",\"evnt_sect\":\"1\",\"cs_chk_yn\":\"Y\",\"cs_ecis_id\":\"202609014\",\"checked\":\"3\",\"obj_yn\":null,\"sns_m_img\":null,\"inq_cnt\":21084,\"r_cs_ecis_id\":null,\"pub_yn\":\"PMA\",\"pub_sect\":\"O\",\"apply_levl\":\"2\",\"pub_sdt\":\"202610010000\",\"dlbred\":\"미래에셋증권 준법감시인 심사필\",\"list_pc_img\":\"1790665202161.png\",\"evnt_ctns_pc_url\":null,\"dlbred_dt\":\"제 26 - 1211호 (2026.05.22~2026.12.31)\"},{\"end_day\":\"20261231\",\"list_m_img\":\"1790666689444.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"direct_chk_yn\":null,\"p"
+    ]
+   },
+   "raw_head": "{\"list\":[{\"end_day\":\"20261231\",\"list_m_img\":\"1790672130560.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"direct_chk_yn\":null,\"pub_chnl\":\"PM\",\"evnt_ctns_m_url\":null,\"ctns_expl\":\"<p><br></p>\",\"s_title\":\"「투자하는 연금」 2026년 개인연금 입금 이벤트\",\"strt_day\":\"20261001\",\"evnt_sect\":\"1\",\"cs_chk_yn\":\"Y\",\"cs_ecis_id\":\"202609012\",\"checked\":\"3\",\"obj_yn\":null,\"sns_m_img\":\"1790673666979.jpg\",\"inq_cnt\":3666,\"r_cs_ecis_id\":null,\"pub_yn\":\"PMA\",\"pub_sect\":\"O\",\"apply_levl\":\"2\",\"pub_sdt\":\"202610010000\",\"dlbred\":\"미래에셋증권 준법감시인 심사필\",\"list_pc_img\":\"1790672130546.jpg\",\"evnt_ctns_pc_url\":null,\"dlbred_dt\":\"제26-1552호(2026.06.30~2026.12.31)\"},{\"end_day\":\"20261231\",\"list_m_img\":\"1790665202176.jpg\",\"expl\":null,\"pub_edt\":\"202612312359\",\"",
+   "ua": "mobile"
+  },
+  {
+   "name": "mw_s01_json",
+   "url": "https://securities.miraeasset.com/mw/mki/mki7000/s01.json",
+   "method": "GET",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/mw/mki/mki7000/s01.json",
+   "redirects": [],
+   "len": 0,
    "title": null,
    "text_head": "",
    "n_detailView": 0,
@@ -772,35 +997,291 @@
    "event_links": [],
    "do_urls_in_js": [],
    "period_hits": [],
+   "snippets": {},
+   "raw_head": "",
+   "ua": "desktop"
+  },
+  {
+   "name": "mw_s01_json:POST",
+   "url": "https://securities.miraeasset.com/mw/mki/mki7000/s01.json",
+   "method": "POST",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/mw/mki/mki7000/s01.json",
+   "redirects": [],
+   "len": 0,
+   "title": null,
+   "text_head": "",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 0,
+   "event_links": [],
+   "do_urls_in_js": [],
+   "period_hits": [],
+   "snippets": {},
+   "raw_head": "",
+   "ua": "desktop"
+  },
+  {
+   "name": "mw_s01_json",
+   "url": "https://securities.miraeasset.com/mw/mki/mki7000/s01.json",
+   "method": "GET",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/mw/mki/mki7000/s01.json",
+   "redirects": [],
+   "len": 0,
+   "title": null,
+   "text_head": "",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 0,
+   "event_links": [],
+   "do_urls_in_js": [],
+   "period_hits": [],
+   "snippets": {},
+   "raw_head": "",
+   "ua": "mobile"
+  },
+  {
+   "name": "pc_e04_json",
+   "url": "https://securities.miraeasset.com/hki/hki7000/e04.json",
+   "method": "GET",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/hki/hki7000/e04.json",
+   "redirects": [],
+   "len": 24,
+   "title": null,
+   "text_head": "{\"msgCd\":\"\",\"msgTxt\":\"\"}",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 0,
+   "event_links": [],
+   "do_urls_in_js": [],
+   "period_hits": [],
+   "snippets": {},
+   "raw_head": "{\"msgCd\":\"\",\"msgTxt\":\"\"}",
+   "ua": "desktop"
+  },
+  {
+   "name": "pc_e04_json:POST",
+   "url": "https://securities.miraeasset.com/hki/hki7000/e04.json",
+   "method": "POST",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/hki/hki7000/e04.json",
+   "redirects": [],
+   "len": 24,
+   "title": null,
+   "text_head": "{\"msgCd\":\"\",\"msgTxt\":\"\"}",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 0,
+   "event_links": [],
+   "do_urls_in_js": [],
+   "period_hits": [],
+   "snippets": {},
+   "raw_head": "{\"msgCd\":\"\",\"msgTxt\":\"\"}",
+   "ua": "desktop"
+  },
+  {
+   "name": "pc_e04_json",
+   "url": "https://securities.miraeasset.com/hki/hki7000/e04.json",
+   "method": "GET",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/hki/hki7000/e04.json",
+   "redirects": [],
+   "len": 24,
+   "title": null,
+   "text_head": "{\"msgCd\":\"\",\"msgTxt\":\"\"}",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 0,
+   "event_links": [],
+   "do_urls_in_js": [],
+   "period_hits": [],
+   "snippets": {},
+   "raw_head": "{\"msgCd\":\"\",\"msgTxt\":\"\"}",
+   "ua": "mobile"
+  },
+  {
+   "name": "pc_banner03",
+   "url": "https://securities.miraeasset.com/public/banner/event.banner03.wjson",
+   "method": "GET",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/public/banner/event.banner03.wjson",
+   "redirects": [],
+   "len": 3,
+   "title": null,
+   "text_head": "[]",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 0,
+   "event_links": [],
+   "do_urls_in_js": [],
+   "period_hits": [],
+   "snippets": {},
+   "raw_head": "[]\n",
+   "ua": "desktop"
+  },
+  {
+   "name": "pc_banner03",
+   "url": "https://securities.miraeasset.com/public/banner/event.banner03.wjson",
+   "method": "GET",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/public/banner/event.banner03.wjson",
+   "redirects": [],
+   "len": 3,
+   "title": null,
+   "text_head": "[]",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 0,
+   "event_links": [],
+   "do_urls_in_js": [],
+   "period_hits": [],
+   "snippets": {},
+   "raw_head": "[]\n",
    "ua": "mobile"
   }
  ],
  "render": [
   {
-   "name": "mw_list",
-   "url": "https://securities.miraeasset.com/mw/mki/mki7000/r01.do",
+   "name": "pc_list_r05",
+   "url": "https://securities.miraeasset.com/hki/hki7000/r05.do",
    "guard": true,
    "ua": "desktop",
-   "final_url": "https://securities.miraeasset.com/public/mts/html/AppLink.html?id=event",
-   "title": "미래에셋증권 MAPS",
+   "final_url": "https://securities.miraeasset.com/hki/hki7000/r05.do",
+   "title": "이벤트 글목록 | 진행중인 이벤트 | 공지/이벤트 | 미래에셋증권",
    "n_li_detailView": 0,
    "n_onclick_detail": 0,
-   "body_len": 11,
-   "body_head": "미래에셋증권 MAPS",
-   "event_anchors": [],
-   "sample_items": [],
-   "imgs_event": [],
-   "blocked_offsite": [
-    "https://play.google.com/store/apps/details?id=com.miraeasset.trade"
+   "body_len": 1642,
+   "body_head": "본문 내용 바로가기 주 메뉴 바로가기 HTS 다운로드 트레이딩 인증서/OTP 자주하는 질문 챗봇상담 원격지원 금융소비자포털 상품공시실 로그인 계좌개설 회원가입 MY자산 뱅킹/대출/청약 뱅킹/대출/ 청약 전체 메뉴 보기 이체로그인필요 대여 대출 청약 체크카드 미래에셋 현대카드 메뉴닫기 금융상품 금융상품 전체 메뉴 보기 추천상품 IMA 개인투자용국채 펀드 CMA ELS/DLS/ETN/ELW 발행어음 채권/RP ISA종합 중개형ISA 신탁형ISA 일임형ISA 신탁/Wrap 자문서비스 방카슈랑스 세금혜택상품 숙려제도 메뉴닫기 연금자산 연금",
+   "event_anchors": [
+    {
+     "t": "명예의전당",
+     "h": "javascript:openHp('/hki/hki7106/i01.do?link=event',true);",
+     "o": ""
+    },
+    {
+     "t": "공지/이벤트",
+     "h": "javascript:openHp('/bbs/board/message/list.do?categoryId=66&selectedId=1000000202&selectedId=1000000203&selectedId=1000003101',true);",
+     "o": ""
+    },
+    {
+     "t": "진행중인 이벤트",
+     "h": "javascript:openHp('/hki/hki7000/r05.do',false);",
+     "o": ""
+    },
+    {
+     "t": "참여한 이벤트로그인필요",
+     "h": "javascript:openHp('/hki/hki7000/r07.do',false);",
+     "o": ""
+    },
+    {
+     "t": "지난 이벤트",
+     "h": "javascript:openHp('/hki/hki7000/r06.do',false);",
+     "o": ""
+    },
+    {
+     "t": "진행중인 이벤트",
+     "h": "javascript:openHp('/hki/hki7000/r05.do', false);",
+     "o": ""
+    },
+    {
+     "t": "참여한 이벤트",
+     "h": "javascript:openHp('/hki/hki7000/r07.do', false);",
+     "o": ""
+    },
+    {
+     "t": "지난 이벤트",
+     "h": "javascript:openHp('/hki/hki7000/r06.do', false);",
+     "o": ""
+    }
    ],
+   "sample_items": [
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hku/hku4164/v01.do',true);",
+     "t": "이체계좌/정보조회로그인필요",
+     "html": "<a href=\"javascript:openHp('/hku/hku4164/v01.do',true);\" class=\"depth_no\">이체계좌/정보조회<span class=\"mb\">로그인필요</span></a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hku/hku4045/v01.do',true);",
+     "t": "공개매수 청약로그인필요",
+     "html": "<a href=\"javascript:openHp('/hku/hku4045/v01.do',true);\" class=\"depth_no\">공개매수 청약<span class=\"mb\">로그인필요</span></a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hks/hks4046/v01.do',true);",
+     "t": "개인투자용국채 청약",
+     "html": "<a href=\"javascript:openHp('/hks/hks4046/v01.do',true);\" class=\"depth_no\">개인투자용국채 청약</a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hks/hks4053/v01.do',true);",
+     "t": "ELS/DLS 매도예약/취소로그인필요",
+     "html": "<a href=\"javascript:openHp('/hks/hks4053/v01.do',true);\" class=\"depth_no\">ELS/DLS 매도예약/취소<span class=\"mb\">로그인필요</span></a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hks/hks4061/v01.do',true);",
+     "t": "외화 RP매매로그인필요",
+     "html": "<a href=\"javascript:openHp('/hks/hks4061/v01.do',true);\" class=\"depth_no\">외화 RP매매<span class=\"mb\">로그인필요</span></a>"
+    }
+   ],
+   "dated": [
+    {
+     "tag": "DL",
+     "cls": "eventCont",
+     "t": "진행중 「투자하는 연금」 2026년 개인연금 입금 이벤트 2026.10.01 ~ 2026.12.31",
+     "html": "<dl class=\"eventCont\"> <dt> <a href=\"javascript:doView('202609012','1','')\"> <img src=\"/public/mw/event/202609012/1790672130546.jpg\" alt=\"\" class=\"spot\"> </a> </dt> <!-- FLAG 적용 --> <dd class=\"evLabel\"> <span class=\"ico_label ev ev03\"><em>진행중</em></span> </dd> <dd class=\"evTit\">「투자하는 연금」 2026년 개인연금 입금 이벤트</dd> <dd class=\"evDate\">2026.10.01 ~ 2026.12.31</dd> </dl>"
+    },
+    {
+     "tag": "DL",
+     "cls": "eventCont",
+     "t": "진행중 「투자하는 연금」2026년 IRP 입금 이벤트 2026.10.01 ~ 2026.12.31",
+     "html": "<dl class=\"eventCont\"> <dt> <a href=\"javascript:doView('202609014','1','')\"> <img src=\"/public/mw/event/202609014/1790665202161.png\" alt=\"\" class=\"spot\"> </a> </dt> <!-- FLAG 적용 --> <dd class=\"evLabel\"> <span class=\"ico_label ev ev03\"><em>진행중</em></span> </dd> <dd class=\"evTit\">「투자하는 연금」2026년 IRP 입금 이벤트</dd> <dd class=\"evDate\">2026.10.01 ~ 2026.12.31</dd> </dl>"
+    },
+    {
+     "tag": "DL",
+     "cls": "eventCont",
+     "t": "진행중 「투자하는 연금」2026년 퇴직연금 DC 이벤트 2026.10.01 ~ 2026.12.31",
+     "html": "<dl class=\"eventCont\"> <dt> <a href=\"javascript:doView('202609013','5','')\"> <img src=\"/public/mw/event/202609013/1790666689428.png\" alt=\"\" class=\"spot\"> </a> </dt> <!-- FLAG 적용 --> <dd class=\"evLabel\"> <span class=\"ico_label ev ev03\"><em>진행중</em></span> </dd> <dd class=\"evTit\">「투자하는 연금」2026년 퇴직연금 DC 이벤트</dd> <dd class=\"evDate\">2026.10.01 ~ 2026.12.31</dd> </dl>"
+    },
+    {
+     "tag": "DL",
+     "cls": "eventCont",
+     "t": "진행중 ELS 가입 이벤트 선택은 ELS 혜택은 PLUS 2026.09.28 ~ 2026.11.30",
+     "html": "<dl class=\"eventCont\"> <dt> <a href=\"javascript:doView('202609005','1','')\"> <img src=\"/public/mw/event/202609005/1-4_PC_list_292x292.png\" alt=\"\" class=\"spot\"> </a> </dt> <!-- FLAG 적용 --> <dd class=\"evLabel\"> <span class=\"ico_label ev ev03\"><em>진행중</em></span> </dd> <dd class=\"evTit\">ELS 가입 이벤트 선택은 ELS 혜택은 PLUS</dd> <dd class=\"evDate\">2026.09.28 ~ 2026.11.30</dd> </dl>"
+    },
+    {
+     "tag": "DL",
+     "cls": "eventCont",
+     "t": "진행중 지금은 국채에 투자할 시간 2026.09.07 ~ 2026.11.20",
+     "html": "<dl class=\"eventCont\"> <dt> <a href=\"javascript:doView('202609002','1','')\"> <img src=\"/public/mw/event/202609002/1-4_PC_list_292x292.png\" alt=\"\" class=\"spot\"> </a> </dt> <!-- FLAG 적용 --> <dd class=\"evLabel\"> <span class=\"ico_label ev ev03\"><em>진행중</em></span> </dd> <dd class=\"evTit\">지금은 국채에 투자할 시간</dd> <dd class=\"evDate\">2026.09.07 ~ 2026.11.20</dd> </dl>"
+    },
+    {
+     "tag": "DL",
+     "cls": "eventCont",
+     "t": "진행중 국내선물옵션 수수료할인이벤트 시즌3_We go, Be light 시즌3 2026.07.01 ~ 2027.06.30",
+     "html": "<dl class=\"eventCont\"> <dt> <a href=\"javascript:doView('202605010','3','')\"> <img src=\"/public/mw/event/202605010/1-4_PC_list_292x292[2].jpg\" alt=\"국내선물옵션 수수료할인 이벤트 시즌3\" class=\"spot\"> </a> </dt> <!-- FLAG 적용 --> <dd class=\"evLabel\"> <span class=\"ico_label ev ev03\"><em>진행중</em></span> </dd> <dd class=\"evTit\">국내선물옵션 수수료할인이벤트 시즌3_We go, Be light 시즌3</dd> <dd class=\"evDate\">2026.07.01 ~ 2027.06.30</dd> </dl>"
+    }
+   ],
+   "n_dated": 9,
+   "imgs_event": [
+    "https://securities.miraeasset.com/public/mw/event/202609012/1790672130546.jpg",
+    "https://securities.miraeasset.com/public/mw/event/202609014/1790665202161.png",
+    "https://securities.miraeasset.com/public/mw/event/202609013/1790666689428.png",
+    "https://securities.miraeasset.com/public/mw/event/202609005/1-4_PC_list_292x292.png",
+    "https://securities.miraeasset.com/public/mw/event/202609002/1-4_PC_list_292x292.png",
+    "https://securities.miraeasset.com/public/mw/event/202605010/1-4_PC_list_292x292[2].jpg",
+    "https://securities.miraeasset.com/public/mw/event/202606003/1-4_PC_list_292x292.jpg",
+    "https://securities.miraeasset.com/public/mw/event/202606002/1-4_PC_list_292x292.jpg",
+    "https://securities.miraeasset.com/public/mw/event/202605013/1-4_PC_list_292x292.jpg"
+   ],
+   "blocked_offsite": [],
    "requests": [
-    "https://securities.miraeasset.com/mw/mki/mki7000/r01.do",
-    "https://securities.miraeasset.com/public/mts/html/AppLink.html?id=event"
+    "https://securities.miraeasset.com/hki/hki7000/r05.do",
+    "https://securities.miraeasset.com/search/getTotalSearch.jsp",
+    "https://securities.miraeasset.com/public/banner/event.banner03.wjson",
+    "https://securities.miraeasset.com/public/banner/event.banner04.wjson"
    ]
   },
   {
-   "name": "mw_list",
-   "url": "https://securities.miraeasset.com/mw/mki/mki7000/r01.do",
+   "name": "pc_list_r05",
+   "url": "https://securities.miraeasset.com/hki/hki7000/r05.do",
    "guard": true,
    "ua": "mobile",
    "final_url": "about:blank",
@@ -811,141 +1292,21 @@
    "body_head": "",
    "event_anchors": [],
    "sample_items": [],
+   "dated": [],
+   "n_dated": 0,
    "imgs_event": [],
    "blocked_offsite": [],
    "requests": [
+    "https://securities.miraeasset.com/hki/hki7000/r05.do",
     "https://securities.miraeasset.com/mw/mki/mki7000/r01.do",
+    "http://securities.miraeasset.com/public/mts/html/AppLink.html?id=event",
     "https://securities.miraeasset.com/public/mts/html/AppLink.html?id=event",
     "miraeassettrade://content?menuId=event&af_deeplink=true&af_dp=miraeassetTrade%3A%2F%2Fcontent%3FmenuId%3Devent",
     "itms-apps://apps.apple.com/KR/app/id1248716281?ls=1&mt=8"
    ]
   },
   {
-   "name": "mw_detail",
-   "url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
-   "guard": true,
-   "ua": "desktop",
-   "final_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
-   "title": "목록 - 진행중 이벤트",
-   "n_li_detailView": 0,
-   "n_onclick_detail": 0,
-   "body_len": 258,
-   "body_head": "이벤트 상세 닫기 닫기 홈 미래에셋증권 닫기 검색 검색 #연금#공모주 닫기 MY 트레이딩 금융상품 연금자산 투자정보 뱅킹/서비스 공지/이벤트 이용안내 MY 자산분석 MY자산 MY연금 투자수익률 진행중 2026.10.01 ~ 2026.12.31 공유하기 목록 이벤트 참여 신청 MAPS에서 이용하세요! 앱에서 더 많은 서비스 이용가능합니다. MAPS로 이동하시겠습니까? (설치되어 있지 않으면 다운로드 페이지로 이동합니다.) 앱으로 보기 팝업닫기 '",
-   "event_anchors": [
-    {
-     "t": "공지/이벤트",
-     "h": "javascript:setMenuBanner(\"mki7000m01\");",
-     "o": ""
-    },
-    {
-     "t": "이벤트",
-     "h": "#none",
-     "o": ""
-    },
-    {
-     "t": "진행중 이벤트App",
-     "h": "javascript:fn_nativeErr('event','nms','','')",
-     "o": ""
-    },
-    {
-     "t": "지난 이벤트App",
-     "h": "javascript:fn_nativeErr('event','nms','','')",
-     "o": ""
-    },
-    {
-     "t": "참여한 이벤트App",
-     "h": "javascript:fn_nativeErr('event','nms','','')",
-     "o": ""
-    },
-    {
-     "t": "이벤트 참여 신청",
-     "h": "javascript:targetLink('A','JoinEvent()')",
-     "o": ""
-    },
-    {
-     "t": "",
-     "h": "javascript:fn_nativeErr('event','amg','','')",
-     "o": ""
-    },
-    {
-     "t": "앱으로 보기",
-     "h": "javascript:fn_nativeErr('event','nms','','evnno:202609012','Y'); appCancelPopup();",
-     "o": ""
-    }
-   ],
-   "sample_items": [],
-   "imgs_event": [
-    "https://securities.miraeasset.com/public/mw/event/202609012/1790672130640.jpg"
-   ],
-   "blocked_offsite": [],
-   "requests": [
-    "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do"
-   ]
-  },
-  {
-   "name": "mw_detail",
-   "url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
-   "guard": true,
-   "ua": "mobile",
-   "final_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
-   "title": "목록 - 진행중 이벤트",
-   "n_li_detailView": 0,
-   "n_onclick_detail": 0,
-   "body_len": 258,
-   "body_head": "이벤트 상세 닫기 닫기 홈 미래에셋증권 닫기 검색 검색 #연금#공모주 닫기 MY 트레이딩 금융상품 연금자산 투자정보 뱅킹/서비스 공지/이벤트 이용안내 MY 자산분석 MY자산 MY연금 투자수익률 진행중 2026.10.01 ~ 2026.12.31 공유하기 목록 이벤트 참여 신청 MAPS에서 이용하세요! 앱에서 더 많은 서비스 이용가능합니다. MAPS로 이동하시겠습니까? (설치되어 있지 않으면 다운로드 페이지로 이동합니다.) 앱으로 보기 팝업닫기 '",
-   "event_anchors": [
-    {
-     "t": "공지/이벤트",
-     "h": "javascript:setMenuBanner(\"mki7000m01\");",
-     "o": ""
-    },
-    {
-     "t": "이벤트",
-     "h": "#none",
-     "o": ""
-    },
-    {
-     "t": "진행중 이벤트App",
-     "h": "javascript:fn_nativeErr('event','nms','','')",
-     "o": ""
-    },
-    {
-     "t": "지난 이벤트App",
-     "h": "javascript:fn_nativeErr('event','nms','','')",
-     "o": ""
-    },
-    {
-     "t": "참여한 이벤트App",
-     "h": "javascript:fn_nativeErr('event','nms','','')",
-     "o": ""
-    },
-    {
-     "t": "이벤트 참여 신청",
-     "h": "javascript:targetLink('A','JoinEvent()')",
-     "o": ""
-    },
-    {
-     "t": "",
-     "h": "javascript:fn_nativeErr('event','amg','','')",
-     "o": ""
-    },
-    {
-     "t": "앱으로 보기",
-     "h": "javascript:fn_nativeErr('event','nms','','evnno:202609012','Y'); appCancelPopup();",
-     "o": ""
-    }
-   ],
-   "sample_items": [],
-   "imgs_event": [
-    "https://securities.miraeasset.com/public/mw/event/202609012/1790672130640.jpg"
-   ],
-   "blocked_offsite": [],
-   "requests": [
-    "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do"
-   ]
-  },
-  {
-   "name": "pc_list_hki",
+   "name": "pc_list_r01",
    "url": "https://securities.miraeasset.com/hki/hki7000/r01.do",
    "guard": true,
    "ua": "desktop",
@@ -982,7 +1343,40 @@
      "o": ""
     }
    ],
-   "sample_items": [],
+   "sample_items": [
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hku/hku4164/v01.do',true);",
+     "t": "이체계좌/정보조회로그인필요",
+     "html": "<a href=\"javascript:openHp('/hku/hku4164/v01.do',true);\" class=\"depth_no\">이체계좌/정보조회<span class=\"mb\">로그인필요</span></a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hku/hku4045/v01.do',true);",
+     "t": "공개매수 청약로그인필요",
+     "html": "<a href=\"javascript:openHp('/hku/hku4045/v01.do',true);\" class=\"depth_no\">공개매수 청약<span class=\"mb\">로그인필요</span></a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hks/hks4046/v01.do',true);",
+     "t": "개인투자용국채 청약",
+     "html": "<a href=\"javascript:openHp('/hks/hks4046/v01.do',true);\" class=\"depth_no\">개인투자용국채 청약</a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hks/hks4053/v01.do',true);",
+     "t": "ELS/DLS 매도예약/취소로그인필요",
+     "html": "<a href=\"javascript:openHp('/hks/hks4053/v01.do',true);\" class=\"depth_no\">ELS/DLS 매도예약/취소<span class=\"mb\">로그인필요</span></a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hks/hks4061/v01.do',true);",
+     "t": "외화 RP매매로그인필요",
+     "html": "<a href=\"javascript:openHp('/hks/hks4061/v01.do',true);\" class=\"depth_no\">외화 RP매매<span class=\"mb\">로그인필요</span></a>"
+    }
+   ],
+   "dated": [],
+   "n_dated": 0,
    "imgs_event": [
     "https://img.securities.miraeasset.com/notice/img_no_event.gif"
    ],
@@ -995,7 +1389,7 @@
    ]
   },
   {
-   "name": "pc_list_hki",
+   "name": "pc_list_r01",
    "url": "https://securities.miraeasset.com/hki/hki7000/r01.do",
    "guard": true,
    "ua": "mobile",
@@ -1032,7 +1426,40 @@
      "o": ""
     }
    ],
-   "sample_items": [],
+   "sample_items": [
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hku/hku4164/v01.do',true);",
+     "t": "이체계좌/정보조회로그인필요",
+     "html": "<a href=\"javascript:openHp('/hku/hku4164/v01.do',true);\" class=\"depth_no\">이체계좌/정보조회<span class=\"mb\">로그인필요</span></a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hku/hku4045/v01.do',true);",
+     "t": "공개매수 청약로그인필요",
+     "html": "<a href=\"javascript:openHp('/hku/hku4045/v01.do',true);\" class=\"depth_no\">공개매수 청약<span class=\"mb\">로그인필요</span></a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hks/hks4046/v01.do',true);",
+     "t": "개인투자용국채 청약",
+     "html": "<a href=\"javascript:openHp('/hks/hks4046/v01.do',true);\" class=\"depth_no\">개인투자용국채 청약</a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hks/hks4053/v01.do',true);",
+     "t": "ELS/DLS 매도예약/취소로그인필요",
+     "html": "<a href=\"javascript:openHp('/hks/hks4053/v01.do',true);\" class=\"depth_no\">ELS/DLS 매도예약/취소<span class=\"mb\">로그인필요</span></a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hks/hks4061/v01.do',true);",
+     "t": "외화 RP매매로그인필요",
+     "html": "<a href=\"javascript:openHp('/hks/hks4061/v01.do',true);\" class=\"depth_no\">외화 RP매매<span class=\"mb\">로그인필요</span></a>"
+    }
+   ],
+   "dated": [],
+   "n_dated": 0,
    "imgs_event": [
     "https://img.securities.miraeasset.com/notice/img_no_event.gif"
    ],
@@ -1045,37 +1472,73 @@
    ]
   },
   {
-   "name": "pc_home",
-   "url": "https://securities.miraeasset.com/",
+   "name": "mw_home",
+   "url": "https://securities.miraeasset.com/mw/main.do",
    "guard": true,
    "ua": "desktop",
-   "final_url": "https://securities.miraeasset.com/",
-   "title": "미래에셋증권 - 글로벌 투자 파트너",
+   "final_url": "https://securities.miraeasset.com/mw/main.do",
+   "title": "미래에셋증권",
    "n_li_detailView": 0,
    "n_onclick_detail": 0,
-   "body_len": 0,
-   "body_head": "",
-   "event_anchors": [],
-   "sample_items": [],
+   "body_len": 521,
+   "body_head": "전체메뉴 닫기 홈 미래에셋증권 닫기 검색 검색 #연금#공모주 닫기 MY 트레이딩 금융상품 연금자산 투자정보 뱅킹/서비스 공지/이벤트 이용안내 MY 자산분석 MY자산 MY연금 투자수익률 이전 다음 재생 계좌개설 검색 추천 월간추천상품을 확인해보세요 미래에셋증권 지금 만나보세요 무엇이든 물어보세요 월간추천상품을 확인해보세요 미래에셋증권 지금 만나보세요 무엇이든 물어보세요 월간추천상품을 확인해보세요 쉽고 빠르게 계좌개설 하세요 언제든지 쉽고 편리하게 미래에셋증권 계좌개설 계좌개설 시작하기 More 검색 #연금 #공모주 More 미래에셋증",
+   "event_anchors": [
+    {
+     "t": "공지/이벤트",
+     "h": "javascript:setMenuBanner(\"mki7000m01\");",
+     "o": ""
+    },
+    {
+     "t": "이벤트",
+     "h": "#none",
+     "o": ""
+    },
+    {
+     "t": "진행중 이벤트App",
+     "h": "javascript:fn_nativeErr('event','nms','','')",
+     "o": ""
+    },
+    {
+     "t": "지난 이벤트App",
+     "h": "javascript:fn_nativeErr('event','nms','','')",
+     "o": ""
+    },
+    {
+     "t": "참여한 이벤트App",
+     "h": "javascript:fn_nativeErr('event','nms','','')",
+     "o": ""
+    },
+    {
+     "t": "다양한 혜택 더보기",
+     "h": "javascript:getEventList();",
+     "o": ""
+    }
+   ],
+   "sample_items": [
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/mw/mks/mks4116/v01.do');",
+     "t": "펀드안내",
+     "html": "<a href=\"javascript:openHp('/mw/mks/mks4116/v01.do');\">펀드안내</a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/mw/mkp/mkp1003/v01.do');",
+     "t": "연금로보어드바이저 소개",
+     "html": "<a href=\"javascript:openHp('/mw/mkp/mkp1003/v01.do');\">연금로보어드바이저 소개</a>"
+    }
+   ],
+   "dated": [],
+   "n_dated": 0,
    "imgs_event": [],
    "blocked_offsite": [],
    "requests": [
-    "https://securities.miraeasset.com/",
-    "https://securities.miraeasset.com/blank.html",
-    "https://securities.miraeasset.com/main.do",
-    "https://securities.miraeasset.com/session_update.jsp",
-    "https://securities.miraeasset.com/wtsform.jsp",
-    "https://securities.miraeasset.com/public/banner/event.banner02.wjson",
-    "https://securities.miraeasset.com/public/main/home_main_jisu.wjson",
-    "https://securities.miraeasset.com/common/a02.json",
-    "https://securities.miraeasset.com/search/getTotalSearch.jsp",
-    "https://securities.miraeasset.com/public/banner/event.banner03.wjson",
-    "https://securities.miraeasset.com/public/banner/event.banner04.wjson"
+    "https://securities.miraeasset.com/mw/main.do"
    ]
   },
   {
-   "name": "pc_home",
-   "url": "https://securities.miraeasset.com/",
+   "name": "mw_home",
+   "url": "https://securities.miraeasset.com/mw/main.do",
    "guard": true,
    "ua": "mobile",
    "final_url": "https://securities.miraeasset.com/mw/main.do",
@@ -1116,11 +1579,25 @@
      "o": ""
     }
    ],
-   "sample_items": [],
+   "sample_items": [
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/mw/mks/mks4116/v01.do');",
+     "t": "펀드안내",
+     "html": "<a href=\"javascript:openHp('/mw/mks/mks4116/v01.do');\">펀드안내</a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/mw/mkp/mkp1003/v01.do');",
+     "t": "연금로보어드바이저 소개",
+     "html": "<a href=\"javascript:openHp('/mw/mkp/mkp1003/v01.do');\">연금로보어드바이저 소개</a>"
+    }
+   ],
+   "dated": [],
+   "n_dated": 0,
    "imgs_event": [],
    "blocked_offsite": [],
    "requests": [
-    "https://securities.miraeasset.com/",
     "https://securities.miraeasset.com/mw/main.do"
    ]
   },
@@ -1177,7 +1654,40 @@
      "o": ""
     }
    ],
-   "sample_items": [],
+   "sample_items": [
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hku/hku4164/v01.do',true);",
+     "t": "이체계좌/정보조회로그인필요",
+     "html": "<a href=\"javascript:openHp('/hku/hku4164/v01.do',true);\" class=\"depth_no\">이체계좌/정보조회<span class=\"mb\">로그인필요</span></a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hku/hku4045/v01.do',true);",
+     "t": "공개매수 청약로그인필요",
+     "html": "<a href=\"javascript:openHp('/hku/hku4045/v01.do',true);\" class=\"depth_no\">공개매수 청약<span class=\"mb\">로그인필요</span></a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hks/hks4046/v01.do',true);",
+     "t": "개인투자용국채 청약",
+     "html": "<a href=\"javascript:openHp('/hks/hks4046/v01.do',true);\" class=\"depth_no\">개인투자용국채 청약</a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hks/hks4053/v01.do',true);",
+     "t": "ELS/DLS 매도예약/취소로그인필요",
+     "html": "<a href=\"javascript:openHp('/hks/hks4053/v01.do',true);\" class=\"depth_no\">ELS/DLS 매도예약/취소<span class=\"mb\">로그인필요</span></a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hks/hks4061/v01.do',true);",
+     "t": "외화 RP매매로그인필요",
+     "html": "<a href=\"javascript:openHp('/hks/hks4061/v01.do',true);\" class=\"depth_no\">외화 RP매매<span class=\"mb\">로그인필요</span></a>"
+    }
+   ],
+   "dated": [],
+   "n_dated": 0,
    "imgs_event": [],
    "blocked_offsite": [],
    "requests": [
@@ -1240,7 +1750,40 @@
      "o": ""
     }
    ],
-   "sample_items": [],
+   "sample_items": [
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hku/hku4164/v01.do',true);",
+     "t": "이체계좌/정보조회로그인필요",
+     "html": "<a href=\"javascript:openHp('/hku/hku4164/v01.do',true);\" class=\"depth_no\">이체계좌/정보조회<span class=\"mb\">로그인필요</span></a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hku/hku4045/v01.do',true);",
+     "t": "공개매수 청약로그인필요",
+     "html": "<a href=\"javascript:openHp('/hku/hku4045/v01.do',true);\" class=\"depth_no\">공개매수 청약<span class=\"mb\">로그인필요</span></a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hks/hks4046/v01.do',true);",
+     "t": "개인투자용국채 청약",
+     "html": "<a href=\"javascript:openHp('/hks/hks4046/v01.do',true);\" class=\"depth_no\">개인투자용국채 청약</a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hks/hks4053/v01.do',true);",
+     "t": "ELS/DLS 매도예약/취소로그인필요",
+     "html": "<a href=\"javascript:openHp('/hks/hks4053/v01.do',true);\" class=\"depth_no\">ELS/DLS 매도예약/취소<span class=\"mb\">로그인필요</span></a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/hks/hks4061/v01.do',true);",
+     "t": "외화 RP매매로그인필요",
+     "html": "<a href=\"javascript:openHp('/hks/hks4061/v01.do',true);\" class=\"depth_no\">외화 RP매매<span class=\"mb\">로그인필요</span></a>"
+    }
+   ],
+   "dated": [],
+   "n_dated": 0,
    "imgs_event": [],
    "blocked_offsite": [],
    "requests": [
@@ -1248,6 +1791,186 @@
     "https://securities.miraeasset.com/search/getTotalSearch.jsp",
     "https://securities.miraeasset.com/public/banner/event.banner03.wjson",
     "https://securities.miraeasset.com/public/banner/event.banner04.wjson"
+   ]
+  },
+  {
+   "name": "mw_detail",
+   "url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
+   "guard": true,
+   "ua": "desktop",
+   "final_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
+   "title": "목록 - 진행중 이벤트",
+   "n_li_detailView": 0,
+   "n_onclick_detail": 0,
+   "body_len": 258,
+   "body_head": "이벤트 상세 닫기 닫기 홈 미래에셋증권 닫기 검색 검색 #연금#공모주 닫기 MY 트레이딩 금융상품 연금자산 투자정보 뱅킹/서비스 공지/이벤트 이용안내 MY 자산분석 MY자산 MY연금 투자수익률 진행중 2026.10.01 ~ 2026.12.31 공유하기 목록 이벤트 참여 신청 MAPS에서 이용하세요! 앱에서 더 많은 서비스 이용가능합니다. MAPS로 이동하시겠습니까? (설치되어 있지 않으면 다운로드 페이지로 이동합니다.) 앱으로 보기 팝업닫기 '",
+   "event_anchors": [
+    {
+     "t": "공지/이벤트",
+     "h": "javascript:setMenuBanner(\"mki7000m01\");",
+     "o": ""
+    },
+    {
+     "t": "이벤트",
+     "h": "#none",
+     "o": ""
+    },
+    {
+     "t": "진행중 이벤트App",
+     "h": "javascript:fn_nativeErr('event','nms','','')",
+     "o": ""
+    },
+    {
+     "t": "지난 이벤트App",
+     "h": "javascript:fn_nativeErr('event','nms','','')",
+     "o": ""
+    },
+    {
+     "t": "참여한 이벤트App",
+     "h": "javascript:fn_nativeErr('event','nms','','')",
+     "o": ""
+    },
+    {
+     "t": "이벤트 참여 신청",
+     "h": "javascript:targetLink('A','JoinEvent()')",
+     "o": ""
+    },
+    {
+     "t": "",
+     "h": "javascript:fn_nativeErr('event','amg','','')",
+     "o": ""
+    },
+    {
+     "t": "앱으로 보기",
+     "h": "javascript:fn_nativeErr('event','nms','','evnno:202609012','Y'); appCancelPopup();",
+     "o": ""
+    }
+   ],
+   "sample_items": [
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/mw/mks/mks4116/v01.do');",
+     "t": "펀드안내",
+     "html": "<a href=\"javascript:openHp('/mw/mks/mks4116/v01.do');\">펀드안내</a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/mw/mkp/mkp1003/v01.do');",
+     "t": "연금로보어드바이저 소개",
+     "html": "<a href=\"javascript:openHp('/mw/mkp/mkp1003/v01.do');\">연금로보어드바이저 소개</a>"
+    }
+   ],
+   "dated": [
+    {
+     "tag": "DIV",
+     "cls": "newWin fixedBtn",
+     "t": "이벤트 상세 닫기 닫기 홈 미래에셋증권 닫기 검색 검색 #연금#공모주 닫기 MY 트레이딩 금융상품 연금자산 투자정보 뱅킹/서비스 공지/이벤트 이용안내 MY 자산분석 MY자산 MY연금 투자수익률 진행중 2026.10.01 ~ 2026.12.31 공유하기 목록 이벤트 참여 신청 MAPS에서 이용하세요! 앱에서 더 많은 서비스 이용가능합니다. MAPS로 이동하시",
+     "html": "<div id=\"wrap\" class=\"newWin fixedBtn\" style=\"overflow: hidden;\"> <!-- 페이지 하단 고정형 버튼이 있는 경우 fixedBtn 클래스 추가 --> <!-- Header s --> <script type=\"text/javascript\"> var _g_public_img_domain = \"\"; </script> <script type=\"text/javascript\" src=\"/mw/com/js/plugin.iscroll.js\"></script> <script type=\"text/javascript\" src=\"/mw/resources/js/common/mw.menu.ui.js\"></script><script src=\"/mw/site_variable.jsp?d=560\" type=\"text/javascript\" charset=\"euc-kr\"></script> <script type=\"text/javascript\" src=\"/mw/resources/js/common/mw.menu.js\"></script> <script src=\"/js/mw.menu.data.js?d=561 type=\" text=\"\" javascrip"
+    },
+    {
+     "tag": "DIV",
+     "cls": "content",
+     "t": "진행중 2026.10.01 ~ 2026.12.31 공유하기 목록 이벤트 참여 신청 MAPS에서 이용하세요! 앱에서 더 많은 서비스 이용가능합니다. MAPS로 이동하시겠습니까? (설치되어 있지 않으면 다운로드 페이지로 이동합니다.) 앱으로 보기 팝업닫기 '",
+     "html": "<div class=\"content\" aria-hidden=\"true\" style=\"padding-bottom: 51px; min-height: 720px;\"> <!-- content s --> <section class=\"banner_area\" data-banner=\"hide\"> </section> <form name=\"f\" method=\"post\"> <input type=\"hidden\" name=\"cs_ecis_id\" value=\"202609012\"> <input type=\"hidden\" name=\"mod\" value=\"S\"> <input type=\"hidden\" name=\"sns_title_img\" id=\"sns_title_img\" value=\"/public/mw/event/202609012/1790672130560.jpg\"> </form> <!-- list --> <section class=\"list_bbs eventLstWrap\"> <dl class=\"bbsView eventView\"> <dt class=\"evInfo\"> <div class=\"labelSet\"> <span class=\"ico_label ev3\"><em>진행중</em></span> <"
+    }
+   ],
+   "n_dated": 0,
+   "imgs_event": [
+    "https://securities.miraeasset.com/public/mw/event/202609012/1790672130640.jpg"
+   ],
+   "blocked_offsite": [],
+   "requests": [
+    "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do"
+   ]
+  },
+  {
+   "name": "mw_detail",
+   "url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
+   "guard": true,
+   "ua": "mobile",
+   "final_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
+   "title": "목록 - 진행중 이벤트",
+   "n_li_detailView": 0,
+   "n_onclick_detail": 0,
+   "body_len": 258,
+   "body_head": "이벤트 상세 닫기 닫기 홈 미래에셋증권 닫기 검색 검색 #연금#공모주 닫기 MY 트레이딩 금융상품 연금자산 투자정보 뱅킹/서비스 공지/이벤트 이용안내 MY 자산분석 MY자산 MY연금 투자수익률 진행중 2026.10.01 ~ 2026.12.31 공유하기 목록 이벤트 참여 신청 MAPS에서 이용하세요! 앱에서 더 많은 서비스 이용가능합니다. MAPS로 이동하시겠습니까? (설치되어 있지 않으면 다운로드 페이지로 이동합니다.) 앱으로 보기 팝업닫기 '",
+   "event_anchors": [
+    {
+     "t": "공지/이벤트",
+     "h": "javascript:setMenuBanner(\"mki7000m01\");",
+     "o": ""
+    },
+    {
+     "t": "이벤트",
+     "h": "#none",
+     "o": ""
+    },
+    {
+     "t": "진행중 이벤트App",
+     "h": "javascript:fn_nativeErr('event','nms','','')",
+     "o": ""
+    },
+    {
+     "t": "지난 이벤트App",
+     "h": "javascript:fn_nativeErr('event','nms','','')",
+     "o": ""
+    },
+    {
+     "t": "참여한 이벤트App",
+     "h": "javascript:fn_nativeErr('event','nms','','')",
+     "o": ""
+    },
+    {
+     "t": "이벤트 참여 신청",
+     "h": "javascript:targetLink('A','JoinEvent()')",
+     "o": ""
+    },
+    {
+     "t": "",
+     "h": "javascript:fn_nativeErr('event','amg','','')",
+     "o": ""
+    },
+    {
+     "t": "앱으로 보기",
+     "h": "javascript:fn_nativeErr('event','nms','','evnno:202609012','Y'); appCancelPopup();",
+     "o": ""
+    }
+   ],
+   "sample_items": [
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/mw/mks/mks4116/v01.do');",
+     "t": "펀드안내",
+     "html": "<a href=\"javascript:openHp('/mw/mks/mks4116/v01.do');\">펀드안내</a>"
+    },
+    {
+     "tag": "A",
+     "o": "javascript:openHp('/mw/mkp/mkp1003/v01.do');",
+     "t": "연금로보어드바이저 소개",
+     "html": "<a href=\"javascript:openHp('/mw/mkp/mkp1003/v01.do');\">연금로보어드바이저 소개</a>"
+    }
+   ],
+   "dated": [
+    {
+     "tag": "DIV",
+     "cls": "newWin fixedBtn",
+     "t": "이벤트 상세 닫기 닫기 홈 미래에셋증권 닫기 검색 검색 #연금#공모주 닫기 MY 트레이딩 금융상품 연금자산 투자정보 뱅킹/서비스 공지/이벤트 이용안내 MY 자산분석 MY자산 MY연금 투자수익률 진행중 2026.10.01 ~ 2026.12.31 공유하기 목록 이벤트 참여 신청 MAPS에서 이용하세요! 앱에서 더 많은 서비스 이용가능합니다. MAPS로 이동하시",
+     "html": "<div id=\"wrap\" class=\"newWin fixedBtn\" style=\"overflow: hidden;\"> <!-- 페이지 하단 고정형 버튼이 있는 경우 fixedBtn 클래스 추가 --> <!-- Header s --> <script type=\"text/javascript\"> var _g_public_img_domain = \"\"; </script> <script type=\"text/javascript\" src=\"/mw/com/js/plugin.iscroll.js\"></script> <script type=\"text/javascript\" src=\"/mw/resources/js/common/mw.menu.ui.js\"></script><script src=\"/mw/site_variable.jsp?d=654\" type=\"text/javascript\" charset=\"euc-kr\"></script> <script type=\"text/javascript\" src=\"/mw/resources/js/common/mw.menu.js\"></script> <script src=\"/js/mw.menu.data.js?d=654 type=\" text=\"\" javascrip"
+    },
+    {
+     "tag": "DIV",
+     "cls": "content",
+     "t": "진행중 2026.10.01 ~ 2026.12.31 공유하기 목록 이벤트 참여 신청 MAPS에서 이용하세요! 앱에서 더 많은 서비스 이용가능합니다. MAPS로 이동하시겠습니까? (설치되어 있지 않으면 다운로드 페이지로 이동합니다.) 앱으로 보기 팝업닫기 '",
+     "html": "<div class=\"content\" aria-hidden=\"true\" style=\"padding-bottom: 51px; min-height: 720px;\"> <!-- content s --> <section class=\"banner_area\" data-banner=\"hide\"> </section> <form name=\"f\" method=\"post\"> <input type=\"hidden\" name=\"cs_ecis_id\" value=\"202609012\"> <input type=\"hidden\" name=\"mod\" value=\"S\"> <input type=\"hidden\" name=\"sns_title_img\" id=\"sns_title_img\" value=\"/public/mw/event/202609012/1790672130560.jpg\"> </form> <!-- list --> <section class=\"list_bbs eventLstWrap\"> <dl class=\"bbsView eventView\"> <dt class=\"evInfo\"> <div class=\"labelSet\"> <span class=\"ico_label ev3\"><em>진행중</em></span> <"
+    }
+   ],
+   "n_dated": 0,
+   "imgs_event": [
+    "https://securities.miraeasset.com/public/mw/event/202609012/1790672130640.jpg"
+   ],
+   "blocked_offsite": [],
+   "requests": [
+    "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do"
    ]
   }
  ]
