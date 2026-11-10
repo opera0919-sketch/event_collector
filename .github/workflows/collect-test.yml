@@ -1,9 +1,23 @@
 name: collect-test
 
-# 상세-우선 수집 검증용: DB/메일 없이 --collect-only 로 수집·분류만 수행하고
+# 상세-우선 수집 검증용: DB 쓰기/메일 없이 --collect-only 로 수집·분류만 수행하고
 # data/events_latest.json 을 커밋 + Step Summary 로 품질을 확인한다. (수동 실행 전용)
+#  - llm=false   : Gemini 를 부르지 않는다. 스크레이퍼·해시 계측(data/hash_inputs.json)만
+#                  빠르게 확인할 때. 두 번 돌리면 그 사이 해시를 바꾼 성분이 diff 로 남는다.
+#  - use_db=true : 기존 DB 행을 '읽기만' 해서 캐시 판정을 운영과 같은 조건으로 재현한다
+#                  (--collect-only 는 sync 를 부르지 않으므로 쓰기는 일어나지 않는다).
+#                  머지 전 "이 브랜치 코드면 Gemini 가 몇 콜 나가는가"를 재는 용도.
 on:
   workflow_dispatch:
+    inputs:
+      llm:
+        description: 'Gemini 구조화 호출 (false 면 수집·해시 계측만)'
+        type: boolean
+        default: true
+      use_db:
+        description: '기존 DB 행을 읽어 캐시 판정 재현 (쓰기 없음)'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -13,18 +27,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Install dependencies
         run: |
-          pip install playwright requests beautifulsoup4 openpyxl
+          pip install -r requirements.txt
           playwright install --with-deps chromium
-      - name: Collect only (no DB/mail; OCR on detail-page images)
+      - name: Collect only (no DB write/mail; OCR on detail-page images)
         env:
           DEBUG: '1'
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PYTHONUNBUFFERED: '1'
+          GEMINI_API_KEY: ${{ inputs.llm && secrets.GEMINI_API_KEY || '' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ inputs.use_db && secrets.SUPABASE_SERVICE_ROLE_KEY || '' }}
         run: python -m pension_monitor.main --collect-only
       - name: Step summary (수집·혜택 품질 요약)
         if: always()
@@ -41,6 +57,22 @@ jobs:
           filled = sum(1 for e in evs if e.get("benefits"))
           print(f"## collect-test 결과 ({d.get('collected_at','')})\n")
           print(f"- 수집 실패 증권사: {d.get('firms_failed') or '없음'}")
+          try:
+              s = json.load(open("data/last_run_summary.json"))
+              print(f"- 실패 사유: {s.get('fail_reasons') or '없음'} · LLM {s.get('llm_calls')}콜 "
+                    f"(사유 {s.get('llm_reasons') or '없음'}) · 캐시 {s.get('cache_hits')} "
+                    f"· 검토필요 {s.get('review_count')} · 소요 {s.get('timings')}")
+              h = json.load(open("data/hash_inputs.json"))
+              ch = [e for e in h.get("events", []) if e.get("changed_from_prev")]
+              print(f"- 직전 대비 해시 변동: **{len(ch)}건** / {len(h.get('events', []))}건")
+              for e in ch:
+                  c = e["changed_from_prev"]
+                  t, i = c.get("text"), c.get("imgs")
+                  print(f"  - {e['firm_name']} {e['event_name'][:28]}: "
+                        + (f"본문 -{len(t['removed'])}/+{len(t['added'])}줄 " if t else "")
+                        + (f"이미지 {i['n'][0]}→{i['n'][1]}장" if i else ""))
+          except Exception as e:
+              print(f"- (요약/해시 계측 읽기 실패: {e})")
           print(f"- 연금 이벤트: **{len(evs)}건** · 혜택 채워짐: **{filled}/{len(evs)}**")
           print(f"- 증권사별: {dict(byf)}\n")
           print("| 증권사 | 이벤트 | 혜택(앞 120자) |")

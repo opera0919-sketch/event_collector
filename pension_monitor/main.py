@@ -17,16 +17,22 @@ import json
 import pathlib
 import re
 import sys
+import time
 
 from . import db, mailer, normalize, report as report_mod
 from .classify import (is_pension, detect_accounts, extract_details, content_hash,
                        source_event_id, clip_detail, select_content_images,
-                       hash_text_per_firm)
-from .config import TRIGGER_TYPE
+                       hash_text_per_firm, hash_input_record, diff_hash_inputs)
+from .config import TRIGGER_TYPE, FAIL_STREAK_ALERT, today_kst
 from .normalize import TEXT_MIN
-from .scrapers import SCRAPERS
+from .scrapers import SCRAPERS, base as scraper_base
 from .scrapers.base import load_page
 from .scrapers.koreainvestment import fetch_detail_text
+
+HASH_INPUTS_PATH = "data/hash_inputs.json"
+SUMMARY_PATH = "data/last_run_summary.json"
+# 연속 수집 실패로 잡을 실패 처리할 때의 종료 코드 (산출물·메일은 이미 처리된 뒤)
+EXIT_FAIL_STREAK = 3
 
 MAX_DETAIL_FETCH = 36       # 상세 페이지 조회 상한 (대상 증권사 연금 이벤트 전건 커버)
 DETAIL_BUDGET_SEC = 200     # 상세 조회 전체 시간 예산 (초과 시 중단 → 런 행 방지)
@@ -63,10 +69,20 @@ def write_step_summary(line: str):
             pass
 
 
+def classify_exception(e) -> str:
+    """수집 예외 → 실패 사유 (scrapers.base 의 사유 체계)."""
+    if isinstance(e, scraper_base.OffsiteRedirect):
+        return "redirected"
+    return "timeout" if "Timeout" in type(e).__name__ else "error"
+
+
 async def collect():
-    """대상 증권사(config.FIRMS) 수집. 반환: (events, firms_failed)"""
+    """대상 증권사(config.FIRMS) 수집. 반환: (events, firms_failed)
+    실패 사유(증권사 → 사유)와 단계별 소요 시간은 _RUN_STATS 에 싣는다."""
     from playwright.async_api import async_playwright
-    events, failed = [], []
+    events, failed, reasons = [], [], {}
+    t0 = time.monotonic()
+    scraper_base.FAIL_REASONS.clear()
     async with async_playwright() as pw:
         browser = await pw.chromium.launch()
 
@@ -80,10 +96,13 @@ async def collect():
                 got = await run_one(firm, fn, needs_browser)
                 if not got:
                     failed.append(firm)
+                    # 스크레이퍼가 사유를 남겼으면 그것을, 아니면 '0건'(원인 미분류)
+                    reasons[firm] = scraper_base.FAIL_REASONS.get(firm) or "zero_items"
                 events.extend(got)
             except Exception as e:
                 print(f"[수집실패] {firm}: {type(e).__name__}: {str(e)[:160]}")
                 failed.append(firm)
+                reasons[firm] = classify_exception(e)
 
         # 간헐 지연/거부(일시 타임아웃) 대응: 실패 증권사를 간격을 두고 재시도.
         for attempt in range(RETRY_PASSES):
@@ -99,12 +118,16 @@ async def collect():
                     got = await run_one(firm, fn, needs_browser)
                     if got:
                         events.extend(got)
+                        reasons.pop(firm, None)
                     else:
                         still.append(firm)
+                        reasons[firm] = scraper_base.FAIL_REASONS.get(firm) or "zero_items"
                 except Exception as e:
                     print(f"[재시도실패] {firm}: {type(e).__name__}")
                     still.append(firm)
+                    reasons[firm] = classify_exception(e)
             failed = still
+        t_list = time.monotonic()
 
         # 정책: 웹검색 방식 미사용 — 데이터는 실제 페이지에서만 수집한다.
         # (키움증권은 EverSafe WAF 상시 차단으로 수집 대상 제외 — REDESIGN.md §2)
@@ -114,7 +137,94 @@ async def collect():
                    if is_pension(e["event_name"] + " " + e.get("raw_text", ""))]
         await enrich_details(browser, pension)
         await browser.close()
+    _RUN_STATS["fail_reasons"] = {f: reasons.get(f, "zero_items") for f in failed}
+    _RUN_STATS.setdefault("timings", {}).update(
+        list_sec=round(t_list - t0), detail_sec=round(time.monotonic() - t_list))
+    if failed:
+        print(f"[수집실패 사유] {_RUN_STATS['fail_reasons']}")
     return events, failed
+
+
+def write_hash_inputs(pension, path=HASH_INPUTS_PATH):
+    """A1: 재추출 트리거 해시의 입력 성분을 실행마다 남기고, 직전 실행과 달라진 성분을 돌려준다.
+
+    KB 는 원문 해시가 거의 매일 바뀌어 매일 재추출되는데(15일 중 14일), 본문·이미지 중
+    무엇이 흔들리는지 볼 수단이 없어 두 달간 원인을 확정하지 못했다. 이 파일은 실행마다
+    덮어쓰며(저장소에는 최신 1회분), 직전 파일과의 차이를 `changed_from_prev` 로 함께 싣는다.
+    원문을 확보하지 못한 이벤트는 직전 레코드를 그대로 유지한다 — 빈 값으로 덮으면 다음
+    실행에서 '전부 바뀜'으로 보여 계측이 오염된다.
+    반환: [(증권사, 이벤트명, diff dict)] — 해시가 바뀐 이벤트만."""
+    def key(r):
+        return (r.get("firm_name"), str(r.get("source_event_id") or r.get("event_name")))
+
+    prev = {}
+    try:
+        with open(path, encoding="utf-8") as f:
+            prev = {key(r): r for r in json.load(f).get("events", [])}
+    except (OSError, ValueError, AttributeError):
+        pass
+    recs, changed = [], []
+    for ev in pension:
+        rec = hash_input_record(ev)
+        old = prev.get(key(rec))
+        if not normalize.detail_fetch_ok(ev):
+            if old:
+                recs.append({**old, "stale": True})
+            continue
+        diff = diff_hash_inputs(old, rec)
+        if diff:
+            rec["changed_from_prev"] = diff
+            changed.append((rec["firm_name"], rec["event_name"], diff))
+        recs.append(rec)
+    pathlib.Path(path).parent.mkdir(exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump({"collected_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+                   "note": "source_content_hash 입력 계측 (A1). text 는 공통 라인 제거본.",
+                   "events": recs}, f, ensure_ascii=False, indent=1)
+    for firm, name, diff in changed:
+        bits = []
+        if "text" in diff:
+            t = diff["text"]
+            bits.append(f"본문 -{len(t['removed'])}/+{len(t['added'])}줄"
+                        + (f" 예: {t['removed'][0][:50]!r} → {t['added'][0][:50]!r}"
+                           if t["removed"] and t["added"] else ""))
+        if "imgs" in diff:
+            i = diff["imgs"]
+            bits.append(f"이미지 {i['n'][0]}→{i['n'][1]}장 (-{len(i['removed'])}/+{len(i['added'])})")
+        print(f"[해시변동] {firm} {name[:24]}: {' · '.join(bits)}")
+    return changed
+
+
+def fail_streaks(failed_now, summary_path=SUMMARY_PATH):
+    """증권사별 연속 수집 실패 횟수(이번 실행 포함). 실패하지 않은 증권사는 담지 않는다.
+
+    1순위는 DB 의 monitoring_runs.failed_firms(실행 이력의 정본), DB 를 못 쓰면 직전 요약
+    파일의 fail_streak 를 이어 센다. 반드시 db.sync 가 이번 실행을 기록하기 전에 부른다."""
+    if not failed_now:
+        return {}
+    history = db.recent_failed_firms() if db.enabled() else None
+    prev = {}
+    if history is None:
+        try:
+            with open(summary_path, encoding="utf-8") as f:
+                prev = json.load(f).get("fail_streak") or {}
+        except (OSError, ValueError, AttributeError):
+            prev = {}
+    out = {}
+    for firm in failed_now:
+        if history is not None:
+            n = 0
+            for failed_set in history:
+                if firm not in failed_set:
+                    break
+                n += 1
+        else:
+            try:
+                n = int(prev.get(firm) or 0)
+            except (TypeError, ValueError):
+                n = 0
+        out[firm] = n + 1
+    return out
 
 
 # 상세 페이지의 모든 이미지 src 후보 (지연 로드 속성 포함). 선택은 Python 쪽
@@ -304,6 +414,7 @@ def main():
     ap.add_argument("--collect-only", action="store_true")
     args = ap.parse_args()
 
+    t_start = time.monotonic()
     events, failed = asyncio.run(collect())
     pension = classify_all(events)
     for ev in pension:
@@ -313,8 +424,14 @@ def main():
     # S2(근사): 같은 증권사 상세 페이지들의 공통 라인(네비·타 이벤트 목록·광고)을
     # 재추출 트리거 해시 입력에서 제거 — LLM 입력은 그대로 (classify.hash_text_per_firm)
     hash_text_per_firm(pension)
+    # A1: 해시 입력 계측 — 직전 실행 대비 무엇이 해시를 바꿨는지 남긴다 (내부 키 제거 전)
+    hash_changes = write_hash_inputs(pension)
+    # B3: 연속 수집 실패 횟수 (db.sync 가 이번 실행을 기록하기 전에 센다)
+    streaks = fail_streaks(failed)
     # 정규화 v2: Gemini 구조화(캐시 우선) → 검증 게이트 → 캐노니컬 + 구조화 행
+    t_norm = time.monotonic()
     stats = normalize.normalize_events(pension, existing)
+    _RUN_STATS.setdefault("timings", {})["normalize_sec"] = round(time.monotonic() - t_norm)
     # 상세 fetch 실패 건(기존 값 유지·재추출 생략) — 관측용
     fetch_failed = [f"{ev['firm_name']}:{ev['event_name'][:20]}" for ev in pension
                     if ev.get("_detail_status") not in ("ok", "none")]
@@ -327,6 +444,12 @@ def main():
           f"상세 fetch 실패: {fetch_failed or '없음'})")
     _RUN_STATS.update(stats or {})
     _RUN_STATS["detail_fetch_failed"] = fetch_failed
+    _RUN_STATS["fail_streak"] = streaks
+    _RUN_STATS["hash_changed"] = len(hash_changes)
+    _RUN_STATS["hash_changed_parts"] = {
+        "text": sum(1 for *_, d in hash_changes if "text" in d),
+        "imgs": sum(1 for *_, d in hash_changes if "imgs" in d)}
+    _RUN_STATS["review_count"] = sum(1 for ev in pension if ev.get("needs_review"))
     if DEBUG:
         for ev in pension:
             print(f"  - [{ev['firm_name']}] {ev['event_name']} ({ev.get('start_date')}~{ev.get('end_date')}) "
@@ -339,7 +462,9 @@ def main():
                    "firms_failed": failed, "events": pension}, f, ensure_ascii=False, indent=1)
 
     if args.collect_only:
+        _RUN_STATS["timings"]["total_sec"] = round(time.monotonic() - t_start)
         _write_summary(len(pension), by_firm, failed, diff=None)
+        write_step_summary(_stats_line(failed))
         return
 
     if len(failed) >= len(SCRAPERS):
@@ -347,11 +472,15 @@ def main():
         _write_summary(0, by_firm, failed, diff=None, note="전 증권사 수집 실패")
         sys.exit(1)
 
+    t_sync = time.monotonic()
     diff = db.sync(pension, failed, TRIGGER_TYPE)
-    report_md = report_mod.build_report(diff, failed)
+    _RUN_STATS["timings"]["sync_sec"] = round(time.monotonic() - t_sync)
+    fail_info = {f: {"reason": _RUN_STATS.get("fail_reasons", {}).get(f),
+                     "streak": streaks.get(f, 1)} for f in failed}
+    report_md = report_mod.build_report(diff, failed, fail_info=fail_info)
     db.save_report(diff.get("run_id"), report_md)
 
-    today = dt.date.today().isoformat()
+    today = today_kst().isoformat()      # 리포트 기준일 = 한국 날짜 (러너는 UTC)
     pathlib.Path("reports").mkdir(exist_ok=True)
     with open(f"reports/{today}.md", "w", encoding="utf-8") as f:
         f.write(report_md)
@@ -359,10 +488,15 @@ def main():
         f.write(report_md)
     print(f"[저장] reports/{today}.md (+ latest.md)")
 
+    _RUN_STATS["review_count"] = sum(1 for ev in diff["active"] if ev.get("needs_review"))
+    _RUN_STATS["timings"]["total_sec"] = round(time.monotonic() - t_start)
     _write_summary(len(diff["active"]), by_firm, failed, diff=diff)
 
     subject = (f"[연금이벤트] {today} — 진행중 {len(diff['active'])}건 "
                f"(신규 {len(diff['new'])}, 종료 {len(diff['closed'])})")
+    if failed:
+        # B3: 수집 실패는 제목에서 바로 보이게 (본문 한 줄로는 10일간 묻혔다 — 삼성 2026-10)
+        subject = f"⚠수집실패 {_fail_label(failed, streaks)} · " + subject
     attachments = []
     try:
         if db.enabled():
@@ -387,9 +521,45 @@ def main():
     sent = mailer.send(subject, report_md, attachments=attachments)
     write_step_summary(
         f"진행중 {len(diff['active'])} · 신규 {len(diff['new'])} · 종료 {len(diff['closed'])} "
-        f"· 변경 {len(diff['changed'])} · 수집실패 {failed or '없음'} · 메일 {'발송' if sent else '스킵'} "
-        f"· LLM {_RUN_STATS.get('llm_calls', 0)}콜/캐시 {_RUN_STATS.get('cache_hits', 0)}"
-        f"/상세실패 {len(_RUN_STATS.get('detail_fetch_failed') or [])}")
+        f"· 변경 {len(diff['changed'])} · 메일 {'발송' if sent else '스킵'} · " + _stats_line(failed))
+
+    # B3: 같은 증권사가 FAIL_STREAK_ALERT 회 이상 연속 실패하면 잡을 실패로 끝낸다.
+    # 리포트·메일·요약은 이미 처리됐고, 워크플로의 커밋 단계는 if: always() 라 산출물도
+    # 보존된다. 잡 색(빨강)과 GitHub 의 실패 알림이 '조용한 장기 실패'를 막는 마지막 수단이다.
+    alarmed = {f: n for f, n in streaks.items() if n >= FAIL_STREAK_ALERT}
+    if alarmed:
+        msg = (f"증권사 수집 {FAIL_STREAK_ALERT}회 이상 연속 실패: "
+               f"{_fail_label(list(alarmed), streaks)} — 스크레이퍼 점검 필요")
+        print(f"::error::{msg}")
+        write_step_summary(f"❌ {msg}")
+        sys.exit(EXIT_FAIL_STREAK)
+
+
+def _fail_label(failed, streaks) -> str:
+    """'미래에셋증권(4회 연속·redirected), …' — 제목·요약·경보 공용."""
+    reasons = _RUN_STATS.get("fail_reasons") or {}
+    out = []
+    for f in failed:
+        bits = []
+        if streaks.get(f, 1) > 1:
+            bits.append(f"{streaks[f]}회 연속")
+        if reasons.get(f):
+            bits.append(reasons[f])
+        out.append(f + (f"({'·'.join(bits)})" if bits else ""))
+    return ", ".join(out)
+
+
+def _stats_line(failed) -> str:
+    """Step Summary 한 줄 — 로그 전문 없이 실행 상태를 본다."""
+    st = _RUN_STATS
+    t = st.get("timings") or {}
+    return (f"수집실패 {_fail_label(failed, st.get('fail_streak') or {}) or '없음'} "
+            f"· LLM {st.get('llm_calls', 0)}콜(사유 {st.get('llm_reasons') or '없음'})"
+            f"/캐시 {st.get('cache_hits', 0)}/상세실패 {len(st.get('detail_fetch_failed') or [])} "
+            f"· 검토필요 {st.get('review_count', 0)} · 해시변동 {st.get('hash_changed', 0)}"
+            f"{st.get('hash_changed_parts') or ''} "
+            f"· 소요 {t.get('total_sec', '?')}s(목록 {t.get('list_sec', '?')}/상세 {t.get('detail_sec', '?')}"
+            f"/정규화 {t.get('normalize_sec', '?')}/DB {t.get('sync_sec', '-')})")
 
 
 def _write_summary(active, by_firm, failed, diff, note=""):
@@ -407,7 +577,7 @@ def _write_summary(active, by_firm, failed, diff, note=""):
         **_RUN_STATS,
     }
     pathlib.Path("data").mkdir(exist_ok=True)
-    with open("data/last_run_summary.json", "w", encoding="utf-8") as f:
+    with open(SUMMARY_PATH, "w", encoding="utf-8") as f:
         json.dump(summary, f, ensure_ascii=False, indent=1)
     print(f"[요약] {summary}")
 

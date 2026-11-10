@@ -9,7 +9,7 @@ import datetime as dt
 
 import requests
 
-from .config import SUPABASE_URL, SUPABASE_KEY, FIRMS, EXCLUDED_FIRMS
+from .config import SUPABASE_URL, SUPABASE_KEY, FIRMS, EXCLUDED_FIRMS, today_kst
 from .facts import (fact_signature, tier_count, benefit_signature,
                     condition_signature, loses_facts)
 
@@ -164,6 +164,23 @@ def fetch_children(table: str) -> list:
         return []
 
 
+def recent_failed_firms(limit: int = 15):
+    """최근 실행들의 수집 실패 증권사 집합 목록 (최신 실행이 앞). 조회 실패 시 None.
+
+    monitoring_runs.failed_firms 는 "A, B" 형태의 문자열(실패 없으면 NULL)이다.
+    연속 실패 횟수 계산용(main.fail_streaks) — 실패해도 파이프라인은 계속된다."""
+    if not enabled():
+        return None
+    try:
+        rows = _get("monitoring_runs", {"select": "run_at,failed_firms",
+                                         "order": "run_at.desc", "limit": str(limit)})
+    except Exception as e:
+        print(f"[db] 실행 이력 조회 실패(무시): {type(e).__name__}")
+        return None
+    return [{x.strip() for x in (r.get("failed_firms") or "").split(",") if x.strip()}
+            for r in rows]
+
+
 def _multiplier_map() -> dict:
     """event_id → 기존 배수 행 목록 (사실 시그니처 비교용). 조회 실패는 빈 dict."""
     out = {}
@@ -266,7 +283,7 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
     반환: dict(new=[...], closed=[...], changed=[(event, field, old, new)...],
               active=[...], run_id=int|None)
     """
-    today = dt.date.today().isoformat()
+    today = today_kst().isoformat()      # '종료' 판정 기준일 = 한국 날짜
     now = dt.datetime.now(dt.timezone.utc).isoformat()
     existing = fetch_all_events() if enabled() else []
     idx = build_index(existing)
@@ -358,7 +375,10 @@ def sync(scraped: list, firms_failed: list, trigger_type: str):
             # 예산 소진·LLM 실패로 추출을 못 한 건에 schema_version 을 찍으면,
             # 다음 배치에서 cache_ok 가 True 가 되어 '누락의 영구화'가 그대로
             # 재현된다 (이 패치가 없애려던 바로 그 버그).
-            if ev.get("rows_fresh"):
+            # 예외(A5): normalize 가 '이 원문에는 추출할 근거가 없다'를 반복 확인해
+            # empty_confirmed 를 실은 건. 미처리·장애 건과 달리 LLM 이 정상 응답으로 답한
+            # 결과이므로 해시를 저장해 다음 실행부터 캐시되게 한다(원문이 바뀌면 재추출).
+            if ev.get("rows_fresh") or ev.get("empty_confirmed"):
                 for f in ("source_content_hash", "extract_schema_version"):
                     if f in ev and old.get(f) != ev.get(f):
                         updates[f] = ev.get(f)
