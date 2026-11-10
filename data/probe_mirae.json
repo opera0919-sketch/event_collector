@@ -1,0 +1,1254 @@
+{
+ "static": [
+  {
+   "name": "mw_list",
+   "url": "https://securities.miraeasset.com/mw/mki/mki7000/r01.do",
+   "error": "ConnectTimeout: HTTPConnectionPool(host='securities.miraeasset.com', port=80): Max retries exceeded with url: /public/mts/html/AppLink.html?id=event (Caused by ConnectTimeoutEr",
+   "ua": "desktop"
+  },
+  {
+   "name": "mw_list",
+   "url": "https://securities.miraeasset.com/mw/mki/mki7000/r01.do",
+   "error": "ConnectTimeout: HTTPConnectionPool(host='securities.miraeasset.com', port=80): Max retries exceeded with url: /public/mts/html/AppLink.html?id=event (Caused by ConnectTimeoutEr",
+   "ua": "mobile"
+  },
+  {
+   "name": "mw_detail",
+   "url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
+   "redirects": [],
+   "len": 51954,
+   "title": "목록 - 진행중 이벤트",
+   "text_head": "목록 - 진행중 이벤트 닫기 홈 미래에셋증권 닫기 로그인 로그아웃 김미래 님 검색 검색 닫기 안내 등록되지 않은 ID 입니다 확인 팝업닫기 loading MAPS에서 이용하세요! 선택하신 메뉴는 MAPS에서 이용가능합니다. MAPS으로 이동하시겠습니까? (설치되어 있지 않으면 다운로드 페이지로 이동합니다.) 취소 확인 팝업닫기 m.Global에서 이용하세요! 선택하신 메뉴는 m.Global에서 이용가능합니다. m.Global로 이동하시겠습니까? (설치되어 있지 않으면 다운로드 페이지로 이동합니다.) 취소 확인 팝업닫기 진행중 「투자",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 2,
+   "event_links": [
+    "/mw/mki/mki7000/r01.do",
+    "/mw/mki/mki7000/r02.do",
+    "/mw/mki/mki7000/r03.do",
+    "/mw/mki/mki7000/v01.do?cs_ecis_id=",
+    "/public/mts/html/AppLink.html?id=event",
+    "/public/mw/event/202609012/1790672130640.jpg"
+   ],
+   "do_urls_in_js": [
+    "/hki/hki7000/e04.json",
+    "/hki/hki7000/e05.json",
+    "/login/logoutTime.json",
+    "/mka/mka1001/n02.do",
+    "/mw/login.do",
+    "/mw/login.do?url=",
+    "/mw/login/logout.do",
+    "/mw/login/logout/ajax.json",
+    "/mw/main.do",
+    "/mw/mki/mki1002/n01.do",
+    "/mw/mki/mki7000/a04.json",
+    "/mw/mki/mki7000/a06.json",
+    "/mw/mki/mki7000/a07.json",
+    "/mw/mki/mki7000/a08.json",
+    "/mw/mki/mki7000/a09.json",
+    "/mw/mki/mki7000/e01.do?custExerId=202609012&mod=S",
+    "/mw/mki/mki7000/e02.json",
+    "/mw/mki/mki7000/e03.do?custExerId=202609012&mod=S",
+    "/mw/mki/mki7000/e03.do?custExerId=202609012&mod=S&evnt_sect=",
+    "/mw/mki/mki7000/e04.json",
+    "/mw/mki/mki7000/r01.do",
+    "/mw/mki/mki7000/r02.do",
+    "/mw/mki/mki7000/r03.do",
+    "/mw/mki/mki7000/s01.json",
+    "/mw/mki/mki7000/v01.do?cs_ecis_id=",
+    "/mw/mkr/mkr1001/a06.json",
+    "/mw/search.do",
+    "/mw/search.do?query="
+   ],
+   "period_hits": [
+    "2026.10.01 ~ 2026.12.31"
+   ],
+   "ua": "desktop"
+  },
+  {
+   "name": "mw_detail",
+   "url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
+   "redirects": [],
+   "len": 51954,
+   "title": "목록 - 진행중 이벤트",
+   "text_head": "목록 - 진행중 이벤트 닫기 홈 미래에셋증권 닫기 로그인 로그아웃 김미래 님 검색 검색 닫기 안내 등록되지 않은 ID 입니다 확인 팝업닫기 loading MAPS에서 이용하세요! 선택하신 메뉴는 MAPS에서 이용가능합니다. MAPS으로 이동하시겠습니까? (설치되어 있지 않으면 다운로드 페이지로 이동합니다.) 취소 확인 팝업닫기 m.Global에서 이용하세요! 선택하신 메뉴는 m.Global에서 이용가능합니다. m.Global로 이동하시겠습니까? (설치되어 있지 않으면 다운로드 페이지로 이동합니다.) 취소 확인 팝업닫기 진행중 「투자",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 2,
+   "event_links": [
+    "/mw/mki/mki7000/r01.do",
+    "/mw/mki/mki7000/r02.do",
+    "/mw/mki/mki7000/r03.do",
+    "/mw/mki/mki7000/v01.do?cs_ecis_id=",
+    "/public/mts/html/AppLink.html?id=event",
+    "/public/mw/event/202609012/1790672130640.jpg"
+   ],
+   "do_urls_in_js": [
+    "/hki/hki7000/e04.json",
+    "/hki/hki7000/e05.json",
+    "/login/logoutTime.json",
+    "/mka/mka1001/n02.do",
+    "/mw/login.do",
+    "/mw/login.do?url=",
+    "/mw/login/logout.do",
+    "/mw/login/logout/ajax.json",
+    "/mw/main.do",
+    "/mw/mki/mki1002/n01.do",
+    "/mw/mki/mki7000/a04.json",
+    "/mw/mki/mki7000/a06.json",
+    "/mw/mki/mki7000/a07.json",
+    "/mw/mki/mki7000/a08.json",
+    "/mw/mki/mki7000/a09.json",
+    "/mw/mki/mki7000/e01.do?custExerId=202609012&mod=S",
+    "/mw/mki/mki7000/e02.json",
+    "/mw/mki/mki7000/e03.do?custExerId=202609012&mod=S",
+    "/mw/mki/mki7000/e03.do?custExerId=202609012&mod=S&evnt_sect=",
+    "/mw/mki/mki7000/e04.json",
+    "/mw/mki/mki7000/r01.do",
+    "/mw/mki/mki7000/r02.do",
+    "/mw/mki/mki7000/r03.do",
+    "/mw/mki/mki7000/s01.json",
+    "/mw/mki/mki7000/v01.do?cs_ecis_id=",
+    "/mw/mkr/mkr1001/a06.json",
+    "/mw/search.do",
+    "/mw/search.do?query="
+   ],
+   "period_hits": [
+    "2026.10.01 ~ 2026.12.31"
+   ],
+   "ua": "mobile"
+  },
+  {
+   "name": "applink",
+   "url": "https://securities.miraeasset.com/public/mts/html/AppLink.html?id=event",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/public/mts/html/AppLink.html?id=event",
+   "redirects": [],
+   "len": 11036,
+   "title": "미래에셋증권 MAPS",
+   "text_head": "미래에셋증권 MAPS 미래에셋증권 MAPS",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 0,
+   "event_links": [],
+   "do_urls_in_js": [],
+   "period_hits": [],
+   "html_head": "<html lang=\"ko\">\r\n<head>\r\n    <title>미래에셋증권 MAPS </title>\r\n    <meta charset=\"euc-kr\">\r\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />\r\n    <meta http-equiv=\"Pragma\" content=\"no-cache\" />\r\n    <meta http-equiv=\"Expires\" content=\"-1\" />\r\n    <meta http-equiv=\"cache-control\" content=\"no-store\" />\r\n    <link rel=\"shortcut icon\" href=\"https://img.securities.miraeasset.com/new2016/layout/favicon.ico\" />\r\n    <style>\r\n        html,\r\n        body {\r\n            height: 100%;\r\n            width: 100%;\r\n        }\r\n\r\n        body {\r\n            background: #F5F6F8;\r\n            font-size: 16px;\r\n            font-family: 'Open Sans', sans-serif;\r\n            color: #2C3E51;\r\n        }\r\n\r\n        .main {\r\n            display: flex;\r\n            align-items: center;\r\n            justify-content: center;\r\n            height: 100vh;\r\n        }\r\n\r\n        .main>div>div,\r\n        .main>div>span {\r\n            text-align: center;\r\n        }\r\n\r\n        .main span {\r\n            display: block;\r\n            padding: 40px 0 170px;\r\n            font-size: 3rem;\r\n        }\r\n\r\n        .main .app img {\r\n            position: absolute;\r\n            bottom: 30px;\r\n            left: 50%;\r\n            transform: translate(-50%, -50%);\r\n            width: 300px;\r\n        }\r\n    </style>\r\n    <!-- Google Tag Manager -->\r\n    <script>\r\n        var pageviewObj = new Object();\r\n        pageviewObj.dimension12=\"mobileweb\";\r\n        dataLayer=[pageviewObj];\r\n        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-P38XR3M');\r\n    </script>\r\n    <!-- End Google Tag Manager -->\r\n</head>\r\n<body>\r\n<div class=\"main\">\r\n    <div class=\"workarea\">\r\n        <div id=\"logo\" class=\"logo\">\r\n            <img src=\"/public/mts/images/ico_m_stock.jpg?v=2\" style=\"width:250px;height:250px;border-radius:20px;\" onerror=\"this.style.display='none'\"/>\r\n        </div>\r\n        <span id=\"app_name\">미래에셋증권 MAPS</span>\r\n        <div id=\"app_logo\" class=\"app\" style=\"display:none;\">\r\n            <img src=\"/public/mts/images/app_store_badge.png\" onclick=\"redirect_to_store()\" />\r\n        </div>\r\n    </div>\r\n</div>\r\n<script>\r\n    // 유저에트\r\n    let useragent = navigator.userAgent.toLowerCase();\r\n    let os = (/iphone|ipad|ipod/i.test(useragent)) ? \"ios\" : (/android/i.test(useragent))? \"android\" : \"etc\";\r\n    console.log(\"os : \" + os);\r\n\r\n    // 앱 링크 상세경로\r\n    let app_link_scheme = 'miraeassetTrade://';\r\n    let app_link_path = 'content?menuId=home';\r\n    let app_link_path_reg_exp = /path=/;\t// applink full 인코딩 된 경로, ex) path=content%3FmenuId%3Dhome\r\n    let app_link_short_path_reg_exp = /id=/; // applink 사용하는 메뉴 id,\t  ex) id=home\r\n    let app_link_short_path_reg_exp2 = /data=/; // applink 사용하는 메뉴 id,\t  ex) id=home\r\n    let app_link_short_path_reg_exp3 = /cd=/; // applink 사용하는 메뉴 id,\t  ex) id=home\r\n    let app_link_short_path_reg_exp4 = /pmi=/;\r\n    if(location.search.replace(\"?\",\"\")) {\r\n        let urlParams = location.search.replace(\"?\", \"\").split(\"&\");\r\n        if(app_link_path_reg_exp.test(location.search)) {\r\n            let encoded_app_link_path = urlParams.find(e => app_link_path_reg_exp.test(e)).replace(app_link_path_reg_exp, \"\");\r\n            if(encoded_app_link_path) app_link_path = decodeURIComponent(encoded_app",
+   "ua": "desktop"
+  },
+  {
+   "name": "applink",
+   "url": "https://securities.miraeasset.com/public/mts/html/AppLink.html?id=event",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/public/mts/html/AppLink.html?id=event",
+   "redirects": [],
+   "len": 11036,
+   "title": "미래에셋증권 MAPS",
+   "text_head": "미래에셋증권 MAPS 미래에셋증권 MAPS",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 0,
+   "event_links": [],
+   "do_urls_in_js": [],
+   "period_hits": [],
+   "html_head": "<html lang=\"ko\">\r\n<head>\r\n    <title>미래에셋증권 MAPS </title>\r\n    <meta charset=\"euc-kr\">\r\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />\r\n    <meta http-equiv=\"Pragma\" content=\"no-cache\" />\r\n    <meta http-equiv=\"Expires\" content=\"-1\" />\r\n    <meta http-equiv=\"cache-control\" content=\"no-store\" />\r\n    <link rel=\"shortcut icon\" href=\"https://img.securities.miraeasset.com/new2016/layout/favicon.ico\" />\r\n    <style>\r\n        html,\r\n        body {\r\n            height: 100%;\r\n            width: 100%;\r\n        }\r\n\r\n        body {\r\n            background: #F5F6F8;\r\n            font-size: 16px;\r\n            font-family: 'Open Sans', sans-serif;\r\n            color: #2C3E51;\r\n        }\r\n\r\n        .main {\r\n            display: flex;\r\n            align-items: center;\r\n            justify-content: center;\r\n            height: 100vh;\r\n        }\r\n\r\n        .main>div>div,\r\n        .main>div>span {\r\n            text-align: center;\r\n        }\r\n\r\n        .main span {\r\n            display: block;\r\n            padding: 40px 0 170px;\r\n            font-size: 3rem;\r\n        }\r\n\r\n        .main .app img {\r\n            position: absolute;\r\n            bottom: 30px;\r\n            left: 50%;\r\n            transform: translate(-50%, -50%);\r\n            width: 300px;\r\n        }\r\n    </style>\r\n    <!-- Google Tag Manager -->\r\n    <script>\r\n        var pageviewObj = new Object();\r\n        pageviewObj.dimension12=\"mobileweb\";\r\n        dataLayer=[pageviewObj];\r\n        (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-P38XR3M');\r\n    </script>\r\n    <!-- End Google Tag Manager -->\r\n</head>\r\n<body>\r\n<div class=\"main\">\r\n    <div class=\"workarea\">\r\n        <div id=\"logo\" class=\"logo\">\r\n            <img src=\"/public/mts/images/ico_m_stock.jpg?v=2\" style=\"width:250px;height:250px;border-radius:20px;\" onerror=\"this.style.display='none'\"/>\r\n        </div>\r\n        <span id=\"app_name\">미래에셋증권 MAPS</span>\r\n        <div id=\"app_logo\" class=\"app\" style=\"display:none;\">\r\n            <img src=\"/public/mts/images/app_store_badge.png\" onclick=\"redirect_to_store()\" />\r\n        </div>\r\n    </div>\r\n</div>\r\n<script>\r\n    // 유저에트\r\n    let useragent = navigator.userAgent.toLowerCase();\r\n    let os = (/iphone|ipad|ipod/i.test(useragent)) ? \"ios\" : (/android/i.test(useragent))? \"android\" : \"etc\";\r\n    console.log(\"os : \" + os);\r\n\r\n    // 앱 링크 상세경로\r\n    let app_link_scheme = 'miraeassetTrade://';\r\n    let app_link_path = 'content?menuId=home';\r\n    let app_link_path_reg_exp = /path=/;\t// applink full 인코딩 된 경로, ex) path=content%3FmenuId%3Dhome\r\n    let app_link_short_path_reg_exp = /id=/; // applink 사용하는 메뉴 id,\t  ex) id=home\r\n    let app_link_short_path_reg_exp2 = /data=/; // applink 사용하는 메뉴 id,\t  ex) id=home\r\n    let app_link_short_path_reg_exp3 = /cd=/; // applink 사용하는 메뉴 id,\t  ex) id=home\r\n    let app_link_short_path_reg_exp4 = /pmi=/;\r\n    if(location.search.replace(\"?\",\"\")) {\r\n        let urlParams = location.search.replace(\"?\", \"\").split(\"&\");\r\n        if(app_link_path_reg_exp.test(location.search)) {\r\n            let encoded_app_link_path = urlParams.find(e => app_link_path_reg_exp.test(e)).replace(app_link_path_reg_exp, \"\");\r\n            if(encoded_app_link_path) app_link_path = decodeURIComponent(encoded_app",
+   "ua": "mobile"
+  },
+  {
+   "name": "pc_home",
+   "url": "https://securities.miraeasset.com/",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/",
+   "redirects": [],
+   "len": 4281,
+   "title": "미래에셋증권 - 글로벌 투자 파트너",
+   "text_head": "미래에셋증권 - 글로벌 투자 파트너 -->",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 0,
+   "event_links": [],
+   "do_urls_in_js": [
+    "/session_update.jsp",
+    "/wtsform.jsp"
+   ],
+   "period_hits": [],
+   "ua": "desktop"
+  },
+  {
+   "name": "pc_home",
+   "url": "https://securities.miraeasset.com/",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/",
+   "redirects": [],
+   "len": 4281,
+   "title": "미래에셋증권 - 글로벌 투자 파트너",
+   "text_head": "미래에셋증권 - 글로벌 투자 파트너 -->",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 0,
+   "event_links": [],
+   "do_urls_in_js": [
+    "/session_update.jsp",
+    "/wtsform.jsp"
+   ],
+   "period_hits": [],
+   "ua": "mobile"
+  },
+  {
+   "name": "pc_list_hki",
+   "url": "https://securities.miraeasset.com/hki/hki7000/r01.do",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/hki/hki7000/r01.do",
+   "redirects": [],
+   "len": 49563,
+   "title": "이벤트 글목록 | 진행중인 이벤트 | 공지/이벤트 | 미래에셋증권",
+   "text_head": "이벤트 글목록 | 진행중인 이벤트 | 공지/이벤트 | 미래에셋증권 본문 내용 바로가기 주 메뉴 바로가기 HTS 다운로드 --> HTS 다운로드 트레이딩 인증서/OTP 자주하는 질문 챗봇상담 원격지원 금융소비자포털 상품공시실 로그인 계좌개설 회원가입 MY자산 뱅킹/대출/청약 금융상품 연금자산 투자정보 서비스 신청/변경 이용안내/문의 검색창 열기 삭제 검색 의 메뉴가 있습니다. 더보기 닫기 --> 추천검색어 #추천상품 #수수료 #카이로스다운로드 #OTP 월간 추천상품 더보기 검색창 닫기 전체메뉴 열기 고객센터 1588-6800 연금자산",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 0,
+   "event_links": [
+    "https://img.securities.miraeasset.com/notice/img_no_event.gif"
+   ],
+   "do_urls_in_js": [
+    "/advancement/jsp/common/allMenuPopup.jsp",
+    "/advancement/jsp/common/mkaPopup.jsp",
+    "/bbs/board/message/list.do?categoryId=1296",
+    "/bbs/main/research/index.do",
+    "/directMain.do",
+    "/hkd/hkd1001/r01.do",
+    "/hkd/hkd1005/r01.do",
+    "/hki/hki3016/n01.do",
+    "/hki/hki3016/n04.do",
+    "/hki/hki3031/a00.do",
+    "/hki/hki3040/a00.do",
+    "/hki/hki3040/a00.do?getCode=/hki/hki3040/n04.do",
+    "/hki/hki3043/n01.do",
+    "/hki/hki3062/n03.do?clasCd=5",
+    "/hki/hki3062/n04.do",
+    "/hki/hki3062/n05.do",
+    "/hki/hki3096/r01.do",
+    "/hki/hki7000/r05.do",
+    "/hkp/hkp1002/r01.do",
+    "/hkp/hkp1003/r01.do",
+    "/hkp/hkp1004/n01.do",
+    "/hkp/hkp1004/n05.do",
+    "/hkp/hkp1004/n06.do",
+    "/hkp/hkp2001/r01.do",
+    "/hkp/hkp2002/r01.do",
+    "/hkp/hkp2007/n01.do",
+    "/hkp/hkp2009/c01.do",
+    "/hkp/hkp2010/p01.do",
+    "/hks/hks4000/n02.do",
+    "/hks/hks4000/n02_1.do",
+    "/hks/hks4000/n06.do",
+    "/hks/hks4022/n02_2.do",
+    "/hks/hks4023/n01_1.do",
+    "/hks/hks4033/n01.do",
+    "/hks/hks4033/n02.do",
+    "/hks/hks4036/r01.do",
+    "/hks/hks4041/n01.do",
+    "/hks/hks4048/r05.do",
+    "/hks/hks4054/v03.do",
+    "/hks/hks4113/n02.do",
+    "/hks/hks4116/r01.do",
+    "/hks/hks4125/n11.do",
+    "/hks/hks4200/n01.do",
+    "/hks/hks4318/n01.do",
+    "/hks/hks4318/n11.do",
+    "/hks/hks4323/n05.do",
+    "/hku/hku2001/c07.do",
+    "/hku/hku2001/t01.do",
+    "/hku/hku2001/t02.do",
+    "/hku/hku3005/u01.do",
+    "/hku/hku3013/r01.do",
+    "/hku/hku3014/u01.do",
+    "/hku/hku3020/n02.do",
+    "/hku/hku4010/r01.do",
+    "/hku/hku4013/r02.do",
+    "/hku/hku4196/n01.do",
+    "/imf/100/imf101.do",
+    "/imf/200/imf101.do",
+    "/imf/200/imf101.do#wrap-collapse1-01",
+    "/imf/200/imf601.do"
+   ],
+   "period_hits": [],
+   "ua": "desktop"
+  },
+  {
+   "name": "pc_list_hki",
+   "url": "https://securities.miraeasset.com/hki/hki7000/r01.do",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/hki/hki7000/r01.do",
+   "redirects": [],
+   "len": 49563,
+   "title": "이벤트 글목록 | 진행중인 이벤트 | 공지/이벤트 | 미래에셋증권",
+   "text_head": "이벤트 글목록 | 진행중인 이벤트 | 공지/이벤트 | 미래에셋증권 본문 내용 바로가기 주 메뉴 바로가기 HTS 다운로드 --> HTS 다운로드 트레이딩 인증서/OTP 자주하는 질문 챗봇상담 원격지원 금융소비자포털 상품공시실 로그인 계좌개설 회원가입 MY자산 뱅킹/대출/청약 금융상품 연금자산 투자정보 서비스 신청/변경 이용안내/문의 검색창 열기 삭제 검색 의 메뉴가 있습니다. 더보기 닫기 --> 추천검색어 #추천상품 #수수료 #카이로스다운로드 #OTP 월간 추천상품 더보기 검색창 닫기 전체메뉴 열기 고객센터 1588-6800 연금자산",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 0,
+   "event_links": [
+    "https://img.securities.miraeasset.com/notice/img_no_event.gif"
+   ],
+   "do_urls_in_js": [
+    "/advancement/jsp/common/allMenuPopup.jsp",
+    "/advancement/jsp/common/mkaPopup.jsp",
+    "/bbs/board/message/list.do?categoryId=1296",
+    "/bbs/main/research/index.do",
+    "/directMain.do",
+    "/hkd/hkd1001/r01.do",
+    "/hkd/hkd1005/r01.do",
+    "/hki/hki3016/n01.do",
+    "/hki/hki3016/n04.do",
+    "/hki/hki3031/a00.do",
+    "/hki/hki3040/a00.do",
+    "/hki/hki3040/a00.do?getCode=/hki/hki3040/n04.do",
+    "/hki/hki3043/n01.do",
+    "/hki/hki3062/n03.do?clasCd=5",
+    "/hki/hki3062/n04.do",
+    "/hki/hki3062/n05.do",
+    "/hki/hki3096/r01.do",
+    "/hki/hki7000/r05.do",
+    "/hkp/hkp1002/r01.do",
+    "/hkp/hkp1003/r01.do",
+    "/hkp/hkp1004/n01.do",
+    "/hkp/hkp1004/n05.do",
+    "/hkp/hkp1004/n06.do",
+    "/hkp/hkp2001/r01.do",
+    "/hkp/hkp2002/r01.do",
+    "/hkp/hkp2007/n01.do",
+    "/hkp/hkp2009/c01.do",
+    "/hkp/hkp2010/p01.do",
+    "/hks/hks4000/n02.do",
+    "/hks/hks4000/n02_1.do",
+    "/hks/hks4000/n06.do",
+    "/hks/hks4022/n02_2.do",
+    "/hks/hks4023/n01_1.do",
+    "/hks/hks4033/n01.do",
+    "/hks/hks4033/n02.do",
+    "/hks/hks4036/r01.do",
+    "/hks/hks4041/n01.do",
+    "/hks/hks4048/r05.do",
+    "/hks/hks4054/v03.do",
+    "/hks/hks4113/n02.do",
+    "/hks/hks4116/r01.do",
+    "/hks/hks4125/n11.do",
+    "/hks/hks4200/n01.do",
+    "/hks/hks4318/n01.do",
+    "/hks/hks4318/n11.do",
+    "/hks/hks4323/n05.do",
+    "/hku/hku2001/c07.do",
+    "/hku/hku2001/t01.do",
+    "/hku/hku2001/t02.do",
+    "/hku/hku3005/u01.do",
+    "/hku/hku3013/r01.do",
+    "/hku/hku3014/u01.do",
+    "/hku/hku3020/n02.do",
+    "/hku/hku4010/r01.do",
+    "/hku/hku4013/r02.do",
+    "/hku/hku4196/n01.do",
+    "/imf/100/imf101.do",
+    "/imf/200/imf101.do",
+    "/imf/200/imf101.do#wrap-collapse1-01",
+    "/imf/200/imf601.do"
+   ],
+   "period_hits": [],
+   "ua": "mobile"
+  },
+  {
+   "name": "pc_list_hki3",
+   "url": "https://securities.miraeasset.com/hki/hki3028/r01.do",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/hki/hki3028/r01.do",
+   "redirects": [],
+   "len": 154079,
+   "title": "증권용어사전 | 미래에셋대우",
+   "text_head": "증권용어사전 | 미래에셋대우 검색어 가 나 다 라 마 바 사 아 자 차 카 타 파 하 찾으시는 단어를 검색창에 입력하시거나 목록을 선택하시면 용어 의미를 찾으실 수 있습니다. CD(certificates of deposit) DR(Depository Receipts) IMC (IMC (Integrated Marketing Communications )) M 0 (Merger 0) MMF(Money Market Fund) (Money Market Fund ) NYSE (New York Stick Exchange) OBV지표(On Ba",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 0,
+   "event_links": [],
+   "do_urls_in_js": [
+    "/bbs/board/message/list.do?categoryId=1296",
+    "/hkd/hkd1001/r01.do",
+    "/hkd/hkd1005/r01.do",
+    "/hki/hki3028/r01.do#seq_",
+    "/hki/hki3096/r01.do",
+    "/hki/hki7000/r05.do",
+    "/hkp/hkp1002/r01.do",
+    "/hkp/hkp1003/r01.do",
+    "/hkp/hkp1004/n01.do",
+    "/hkp/hkp1004/n05.do",
+    "/hkp/hkp1004/n06.do",
+    "/hkp/hkp2001/r01.do",
+    "/hkp/hkp2002/r01.do",
+    "/hkp/hkp2007/n01.do",
+    "/hkp/hkp2009/c01.do",
+    "/hks/hks4000/n02_1.do",
+    "/hks/hks4000/n06.do",
+    "/hks/hks4022/n02_2.do",
+    "/hks/hks4023/n01_1.do",
+    "/hks/hks4033/n01.do",
+    "/hks/hks4033/n02.do",
+    "/hks/hks4036/r01.do",
+    "/hks/hks4041/n01.do",
+    "/hks/hks4048/r05.do",
+    "/hks/hks4054/v03.do",
+    "/hks/hks4113/n02.do",
+    "/hks/hks4116/r01.do",
+    "/hks/hks4125/n11.do",
+    "/hks/hks4318/n01.do",
+    "/hks/hks4318/n11.do",
+    "/hks/hks4323/n05.do",
+    "/hku/hku2001/c07.do",
+    "/hku/hku2001/t01.do",
+    "/hku/hku3005/u01.do",
+    "/hku/hku3014/u01.do",
+    "/hku/hku4010/r01.do",
+    "/hku/hku4013/r02.do",
+    "/hku/hku4196/n01.do",
+    "/imf/100/imf101.do",
+    "/imf/200/imf101.do",
+    "/imf/400/imf201.do",
+    "/imf/500/imf101.do",
+    "/imf/600/imf401.do",
+    "/imf/700/imf101.do",
+    "/mw/mkd/mkd1001/r01.do",
+    "/mw/mkd/mkd1001/r03.do",
+    "/mw/mkd/mkd1001/r04.do",
+    "/mw/mki/mki3001/r01.do",
+    "/mw/mki/mki3096/r01.do",
+    "/mw/mki/mki7000/r01.do",
+    "/mw/mkp/mkp1003/r01.do",
+    "/mw/mkp/mkp1004/n01.do",
+    "/mw/mkp/mkp1004/n02.do",
+    "/mw/mkp/mkp1004/n03.do",
+    "/mw/mkp/mkp2002/r01.do",
+    "/mw/mkp/mkp2007/n01.do",
+    "/mw/mkp/mkp2009/c02.do",
+    "/mw/mkr/mkr1001/r02.do",
+    "/mw/mks/mks4000/r01.do",
+    "/mw/mks/mks4022/r01.do"
+   ],
+   "period_hits": [],
+   "ua": "desktop"
+  },
+  {
+   "name": "pc_list_hki3",
+   "url": "https://securities.miraeasset.com/hki/hki3028/r01.do",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/hki/hki3028/r01.do",
+   "redirects": [],
+   "len": 154079,
+   "title": "증권용어사전 | 미래에셋대우",
+   "text_head": "증권용어사전 | 미래에셋대우 검색어 가 나 다 라 마 바 사 아 자 차 카 타 파 하 찾으시는 단어를 검색창에 입력하시거나 목록을 선택하시면 용어 의미를 찾으실 수 있습니다. CD(certificates of deposit) DR(Depository Receipts) IMC (IMC (Integrated Marketing Communications )) M 0 (Merger 0) MMF(Money Market Fund) (Money Market Fund ) NYSE (New York Stick Exchange) OBV지표(On Ba",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 0,
+   "event_links": [],
+   "do_urls_in_js": [
+    "/bbs/board/message/list.do?categoryId=1296",
+    "/hkd/hkd1001/r01.do",
+    "/hkd/hkd1005/r01.do",
+    "/hki/hki3028/r01.do#seq_",
+    "/hki/hki3096/r01.do",
+    "/hki/hki7000/r05.do",
+    "/hkp/hkp1002/r01.do",
+    "/hkp/hkp1003/r01.do",
+    "/hkp/hkp1004/n01.do",
+    "/hkp/hkp1004/n05.do",
+    "/hkp/hkp1004/n06.do",
+    "/hkp/hkp2001/r01.do",
+    "/hkp/hkp2002/r01.do",
+    "/hkp/hkp2007/n01.do",
+    "/hkp/hkp2009/c01.do",
+    "/hks/hks4000/n02_1.do",
+    "/hks/hks4000/n06.do",
+    "/hks/hks4022/n02_2.do",
+    "/hks/hks4023/n01_1.do",
+    "/hks/hks4033/n01.do",
+    "/hks/hks4033/n02.do",
+    "/hks/hks4036/r01.do",
+    "/hks/hks4041/n01.do",
+    "/hks/hks4048/r05.do",
+    "/hks/hks4054/v03.do",
+    "/hks/hks4113/n02.do",
+    "/hks/hks4116/r01.do",
+    "/hks/hks4125/n11.do",
+    "/hks/hks4318/n01.do",
+    "/hks/hks4318/n11.do",
+    "/hks/hks4323/n05.do",
+    "/hku/hku2001/c07.do",
+    "/hku/hku2001/t01.do",
+    "/hku/hku3005/u01.do",
+    "/hku/hku3014/u01.do",
+    "/hku/hku4010/r01.do",
+    "/hku/hku4013/r02.do",
+    "/hku/hku4196/n01.do",
+    "/imf/100/imf101.do",
+    "/imf/200/imf101.do",
+    "/imf/400/imf201.do",
+    "/imf/500/imf101.do",
+    "/imf/600/imf401.do",
+    "/imf/700/imf101.do",
+    "/mw/mkd/mkd1001/r01.do",
+    "/mw/mkd/mkd1001/r03.do",
+    "/mw/mkd/mkd1001/r04.do",
+    "/mw/mki/mki3001/r01.do",
+    "/mw/mki/mki3096/r01.do",
+    "/mw/mki/mki7000/r01.do",
+    "/mw/mkp/mkp1003/r01.do",
+    "/mw/mkp/mkp1004/n01.do",
+    "/mw/mkp/mkp1004/n02.do",
+    "/mw/mkp/mkp1004/n03.do",
+    "/mw/mkp/mkp2002/r01.do",
+    "/mw/mkp/mkp2007/n01.do",
+    "/mw/mkp/mkp2009/c02.do",
+    "/mw/mkr/mkr1001/r02.do",
+    "/mw/mks/mks4000/r01.do",
+    "/mw/mks/mks4022/r01.do"
+   ],
+   "period_hits": [],
+   "ua": "mobile"
+  },
+  {
+   "name": "pc_detail_hki",
+   "url": "https://securities.miraeasset.com/hki/hki7000/v01.do?cs_ecis_id=202609012",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/hki/hki7000/v01.do?cs_ecis_id=202609012",
+   "redirects": [],
+   "len": 52485,
+   "title": "상세보기 | 진행중인 이벤트 | 공지/이벤트 | 이용안내/문의 | 미래에셋대우",
+   "text_head": "상세보기 | 진행중인 이벤트 | 공지/이벤트 | 이용안내/문의 | 미래에셋대우 본문 내용 바로가기 주 메뉴 바로가기 HTS 다운로드 --> HTS 다운로드 트레이딩 인증서/OTP 자주하는 질문 챗봇상담 원격지원 금융소비자포털 상품공시실 로그인 계좌개설 회원가입 MY자산 뱅킹/대출/청약 금융상품 연금자산 투자정보 서비스 신청/변경 이용안내/문의 검색창 열기 삭제 검색 의 메뉴가 있습니다. 더보기 닫기 --> 추천검색어 #추천상품 #수수료 #카이로스다운로드 #OTP 월간 추천상품 더보기 검색창 닫기 전체메뉴 열기 진행중인 이벤트 이벤트",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 0,
+   "event_links": [
+    "/hki/hki7000/r01.do",
+    "/hki/hki7000/v01.do"
+   ],
+   "do_urls_in_js": [
+    "/advancement/jsp/common/allMenuPopup.jsp",
+    "/advancement/jsp/common/mkaPopup.jsp",
+    "/bbs/board/message/list.do?categoryId=1296",
+    "/bbs/main/research/index.do",
+    "/directMain.do",
+    "/hkd/hkd1001/r01.do",
+    "/hkd/hkd1005/r01.do",
+    "/hki/hki3016/n01.do",
+    "/hki/hki3016/n04.do",
+    "/hki/hki3031/a00.do",
+    "/hki/hki3040/a00.do",
+    "/hki/hki3040/a00.do?getCode=/hki/hki3040/n04.do",
+    "/hki/hki3043/n01.do",
+    "/hki/hki3062/n03.do?clasCd=5",
+    "/hki/hki3062/n04.do",
+    "/hki/hki3062/n05.do",
+    "/hki/hki3096/r01.do",
+    "/hki/hki7000/r01.do",
+    "/hki/hki7000/r05.do",
+    "/hki/hki7000/v01.do",
+    "/hkp/hkp1002/r01.do",
+    "/hkp/hkp1003/r01.do",
+    "/hkp/hkp1004/n01.do",
+    "/hkp/hkp1004/n05.do",
+    "/hkp/hkp1004/n06.do",
+    "/hkp/hkp2001/r01.do",
+    "/hkp/hkp2002/r01.do",
+    "/hkp/hkp2007/n01.do",
+    "/hkp/hkp2009/c01.do",
+    "/hkp/hkp2010/p01.do",
+    "/hks/hks4000/n02.do",
+    "/hks/hks4000/n02_1.do",
+    "/hks/hks4000/n06.do",
+    "/hks/hks4022/n02_2.do",
+    "/hks/hks4023/n01_1.do",
+    "/hks/hks4033/n01.do",
+    "/hks/hks4033/n02.do",
+    "/hks/hks4036/r01.do",
+    "/hks/hks4041/n01.do",
+    "/hks/hks4048/r05.do",
+    "/hks/hks4054/v03.do",
+    "/hks/hks4113/n02.do",
+    "/hks/hks4116/r01.do",
+    "/hks/hks4125/n11.do",
+    "/hks/hks4200/n01.do",
+    "/hks/hks4318/n01.do",
+    "/hks/hks4318/n11.do",
+    "/hks/hks4323/n05.do",
+    "/hku/hku2001/c07.do",
+    "/hku/hku2001/t01.do",
+    "/hku/hku2001/t02.do",
+    "/hku/hku3005/u01.do",
+    "/hku/hku3013/r01.do",
+    "/hku/hku3014/u01.do",
+    "/hku/hku3020/n02.do",
+    "/hku/hku4010/r01.do",
+    "/hku/hku4013/r02.do",
+    "/hku/hku4196/n01.do",
+    "/imf/100/imf101.do",
+    "/imf/200/imf101.do"
+   ],
+   "period_hits": [],
+   "ua": "desktop"
+  },
+  {
+   "name": "pc_detail_hki",
+   "url": "https://securities.miraeasset.com/hki/hki7000/v01.do?cs_ecis_id=202609012",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/hki/hki7000/v01.do?cs_ecis_id=202609012",
+   "redirects": [],
+   "len": 52485,
+   "title": "상세보기 | 진행중인 이벤트 | 공지/이벤트 | 이용안내/문의 | 미래에셋대우",
+   "text_head": "상세보기 | 진행중인 이벤트 | 공지/이벤트 | 이용안내/문의 | 미래에셋대우 본문 내용 바로가기 주 메뉴 바로가기 HTS 다운로드 --> HTS 다운로드 트레이딩 인증서/OTP 자주하는 질문 챗봇상담 원격지원 금융소비자포털 상품공시실 로그인 계좌개설 회원가입 MY자산 뱅킹/대출/청약 금융상품 연금자산 투자정보 서비스 신청/변경 이용안내/문의 검색창 열기 삭제 검색 의 메뉴가 있습니다. 더보기 닫기 --> 추천검색어 #추천상품 #수수료 #카이로스다운로드 #OTP 월간 추천상품 더보기 검색창 닫기 전체메뉴 열기 진행중인 이벤트 이벤트",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 0,
+   "event_links": [
+    "/hki/hki7000/r01.do",
+    "/hki/hki7000/v01.do"
+   ],
+   "do_urls_in_js": [
+    "/advancement/jsp/common/allMenuPopup.jsp",
+    "/advancement/jsp/common/mkaPopup.jsp",
+    "/bbs/board/message/list.do?categoryId=1296",
+    "/bbs/main/research/index.do",
+    "/directMain.do",
+    "/hkd/hkd1001/r01.do",
+    "/hkd/hkd1005/r01.do",
+    "/hki/hki3016/n01.do",
+    "/hki/hki3016/n04.do",
+    "/hki/hki3031/a00.do",
+    "/hki/hki3040/a00.do",
+    "/hki/hki3040/a00.do?getCode=/hki/hki3040/n04.do",
+    "/hki/hki3043/n01.do",
+    "/hki/hki3062/n03.do?clasCd=5",
+    "/hki/hki3062/n04.do",
+    "/hki/hki3062/n05.do",
+    "/hki/hki3096/r01.do",
+    "/hki/hki7000/r01.do",
+    "/hki/hki7000/r05.do",
+    "/hki/hki7000/v01.do",
+    "/hkp/hkp1002/r01.do",
+    "/hkp/hkp1003/r01.do",
+    "/hkp/hkp1004/n01.do",
+    "/hkp/hkp1004/n05.do",
+    "/hkp/hkp1004/n06.do",
+    "/hkp/hkp2001/r01.do",
+    "/hkp/hkp2002/r01.do",
+    "/hkp/hkp2007/n01.do",
+    "/hkp/hkp2009/c01.do",
+    "/hkp/hkp2010/p01.do",
+    "/hks/hks4000/n02.do",
+    "/hks/hks4000/n02_1.do",
+    "/hks/hks4000/n06.do",
+    "/hks/hks4022/n02_2.do",
+    "/hks/hks4023/n01_1.do",
+    "/hks/hks4033/n01.do",
+    "/hks/hks4033/n02.do",
+    "/hks/hks4036/r01.do",
+    "/hks/hks4041/n01.do",
+    "/hks/hks4048/r05.do",
+    "/hks/hks4054/v03.do",
+    "/hks/hks4113/n02.do",
+    "/hks/hks4116/r01.do",
+    "/hks/hks4125/n11.do",
+    "/hks/hks4200/n01.do",
+    "/hks/hks4318/n01.do",
+    "/hks/hks4318/n11.do",
+    "/hks/hks4323/n05.do",
+    "/hku/hku2001/c07.do",
+    "/hku/hku2001/t01.do",
+    "/hku/hku2001/t02.do",
+    "/hku/hku3005/u01.do",
+    "/hku/hku3013/r01.do",
+    "/hku/hku3014/u01.do",
+    "/hku/hku3020/n02.do",
+    "/hku/hku4010/r01.do",
+    "/hku/hku4013/r02.do",
+    "/hku/hku4196/n01.do",
+    "/imf/100/imf101.do",
+    "/imf/200/imf101.do"
+   ],
+   "period_hits": [],
+   "ua": "mobile"
+  },
+  {
+   "name": "mw_home",
+   "url": "https://securities.miraeasset.com/mw/main.do",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/mw/main.do",
+   "redirects": [],
+   "len": 42338,
+   "title": "미래에셋증권",
+   "text_head": "미래에셋증권 닫기 홈 미래에셋증권 닫기 로그인 로그아웃 김미래 님 검색 검색 닫기 안내 등록되지 않은 ID 입니다 확인 팝업닫기 loading MAPS에서 이용하세요! 선택하신 메뉴는 MAPS에서 이용가능합니다. MAPS으로 이동하시겠습니까? (설치되어 있지 않으면 다운로드 페이지로 이동합니다.) 취소 확인 팝업닫기 m.Global에서 이용하세요! 선택하신 메뉴는 m.Global에서 이용가능합니다. m.Global로 이동하시겠습니까? (설치되어 있지 않으면 다운로드 페이지로 이동합니다.) 취소 확인 팝업닫기 이전 다음 재생 정지 계",
+   "n_detailView": 3,
+   "n_cs_ecis_id": 5,
+   "event_links": [
+    "/mw/mki/mki7000/v01.do?cs_ecis_id=",
+    "/public/mw/event/",
+    "javascript:getEventList();"
+   ],
+   "do_urls_in_js": [
+    "/bbs/board/message/list.do?categoryId=1490",
+    "/bbs/board/message/view.do?categoryId=1490&messageId=",
+    "/hki/hki3040/n02.do",
+    "/mw/login.do",
+    "/mw/login.do?url=",
+    "/mw/login/logout.do",
+    "/mw/main.do",
+    "/mw/mki/mki1002/n01.do",
+    "/mw/mki/mki3001/r01.do",
+    "/mw/mki/mki3062/n01.do",
+    "/mw/mki/mki3096/n01.do",
+    "/mw/mki/mki7000/a01.json",
+    "/mw/mki/mki7000/v01.do?cs_ecis_id=",
+    "/mw/mks/mks4000/r01.do",
+    "/mw/search.do",
+    "/mw/search.do?query="
+   ],
+   "period_hits": [],
+   "ua": "desktop"
+  },
+  {
+   "name": "mw_home",
+   "url": "https://securities.miraeasset.com/mw/main.do",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/mw/main.do",
+   "redirects": [],
+   "len": 42338,
+   "title": "미래에셋증권",
+   "text_head": "미래에셋증권 닫기 홈 미래에셋증권 닫기 로그인 로그아웃 김미래 님 검색 검색 닫기 안내 등록되지 않은 ID 입니다 확인 팝업닫기 loading MAPS에서 이용하세요! 선택하신 메뉴는 MAPS에서 이용가능합니다. MAPS으로 이동하시겠습니까? (설치되어 있지 않으면 다운로드 페이지로 이동합니다.) 취소 확인 팝업닫기 m.Global에서 이용하세요! 선택하신 메뉴는 m.Global에서 이용가능합니다. m.Global로 이동하시겠습니까? (설치되어 있지 않으면 다운로드 페이지로 이동합니다.) 취소 확인 팝업닫기 이전 다음 재생 정지 계",
+   "n_detailView": 3,
+   "n_cs_ecis_id": 5,
+   "event_links": [
+    "/mw/mki/mki7000/v01.do?cs_ecis_id=",
+    "/public/mw/event/",
+    "javascript:getEventList();"
+   ],
+   "do_urls_in_js": [
+    "/bbs/board/message/list.do?categoryId=1490",
+    "/bbs/board/message/view.do?categoryId=1490&messageId=",
+    "/hki/hki3040/n02.do",
+    "/mw/login.do",
+    "/mw/login.do?url=",
+    "/mw/login/logout.do",
+    "/mw/main.do",
+    "/mw/mki/mki1002/n01.do",
+    "/mw/mki/mki3001/r01.do",
+    "/mw/mki/mki3062/n01.do",
+    "/mw/mki/mki3096/n01.do",
+    "/mw/mki/mki7000/a01.json",
+    "/mw/mki/mki7000/v01.do?cs_ecis_id=",
+    "/mw/mks/mks4000/r01.do",
+    "/mw/search.do",
+    "/mw/search.do?query="
+   ],
+   "period_hits": [],
+   "ua": "mobile"
+  },
+  {
+   "name": "list_img_dir",
+   "url": "https://securities.miraeasset.com/public/mw/event/202609012/",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/error_404.html",
+   "redirects": [
+    "/error_404.html"
+   ],
+   "len": 1,
+   "title": null,
+   "text_head": "",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 0,
+   "event_links": [],
+   "do_urls_in_js": [],
+   "period_hits": [],
+   "ua": "desktop"
+  },
+  {
+   "name": "list_img_dir",
+   "url": "https://securities.miraeasset.com/public/mw/event/202609012/",
+   "status": 200,
+   "final_url": "https://securities.miraeasset.com/error_404.html",
+   "redirects": [
+    "/error_404.html"
+   ],
+   "len": 1,
+   "title": null,
+   "text_head": "",
+   "n_detailView": 0,
+   "n_cs_ecis_id": 0,
+   "event_links": [],
+   "do_urls_in_js": [],
+   "period_hits": [],
+   "ua": "mobile"
+  }
+ ],
+ "render": [
+  {
+   "name": "mw_list",
+   "url": "https://securities.miraeasset.com/mw/mki/mki7000/r01.do",
+   "guard": true,
+   "ua": "desktop",
+   "final_url": "https://securities.miraeasset.com/public/mts/html/AppLink.html?id=event",
+   "title": "미래에셋증권 MAPS",
+   "n_li_detailView": 0,
+   "n_onclick_detail": 0,
+   "body_len": 11,
+   "body_head": "미래에셋증권 MAPS",
+   "event_anchors": [],
+   "sample_items": [],
+   "imgs_event": [],
+   "blocked_offsite": [
+    "https://play.google.com/store/apps/details?id=com.miraeasset.trade"
+   ],
+   "requests": [
+    "https://securities.miraeasset.com/mw/mki/mki7000/r01.do",
+    "https://securities.miraeasset.com/public/mts/html/AppLink.html?id=event"
+   ]
+  },
+  {
+   "name": "mw_list",
+   "url": "https://securities.miraeasset.com/mw/mki/mki7000/r01.do",
+   "guard": true,
+   "ua": "mobile",
+   "final_url": "about:blank",
+   "title": "",
+   "n_li_detailView": 0,
+   "n_onclick_detail": 0,
+   "body_len": 0,
+   "body_head": "",
+   "event_anchors": [],
+   "sample_items": [],
+   "imgs_event": [],
+   "blocked_offsite": [],
+   "requests": [
+    "https://securities.miraeasset.com/mw/mki/mki7000/r01.do",
+    "https://securities.miraeasset.com/public/mts/html/AppLink.html?id=event",
+    "miraeassettrade://content?menuId=event&af_deeplink=true&af_dp=miraeassetTrade%3A%2F%2Fcontent%3FmenuId%3Devent",
+    "itms-apps://apps.apple.com/KR/app/id1248716281?ls=1&mt=8"
+   ]
+  },
+  {
+   "name": "mw_detail",
+   "url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
+   "guard": true,
+   "ua": "desktop",
+   "final_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
+   "title": "목록 - 진행중 이벤트",
+   "n_li_detailView": 0,
+   "n_onclick_detail": 0,
+   "body_len": 258,
+   "body_head": "이벤트 상세 닫기 닫기 홈 미래에셋증권 닫기 검색 검색 #연금#공모주 닫기 MY 트레이딩 금융상품 연금자산 투자정보 뱅킹/서비스 공지/이벤트 이용안내 MY 자산분석 MY자산 MY연금 투자수익률 진행중 2026.10.01 ~ 2026.12.31 공유하기 목록 이벤트 참여 신청 MAPS에서 이용하세요! 앱에서 더 많은 서비스 이용가능합니다. MAPS로 이동하시겠습니까? (설치되어 있지 않으면 다운로드 페이지로 이동합니다.) 앱으로 보기 팝업닫기 '",
+   "event_anchors": [
+    {
+     "t": "공지/이벤트",
+     "h": "javascript:setMenuBanner(\"mki7000m01\");",
+     "o": ""
+    },
+    {
+     "t": "이벤트",
+     "h": "#none",
+     "o": ""
+    },
+    {
+     "t": "진행중 이벤트App",
+     "h": "javascript:fn_nativeErr('event','nms','','')",
+     "o": ""
+    },
+    {
+     "t": "지난 이벤트App",
+     "h": "javascript:fn_nativeErr('event','nms','','')",
+     "o": ""
+    },
+    {
+     "t": "참여한 이벤트App",
+     "h": "javascript:fn_nativeErr('event','nms','','')",
+     "o": ""
+    },
+    {
+     "t": "이벤트 참여 신청",
+     "h": "javascript:targetLink('A','JoinEvent()')",
+     "o": ""
+    },
+    {
+     "t": "",
+     "h": "javascript:fn_nativeErr('event','amg','','')",
+     "o": ""
+    },
+    {
+     "t": "앱으로 보기",
+     "h": "javascript:fn_nativeErr('event','nms','','evnno:202609012','Y'); appCancelPopup();",
+     "o": ""
+    }
+   ],
+   "sample_items": [],
+   "imgs_event": [
+    "https://securities.miraeasset.com/public/mw/event/202609012/1790672130640.jpg"
+   ],
+   "blocked_offsite": [],
+   "requests": [
+    "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do"
+   ]
+  },
+  {
+   "name": "mw_detail",
+   "url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
+   "guard": true,
+   "ua": "mobile",
+   "final_url": "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do",
+   "title": "목록 - 진행중 이벤트",
+   "n_li_detailView": 0,
+   "n_onclick_detail": 0,
+   "body_len": 258,
+   "body_head": "이벤트 상세 닫기 닫기 홈 미래에셋증권 닫기 검색 검색 #연금#공모주 닫기 MY 트레이딩 금융상품 연금자산 투자정보 뱅킹/서비스 공지/이벤트 이용안내 MY 자산분석 MY자산 MY연금 투자수익률 진행중 2026.10.01 ~ 2026.12.31 공유하기 목록 이벤트 참여 신청 MAPS에서 이용하세요! 앱에서 더 많은 서비스 이용가능합니다. MAPS로 이동하시겠습니까? (설치되어 있지 않으면 다운로드 페이지로 이동합니다.) 앱으로 보기 팝업닫기 '",
+   "event_anchors": [
+    {
+     "t": "공지/이벤트",
+     "h": "javascript:setMenuBanner(\"mki7000m01\");",
+     "o": ""
+    },
+    {
+     "t": "이벤트",
+     "h": "#none",
+     "o": ""
+    },
+    {
+     "t": "진행중 이벤트App",
+     "h": "javascript:fn_nativeErr('event','nms','','')",
+     "o": ""
+    },
+    {
+     "t": "지난 이벤트App",
+     "h": "javascript:fn_nativeErr('event','nms','','')",
+     "o": ""
+    },
+    {
+     "t": "참여한 이벤트App",
+     "h": "javascript:fn_nativeErr('event','nms','','')",
+     "o": ""
+    },
+    {
+     "t": "이벤트 참여 신청",
+     "h": "javascript:targetLink('A','JoinEvent()')",
+     "o": ""
+    },
+    {
+     "t": "",
+     "h": "javascript:fn_nativeErr('event','amg','','')",
+     "o": ""
+    },
+    {
+     "t": "앱으로 보기",
+     "h": "javascript:fn_nativeErr('event','nms','','evnno:202609012','Y'); appCancelPopup();",
+     "o": ""
+    }
+   ],
+   "sample_items": [],
+   "imgs_event": [
+    "https://securities.miraeasset.com/public/mw/event/202609012/1790672130640.jpg"
+   ],
+   "blocked_offsite": [],
+   "requests": [
+    "https://securities.miraeasset.com/mw/mki/mki7000/v01.do?cs_ecis_id=202609012&pub_sect=O&mod=S&returnURL=/mw/mki/mki7000/r01.do"
+   ]
+  },
+  {
+   "name": "pc_list_hki",
+   "url": "https://securities.miraeasset.com/hki/hki7000/r01.do",
+   "guard": true,
+   "ua": "desktop",
+   "final_url": "https://securities.miraeasset.com/hki/hki7000/r01.do",
+   "title": "이벤트 글목록 | 진행중인 이벤트 | 공지/이벤트 | 미래에셋증권",
+   "n_li_detailView": 0,
+   "n_onclick_detail": 0,
+   "body_len": 1054,
+   "body_head": "본문 내용 바로가기 주 메뉴 바로가기 HTS 다운로드 트레이딩 인증서/OTP 자주하는 질문 챗봇상담 원격지원 금융소비자포털 상품공시실 로그인 계좌개설 회원가입 MY자산 뱅킹/대출/청약 뱅킹/대출/ 청약 전체 메뉴 보기 이체로그인필요 대여 대출 청약 체크카드 미래에셋 현대카드 메뉴닫기 금융상품 금융상품 전체 메뉴 보기 추천상품 IMA 개인투자용국채 펀드 CMA ELS/DLS/ETN/ELW 발행어음 채권/RP ISA종합 중개형ISA 신탁형ISA 일임형ISA 신탁/Wrap 자문서비스 방카슈랑스 세금혜택상품 숙려제도 메뉴닫기 연금자산 연금",
+   "event_anchors": [
+    {
+     "t": "명예의전당",
+     "h": "javascript:openHp('/hki/hki7106/i01.do?link=event',true);",
+     "o": ""
+    },
+    {
+     "t": "공지/이벤트",
+     "h": "javascript:openHp('/bbs/board/message/list.do?categoryId=66&selectedId=1000000202&selectedId=1000000203&selectedId=1000003101',true);",
+     "o": ""
+    },
+    {
+     "t": "진행중인 이벤트",
+     "h": "javascript:openHp('/hki/hki7000/r05.do',false);",
+     "o": ""
+    },
+    {
+     "t": "참여한 이벤트로그인필요",
+     "h": "javascript:openHp('/hki/hki7000/r07.do',false);",
+     "o": ""
+    },
+    {
+     "t": "지난 이벤트",
+     "h": "javascript:openHp('/hki/hki7000/r06.do',false);",
+     "o": ""
+    }
+   ],
+   "sample_items": [],
+   "imgs_event": [
+    "https://img.securities.miraeasset.com/notice/img_no_event.gif"
+   ],
+   "blocked_offsite": [],
+   "requests": [
+    "https://securities.miraeasset.com/hki/hki7000/r01.do",
+    "https://securities.miraeasset.com/search/getTotalSearch.jsp",
+    "https://securities.miraeasset.com/public/banner/event.banner03.wjson",
+    "https://securities.miraeasset.com/public/banner/event.banner04.wjson"
+   ]
+  },
+  {
+   "name": "pc_list_hki",
+   "url": "https://securities.miraeasset.com/hki/hki7000/r01.do",
+   "guard": true,
+   "ua": "mobile",
+   "final_url": "https://securities.miraeasset.com/hki/hki7000/r01.do",
+   "title": "이벤트 글목록 | 진행중인 이벤트 | 공지/이벤트 | 미래에셋증권",
+   "n_li_detailView": 0,
+   "n_onclick_detail": 0,
+   "body_len": 1054,
+   "body_head": "본문 내용 바로가기 주 메뉴 바로가기 HTS 다운로드 트레이딩 인증서/OTP 자주하는 질문 챗봇상담 원격지원 금융소비자포털 상품공시실 로그인 계좌개설 회원가입 MY자산 뱅킹/대출/청약 뱅킹/대출/ 청약 전체 메뉴 보기 이체로그인필요 대여 대출 청약 체크카드 미래에셋 현대카드 메뉴닫기 금융상품 금융상품 전체 메뉴 보기 추천상품 IMA 개인투자용국채 펀드 CMA ELS/DLS/ETN/ELW 발행어음 채권/RP ISA종합 중개형ISA 신탁형ISA 일임형ISA 신탁/Wrap 자문서비스 방카슈랑스 세금혜택상품 숙려제도 메뉴닫기 연금자산 연금",
+   "event_anchors": [
+    {
+     "t": "명예의전당",
+     "h": "javascript:openHp('/hki/hki7106/i01.do?link=event',true);",
+     "o": ""
+    },
+    {
+     "t": "공지/이벤트",
+     "h": "javascript:openHp('/bbs/board/message/list.do?categoryId=66&selectedId=1000000202&selectedId=1000000203&selectedId=1000003101',true);",
+     "o": ""
+    },
+    {
+     "t": "진행중인 이벤트",
+     "h": "javascript:openHp('/hki/hki7000/r05.do',false);",
+     "o": ""
+    },
+    {
+     "t": "참여한 이벤트로그인필요",
+     "h": "javascript:openHp('/hki/hki7000/r07.do',false);",
+     "o": ""
+    },
+    {
+     "t": "지난 이벤트",
+     "h": "javascript:openHp('/hki/hki7000/r06.do',false);",
+     "o": ""
+    }
+   ],
+   "sample_items": [],
+   "imgs_event": [
+    "https://img.securities.miraeasset.com/notice/img_no_event.gif"
+   ],
+   "blocked_offsite": [],
+   "requests": [
+    "https://securities.miraeasset.com/hki/hki7000/r01.do",
+    "https://securities.miraeasset.com/search/getTotalSearch.jsp",
+    "https://securities.miraeasset.com/public/banner/event.banner03.wjson",
+    "https://securities.miraeasset.com/public/banner/event.banner04.wjson"
+   ]
+  },
+  {
+   "name": "pc_home",
+   "url": "https://securities.miraeasset.com/",
+   "guard": true,
+   "ua": "desktop",
+   "final_url": "https://securities.miraeasset.com/",
+   "title": "미래에셋증권 - 글로벌 투자 파트너",
+   "n_li_detailView": 0,
+   "n_onclick_detail": 0,
+   "body_len": 0,
+   "body_head": "",
+   "event_anchors": [],
+   "sample_items": [],
+   "imgs_event": [],
+   "blocked_offsite": [],
+   "requests": [
+    "https://securities.miraeasset.com/",
+    "https://securities.miraeasset.com/blank.html",
+    "https://securities.miraeasset.com/main.do",
+    "https://securities.miraeasset.com/session_update.jsp",
+    "https://securities.miraeasset.com/wtsform.jsp",
+    "https://securities.miraeasset.com/public/banner/event.banner02.wjson",
+    "https://securities.miraeasset.com/public/main/home_main_jisu.wjson",
+    "https://securities.miraeasset.com/common/a02.json",
+    "https://securities.miraeasset.com/search/getTotalSearch.jsp",
+    "https://securities.miraeasset.com/public/banner/event.banner03.wjson",
+    "https://securities.miraeasset.com/public/banner/event.banner04.wjson"
+   ]
+  },
+  {
+   "name": "pc_home",
+   "url": "https://securities.miraeasset.com/",
+   "guard": true,
+   "ua": "mobile",
+   "final_url": "https://securities.miraeasset.com/mw/main.do",
+   "title": "미래에셋증권",
+   "n_li_detailView": 0,
+   "n_onclick_detail": 0,
+   "body_len": 521,
+   "body_head": "전체메뉴 닫기 홈 미래에셋증권 닫기 검색 검색 #연금#공모주 닫기 MY 트레이딩 금융상품 연금자산 투자정보 뱅킹/서비스 공지/이벤트 이용안내 MY 자산분석 MY자산 MY연금 투자수익률 이전 다음 재생 계좌개설 검색 추천 월간추천상품을 확인해보세요 미래에셋증권 지금 만나보세요 무엇이든 물어보세요 월간추천상품을 확인해보세요 미래에셋증권 지금 만나보세요 무엇이든 물어보세요 월간추천상품을 확인해보세요 쉽고 빠르게 계좌개설 하세요 언제든지 쉽고 편리하게 미래에셋증권 계좌개설 계좌개설 시작하기 More 검색 #연금 #공모주 More 미래에셋증",
+   "event_anchors": [
+    {
+     "t": "공지/이벤트",
+     "h": "javascript:setMenuBanner(\"mki7000m01\");",
+     "o": ""
+    },
+    {
+     "t": "이벤트",
+     "h": "#none",
+     "o": ""
+    },
+    {
+     "t": "진행중 이벤트App",
+     "h": "javascript:fn_nativeErr('event','nms','','')",
+     "o": ""
+    },
+    {
+     "t": "지난 이벤트App",
+     "h": "javascript:fn_nativeErr('event','nms','','')",
+     "o": ""
+    },
+    {
+     "t": "참여한 이벤트App",
+     "h": "javascript:fn_nativeErr('event','nms','','')",
+     "o": ""
+    },
+    {
+     "t": "다양한 혜택 더보기",
+     "h": "javascript:getEventList();",
+     "o": ""
+    }
+   ],
+   "sample_items": [],
+   "imgs_event": [],
+   "blocked_offsite": [],
+   "requests": [
+    "https://securities.miraeasset.com/",
+    "https://securities.miraeasset.com/mw/main.do"
+   ]
+  },
+  {
+   "name": "pc_detail_hki",
+   "url": "https://securities.miraeasset.com/hki/hki7000/v01.do?cs_ecis_id=202609012",
+   "guard": true,
+   "ua": "desktop",
+   "final_url": "https://securities.miraeasset.com/hki/hki7000/v01.do?cs_ecis_id=202609012",
+   "title": "상세보기 | 진행중인 이벤트 | 공지/이벤트 | 이용안내/문의 | 미래에셋대우",
+   "n_li_detailView": 0,
+   "n_onclick_detail": 0,
+   "body_len": 1188,
+   "body_head": "본문 내용 바로가기 주 메뉴 바로가기 HTS 다운로드 트레이딩 인증서/OTP 자주하는 질문 챗봇상담 원격지원 금융소비자포털 상품공시실 로그인 계좌개설 회원가입 MY자산 뱅킹/대출/청약 뱅킹/대출/ 청약 전체 메뉴 보기 이체로그인필요 대여 대출 청약 체크카드 미래에셋 현대카드 메뉴닫기 금융상품 금융상품 전체 메뉴 보기 추천상품 IMA 개인투자용국채 펀드 CMA ELS/DLS/ETN/ELW 발행어음 채권/RP ISA종합 중개형ISA 신탁형ISA 일임형ISA 신탁/Wrap 자문서비스 방카슈랑스 세금혜택상품 숙려제도 메뉴닫기 연금자산 연금",
+   "event_anchors": [
+    {
+     "t": "명예의전당",
+     "h": "javascript:openHp('/hki/hki7106/i01.do?link=event',true);",
+     "o": ""
+    },
+    {
+     "t": "공지/이벤트",
+     "h": "javascript:openHp('/bbs/board/message/list.do?categoryId=66&selectedId=1000000202&selectedId=1000000203&selectedId=1000003101',true);",
+     "o": ""
+    },
+    {
+     "t": "진행중인 이벤트",
+     "h": "javascript:openHp('/hki/hki7000/r05.do',false);",
+     "o": ""
+    },
+    {
+     "t": "참여한 이벤트로그인필요",
+     "h": "javascript:openHp('/hki/hki7000/r07.do',false);",
+     "o": ""
+    },
+    {
+     "t": "지난 이벤트",
+     "h": "javascript:openHp('/hki/hki7000/r06.do',false);",
+     "o": ""
+    },
+    {
+     "t": "진행중인 이벤트",
+     "h": "javascript:openHp('/hki/hki7000/r05.do', false);",
+     "o": ""
+    },
+    {
+     "t": "참여한 이벤트",
+     "h": "javascript:openHp('/hki/hki7000/r07.do', false);",
+     "o": ""
+    },
+    {
+     "t": "지난 이벤트",
+     "h": "javascript:openHp('/hki/hki7000/r06.do', false);",
+     "o": ""
+    }
+   ],
+   "sample_items": [],
+   "imgs_event": [],
+   "blocked_offsite": [],
+   "requests": [
+    "https://securities.miraeasset.com/hki/hki7000/v01.do?cs_ecis_id=202609012",
+    "https://securities.miraeasset.com/search/getTotalSearch.jsp",
+    "https://securities.miraeasset.com/public/banner/event.banner03.wjson",
+    "https://securities.miraeasset.com/public/banner/event.banner04.wjson"
+   ]
+  },
+  {
+   "name": "pc_detail_hki",
+   "url": "https://securities.miraeasset.com/hki/hki7000/v01.do?cs_ecis_id=202609012",
+   "guard": true,
+   "ua": "mobile",
+   "final_url": "https://securities.miraeasset.com/hki/hki7000/v01.do?cs_ecis_id=202609012",
+   "title": "상세보기 | 진행중인 이벤트 | 공지/이벤트 | 이용안내/문의 | 미래에셋대우",
+   "n_li_detailView": 0,
+   "n_onclick_detail": 0,
+   "body_len": 1188,
+   "body_head": "본문 내용 바로가기 주 메뉴 바로가기 HTS 다운로드 트레이딩 인증서/OTP 자주하는 질문 챗봇상담 원격지원 금융소비자포털 상품공시실 로그인 계좌개설 회원가입 MY자산 뱅킹/대출/청약 뱅킹/대출/ 청약 전체 메뉴 보기 이체로그인필요 대여 대출 청약 체크카드 미래에셋 현대카드 메뉴닫기 금융상품 금융상품 전체 메뉴 보기 추천상품 IMA 개인투자용국채 펀드 CMA ELS/DLS/ETN/ELW 발행어음 채권/RP ISA종합 중개형ISA 신탁형ISA 일임형ISA 신탁/Wrap 자문서비스 방카슈랑스 세금혜택상품 숙려제도 메뉴닫기 연금자산 연금",
+   "event_anchors": [
+    {
+     "t": "명예의전당",
+     "h": "javascript:openHp('/hki/hki7106/i01.do?link=event',true);",
+     "o": ""
+    },
+    {
+     "t": "공지/이벤트",
+     "h": "javascript:openHp('/bbs/board/message/list.do?categoryId=66&selectedId=1000000202&selectedId=1000000203&selectedId=1000003101',true);",
+     "o": ""
+    },
+    {
+     "t": "진행중인 이벤트",
+     "h": "javascript:openHp('/hki/hki7000/r05.do',false);",
+     "o": ""
+    },
+    {
+     "t": "참여한 이벤트로그인필요",
+     "h": "javascript:openHp('/hki/hki7000/r07.do',false);",
+     "o": ""
+    },
+    {
+     "t": "지난 이벤트",
+     "h": "javascript:openHp('/hki/hki7000/r06.do',false);",
+     "o": ""
+    },
+    {
+     "t": "진행중인 이벤트",
+     "h": "javascript:openHp('/hki/hki7000/r05.do', false);",
+     "o": ""
+    },
+    {
+     "t": "참여한 이벤트",
+     "h": "javascript:openHp('/hki/hki7000/r07.do', false);",
+     "o": ""
+    },
+    {
+     "t": "지난 이벤트",
+     "h": "javascript:openHp('/hki/hki7000/r06.do', false);",
+     "o": ""
+    }
+   ],
+   "sample_items": [],
+   "imgs_event": [],
+   "blocked_offsite": [],
+   "requests": [
+    "https://securities.miraeasset.com/hki/hki7000/v01.do?cs_ecis_id=202609012",
+    "https://securities.miraeasset.com/search/getTotalSearch.jsp",
+    "https://securities.miraeasset.com/public/banner/event.banner03.wjson",
+    "https://securities.miraeasset.com/public/banner/event.banner04.wjson"
+   ]
+  }
+ ]
+}
