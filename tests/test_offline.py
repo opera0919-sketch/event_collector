@@ -1909,6 +1909,15 @@ def test_p0_kst_date_and_llm_reasons():
     finally:
         vision.enabled, vision.blocked, vision.extract_from_text, normalize.PACE_SEC = orig_v
     assert stats["llm_calls"] == 2 and stats["llm_reasons"] == {"new": 1, "hash_changed": 1}, stats
+    assert {"llm_failed", "llm_rate_limited", "llm_blocked"} <= set(stats), stats
+    # 추출이 실패해 기존 값을 재사용한 실행에서는 G8 을 새로 평가하지 않는다
+    # (ev 에 배수 자식 행이 없어 '배수 누락'이 거짓으로 붙던 문제 — 2026-11-10 검증 실행)
+    det2 = "타사 연금 이전 고객 대상. 이전 금액은 실적 2배 인정. " * 8
+    ev = _retry_ev(det2, event_name="타사 연금 이전 이벤트")
+    old = _retry_old(det2, count=0, event_name=ev["event_name"], needs_review=False,
+                     review_reason=None, benefits="타사 이전 1천만원 이상 → 상품권 1만원 (전원)")
+    assert _run_with_vision([ev], [old], lambda t, h: {}) == 1     # 장애로 추출 실패
+    assert ev["needs_review"] is False, ev.get("review_reason")
     print("OK P0-C1/C3 한국 날짜 기준 종료 판정 · LLM 호출 사유 집계")
 
 

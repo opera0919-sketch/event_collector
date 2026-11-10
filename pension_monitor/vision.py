@@ -199,6 +199,10 @@ _consec_429 = 0
 _BLOCK_AFTER = 3
 
 
+# 이번 실행의 호출 결과 집계 (요약 JSON 용). 429 는 무료 티어 한도 신호라 따로 센다.
+CALL_STATS = {"ok": 0, "failed": 0, "rate_limited": 0}
+
+
 def blocked() -> bool:
     return _BLOCKED
 
@@ -209,6 +213,7 @@ def _run(parts, label: str) -> dict:
         text = _generate(parts, schema=_SCHEMA)
         parsed = json.loads(text)
         _consec_429 = 0
+        CALL_STATS["ok"] += 1
         n_b = len(parsed.get("benefits") or [])
         n_m = len(parsed.get("multipliers") or [])
         print(f"[vision] {label} 성공 → 혜택 {n_b}행"
@@ -217,7 +222,9 @@ def _run(parts, label: str) -> dict:
         return parsed
     except Exception as e:
         msg = str(e)
+        CALL_STATS["failed"] += 1
         if "429" in msg or "RESOURCE_EXHAUSTED" in msg:
+            CALL_STATS["rate_limited"] += 1
             _consec_429 += 1
             if _consec_429 >= _BLOCK_AFTER and not _BLOCKED:
                 _BLOCKED = True

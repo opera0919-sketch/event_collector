@@ -554,7 +554,9 @@ def _stats_line(failed) -> str:
     st = _RUN_STATS
     t = st.get("timings") or {}
     return (f"수집실패 {_fail_label(failed, st.get('fail_streak') or {}) or '없음'} "
-            f"· LLM {st.get('llm_calls', 0)}콜(사유 {st.get('llm_reasons') or '없음'})"
+            f"· LLM {st.get('llm_calls', 0)}콜(사유 {st.get('llm_reasons') or '없음'}"
+            f"{', 실패 ' + str(st.get('llm_failed')) + '·429 ' + str(st.get('llm_rate_limited')) if st.get('llm_failed') else ''}"
+            f"{', 한도 소진으로 중단' if st.get('llm_blocked') else ''})"
             f"/캐시 {st.get('cache_hits', 0)}/상세실패 {len(st.get('detail_fetch_failed') or [])} "
             f"· 검토필요 {st.get('review_count', 0)} · 해시변동 {st.get('hash_changed', 0)}"
             f"{st.get('hash_changed_parts') or ''} "

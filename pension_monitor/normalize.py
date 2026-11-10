@@ -773,8 +773,12 @@ def normalize_events(pension, existing):
 
         reconcile_period(ev, res, old)
         apply_accounts(ev, res)
-        # G8: 이전 유치형인데 배수·제외재원이 원문엔 있으나 추출엔 없으면 검토 표기
-        check_coverage(ev)
+        # G8: 이전 유치형인데 배수·제외재원이 원문엔 있으나 추출엔 없으면 검토 표기.
+        # 이번 실행에서 실제로 추출된 결과만 평가한다. 추출이 실패해 기존 값을 재사용한
+        # 경우 ev 에는 배수 자식 행이 없어 '배수 누락'이 거짓으로 붙는다(2026-11-10 검증
+        # 실행: Gemini 429 로 실패한 삼성 ISA 건). 기존 사유는 위에서 이미 물려받았다.
+        if ev.get("rows_fresh"):
+            check_coverage(ev)
         # DB NOT NULL 컬럼 — 플래그 미발생 시에도 명시적 False 로 적재 (null 금지)
         ev["needs_review"] = bool(ev.get("needs_review"))
         # M4: 시도 여부를 임시 키로 이월 — 카운터 확정은 G7 이후에 해야 한다
@@ -815,8 +819,8 @@ def normalize_events(pension, existing):
             if empty_answer and not retry_flag and count >= EMPTY_CONFIRM_ATTEMPTS:
                 ev["empty_confirmed"] = True
                 ev["last_verified_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
-                print(f"[정규화] {ev['firm_name']} {ev['event_name'][:24]}: 추출 근거 없음 "
-                      f"{count}회 확인 — 원문 해시 저장(이후 캐시)")
+                print(f"[정규화] {ev['firm_name']} {ev['event_name'][:24]}: 쓸 수 있는 혜택 행 "
+                      f"없음 {count}회 확인 — 기존 값 유지, 원문 해시 저장(이후 캐시)")
         ev.pop("_old_retries", None)
         ev.pop("_retry_key", None)
         ev["needs_review"] = bool(ev.get("needs_review"))
@@ -825,4 +829,8 @@ def normalize_events(pension, existing):
           f"재시도한도 스킵 {n_retry_skip}건, 상세 fetch 실패(기존값 유지) {n_fetch_fail}건")
     return {"llm_calls": n_call, "cache_hits": n_cache,
             "retry_skips": n_retry_skip, "fetch_failed": n_fetch_fail,
-            "llm_reasons": reasons}
+            "llm_reasons": reasons,
+            # 호출 중 실패한 수(그중 429). 한도 소진으로 추출을 못 한 실행을 요약에서 구분한다
+            "llm_failed": vision.CALL_STATS["failed"],
+            "llm_rate_limited": vision.CALL_STATS["rate_limited"],
+            "llm_blocked": vision.blocked()}
