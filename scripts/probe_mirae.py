@@ -30,13 +30,18 @@ CANDIDATES = [
     ("mw_detail", BASE + f"/mw/mki/mki7000/v01.do?cs_ecis_id={KNOWN_ID}&pub_sect=O&mod=S"
                          "&returnURL=/mw/mki/mki7000/r01.do"),
     ("applink", BASE + "/public/mts/html/AppLink.html?id=event"),
-    ("pc_home", BASE + "/"),
-    ("pc_list_hki", BASE + "/hki/hki7000/r01.do"),
-    ("pc_list_hki3", BASE + "/hki/hki3028/r01.do"),
+    ("pc_list_r05", BASE + "/hki/hki7000/r05.do"),        # 1차 탐침: PC 메뉴 '진행중인 이벤트'
+    ("pc_list_r01", BASE + "/hki/hki7000/r01.do"),
     ("pc_detail_hki", BASE + f"/hki/hki7000/v01.do?cs_ecis_id={KNOWN_ID}"),
-    ("mw_home", BASE + "/mw/main.do"),
-    ("list_img_dir", BASE + f"/public/mw/event/{KNOWN_ID}/"),
+    ("mw_home", BASE + "/mw/main.do"),                    # 1차 탐침: detailView·a01.json 참조
+    ("mw_a01_json", BASE + "/mw/mki/mki7000/a01.json"),
+    ("mw_s01_json", BASE + "/mw/mki/mki7000/s01.json"),
+    ("pc_e04_json", BASE + "/hki/hki7000/e04.json"),
+    ("pc_banner03", BASE + "/public/banner/event.banner03.wjson"),
 ]
+# 원문에서 앞뒤 문맥을 떠 둘 키워드 — 목록 항목의 마크업/호출 방식을 보기 위함
+SNIPPET_KEYS = ("detailView", "a01.json", "getEventList", "cs_ecis_id", "r05.do", "e04.json")
+RENDER_NAMES = ("pc_list_r05", "pc_list_r01", "mw_home", "pc_detail_hki", "mw_detail")
 _EVENT_HINT = re.compile(r"이벤트|event|mki7000|hki7000", re.I)
 
 
@@ -55,14 +60,20 @@ def _summ_html(html):
         "event_links": sorted({h for h in hrefs if _EVENT_HINT.search(h)})[:40],
         "do_urls_in_js": sorted(set(urls_in_js))[:60],
         "period_hits": re.findall(r"\d{4}\.\d{2}\.\d{2}\s*~\s*\d{4}\.\d{2}\.\d{2}", text)[:8],
+        "snippets": {k: [" ".join(html[max(0, m.start() - 260): m.end() + 420].split())
+                         for m in list(re.finditer(re.escape(k), html))[:3]]
+                     for k in SNIPPET_KEYS if k in html},
+        "raw_head": html[:700] if len(html) < 20000 or html.lstrip()[:1] in "{[" else None,
     }
 
 
-def static_probe(name, url, ua):
-    out = {"name": name, "url": url}
+def static_probe(name, url, ua, method="GET"):
+    out = {"name": name, "url": url, "method": method}
     try:
-        r = requests.get(url, headers={"User-Agent": ua, "Accept-Language": "ko-KR,ko;q=0.9"},
-                         timeout=25, allow_redirects=True)
+        r = requests.request(method, url, timeout=25, allow_redirects=True,
+                             headers={"User-Agent": ua, "Accept-Language": "ko-KR,ko;q=0.9",
+                                      "X-Requested-With": "XMLHttpRequest",
+                                      "Referer": BASE + "/mw/main.do"})
         r.encoding = r.apparent_encoding
         out.update(status=r.status_code, final_url=r.url,
                    redirects=[h.headers.get("Location") for h in r.history],
@@ -85,9 +96,24 @@ JS_DOM = r"""
       h: (a.getAttribute('href') || '').slice(0, 140),
       o: (a.getAttribute('onclick') || '').slice(0, 140)}))
     .filter(x => /이벤트|event/i.test(x.t + x.h + x.o)).slice(0, 30),
-  sample_items: Array.from(document.querySelectorAll('[onclick*="detailView"]')).slice(0, 4).map(e => ({
-      tag: e.tagName, o: (e.getAttribute('onclick') || '').slice(0, 120),
-      t: (e.innerText || '').trim().replace(/\s+/g, ' ').slice(0, 160)})),
+  sample_items: Array.from(document.querySelectorAll('[onclick*="detailView"], [onclick*="cs_ecis_id"], a[href*="v01.do"]')).slice(0, 5).map(e => ({
+      tag: e.tagName, o: (e.getAttribute('onclick') || e.getAttribute('href') || '').slice(0, 140),
+      t: (e.innerText || '').trim().replace(/\s+/g, ' ').slice(0, 160),
+      html: e.outerHTML.replace(/\s+/g, ' ').slice(0, 500)})),
+  dated: (() => {
+    const re = /\d{4}\.\d{2}\.\d{2}\s*~\s*\d{4}\.\d{2}\.\d{2}/;
+    const out = [];
+    for (const el of document.querySelectorAll('li, tr, dl, div, a')) {
+      const t = (el.innerText || '').trim().replace(/\s+/g, ' ');
+      if (!t || t.length > 260 || !re.test(t)) continue;
+      if (Array.from(el.children).some(c => re.test(c.innerText || '') && (c.innerText || '').length >= t.length * 0.8)) continue;
+      out.push({tag: el.tagName, cls: (el.className || '').toString().slice(0, 40), t: t.slice(0, 200),
+                html: el.outerHTML.replace(/\s+/g, ' ').slice(0, 600)});
+      if (out.length >= 6) break;
+    }
+    return out;
+  })(),
+  n_dated: Array.from(document.querySelectorAll('li, tr')).filter(el => /\d{4}\.\d{2}\.\d{2}\s*~\s*\d{4}\.\d{2}\.\d{2}/.test(el.innerText || '') && (el.innerText || '').length < 300).length,
   imgs_event: Array.from(document.querySelectorAll('img')).map(i => i.currentSrc || i.src || '')
     .filter(s => /event/i.test(s)).slice(0, 12),
 })
@@ -128,18 +154,22 @@ async def main():
             f = static_probe(name, url, ua)
             f["ua"] = label
             findings["static"].append(f)
+            if name.endswith("_json") and label == "desktop":      # AJAX 엔드포인트는 POST 도 확인
+                g = static_probe(name + ":POST", url, ua, method="POST")
+                g["ua"] = label
+                findings["static"].append(g)
             print(f"[static:{label}] {name}: status={f.get('status')} final={str(f.get('final_url'))[:90]} "
                   f"len={f.get('len')} detailView={f.get('n_detailView')} ecis={f.get('n_cs_ecis_id')} "
                   f"periods={len(f.get('period_hits') or [])} err={f.get('error')}")
     async with async_playwright() as pw:
         browser = await pw.chromium.launch()
-        for name in ("mw_list", "mw_detail", "pc_list_hki", "pc_home", "pc_detail_hki"):
+        for name in RENDER_NAMES:
             url = dict(CANDIDATES)[name]
             for ua in (UA, MOBILE_UA):
                 f = await render_probe(browser, name, url, ua, guard=True)
                 findings["render"].append(f)
                 print(f"[render:{f['ua']}] {name}: final={str(f.get('final_url'))[:90]} "
-                      f"li={f.get('n_li_detailView')} detail-like={f.get('n_onclick_detail')} "
+                      f"li={f.get('n_li_detailView')} detail-like={f.get('n_onclick_detail')} dated={f.get('n_dated')} "
                       f"body={f.get('body_len')} blocked={len(f.get('blocked_offsite') or [])} "
                       f"err={f.get('error')}")
         await browser.close()
