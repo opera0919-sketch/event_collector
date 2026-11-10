@@ -90,6 +90,16 @@ async def _run():
     async with async_playwright() as pw:
         kw = {"executable_path": os.environ["PW_CHROMIUM"]} if os.environ.get("PW_CHROMIUM") else {}
         browser = await pw.chromium.launch(**kw)
+
+        async def _mobile(url):
+            """모바일 목록 경로(scrape 의 마지막 수단)만 떼어 검증 — scrape() 와 같은 사유 기록."""
+            events, reason = await ma.scrape_mobile_list(browser, url)
+            if events:
+                base.clear_failure(ma.FIRM)
+            else:
+                base.note_failure(ma.FIRM, reason or "selector_zero")
+            return events
+
         try:
             # 0) 재현 확인: 보호 장치 없이 열면 화면이 '스토어'로 넘어가 목록이 0건이 된다
             #    (운영 2026-11-06·09 로그의 상태 — 본문 전체가 앱 소개 문구)
@@ -103,40 +113,40 @@ async def _run():
             print("OK 재현: 보호 없이 열면 타 도메인으로 넘어가 목록 0건")
 
             # 1) 정상
-            got = await ma.scrape(browser, list_url=root + "/ok")
+            got = await _mobile(root + "/ok")
             assert len(got) == 2 and "cs_ecis_id=202609012" in got[0]["event_url"], got
             assert ma.FIRM not in base.FAIL_REASONS
             print("OK 정상 목록 2건")
 
             # 2) 지연 주입(5초): 셀렉터를 기다려 수집. 일찍 뜨면 일찍 끝난다(고정 대기 아님)
-            got = await ma.scrape(browser, list_url=root + "/slow")
+            got = await _mobile(root + "/slow")
             assert len(got) == 2, got
             print("OK 지연 주입 목록 — 셀렉터 대기로 수집")
 
             # 3) 스크립트가 타 도메인으로 이동 시도 → 차단하고 원래 문서에서 목록 수집
-            got = await ma.scrape(browser, list_url=root + "/jsredirect")
+            got = await _mobile(root + "/jsredirect")
             assert len(got) == 2, got
             assert ma.FIRM not in base.FAIL_REASONS
             print("OK 타 도메인 이동 차단 후 목록 수집")
 
             # 4) 서버가 목록 URL 을 타 도메인으로 보냄 → 수집 불가, 사유 redirected
-            got = await ma.scrape(browser, list_url=root + "/srvredirect")
+            got = await _mobile(root + "/srvredirect")
             assert got == [] and base.FAIL_REASONS.get(ma.FIRM) == "redirected", base.FAIL_REASONS
             print("OK 서버 리다이렉트 → 사유 redirected")
 
             # 5) 껍데기만 렌더 → 사유 empty_shell
             ma.SELECTOR_TIMEOUT_MS = 2500
-            got = await ma.scrape(browser, list_url=root + "/shell")
+            got = await _mobile(root + "/shell")
             assert got == [] and base.FAIL_REASONS.get(ma.FIRM) == "empty_shell", base.FAIL_REASONS
             print("OK 빈 화면 → 사유 empty_shell")
 
             # 6) 본문은 있는데 목록 구조가 다름 → 사유 selector_zero
-            got = await ma.scrape(browser, list_url=root + "/nolist")
+            got = await _mobile(root + "/nolist")
             assert got == [] and base.FAIL_REASONS.get(ma.FIRM) == "selector_zero", base.FAIL_REASONS
             print("OK 목록 구조 불일치 → 사유 selector_zero")
 
             # 7) 성공하면 직전 실패 사유가 지워진다 (재시도 패스에서 복구된 경우)
-            got = await ma.scrape(browser, list_url=root + "/ok")
+            got = await _mobile(root + "/ok")
             assert len(got) == 2 and ma.FIRM not in base.FAIL_REASONS
             print("OK 복구 시 실패 사유 해제")
         finally:

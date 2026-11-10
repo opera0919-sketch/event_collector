@@ -14,6 +14,10 @@ os.environ.pop("GEMINI_API_KEY", None)  # 실호출 원천 차단
 
 from pension_monitor import db, normalize, report, vision
 from pension_monitor.config import today_kst   # 기준일은 한국 날짜 (생산 코드와 동일)
+
+# 오프라인 보장: 개별 테스트가 덮어쓰지 않은 DB 읽기(_multiplier_map 등)가 실제 Supabase 로
+# 나가지 않게 기본값을 빈 결과로 둔다 (종전엔 enabled 만 켠 테스트에서 실제 GET 이 나갔다).
+db._get = lambda path, params=None: []
 from pension_monitor.classify import (
     content_hash, detect_accounts, source_event_id, source_content_hash,
     clip_detail, weekday_conflicts, infer_end_from_hold,
@@ -1796,6 +1800,68 @@ def test_p0_miraeasset_parse_items():
     print("OK P0-B1 미래에셋 목록 항목 파싱")
 
 
+def test_p0_miraeasset_api_and_pc_sources():
+    """B1: 모바일 목록이 앱 전용이 된 뒤의 대체 경로 — 목록 API 와 PC 목록 파싱.
+    입력은 2026-11-10 탐침(data/probe_mirae.json)에서 받은 실제 응답 조각."""
+    import asyncio
+    from pension_monitor.scrapers import base as sb, miraeasset as ma
+    api_rows = [
+        {"end_day": "20261231", "list_m_img": "1790672130560.jpg", "expl": None,
+         "pub_edt": "202612312359", "pub_chnl": "PM", "evnt_ctns_m_url": None,
+         "ctns_expl": "<p><br></p>", "s_title": "「투자하는 연금」 2026년 개인연금 입금 이벤트",
+         "strt_day": "20261001", "evnt_sect": "1", "cs_ecis_id": "202609012",
+         "r_cs_ecis_id": None, "pub_sect": "O", "pub_sdt": "202610010000"},
+        {"cs_ecis_id": "202609012", "s_title": "중복 ID 는 한 번만", "strt_day": "20261001",
+         "end_day": "20261231"},
+        {"cs_ecis_id": "202611001", "s_title": "외부 페이지형 이벤트", "strt_day": None,
+         "end_day": None, "pub_sdt": "202611010000", "pub_edt": "202611302359",
+         "evnt_sect": "2", "evnt_ctns_m_url": "https://event.example.com/x", "pub_sect": "O"},
+        {"cs_ecis_id": "202611002", "s_title": "기간 없는 항목"},
+    ]
+    got = ma.parse_api_items(api_rows)
+    assert [e["event_name"] for e in got] == ["「투자하는 연금」 2026년 개인연금 입금 이벤트",
+                                               "외부 페이지형 이벤트"], got
+    assert (got[0]["start_date"], got[0]["end_date"]) == ("2026-10-01", "2026-12-31")
+    # 상세 URL·식별자가 기존 DB 행과 같은 형식이어야 이력이 이어진다
+    assert got[0]["event_url"] == ("https://securities.miraeasset.com/mw/mki/mki7000/v01.do"
+                                   "?cs_ecis_id=202609012&pub_sect=O&mod=S"
+                                   "&returnURL=/mw/mki/mki7000/r01.do")
+    assert source_event_id(got[0]) == "202609012"
+    assert (got[1]["start_date"], got[1]["end_date"]) == ("2026-11-01", "2026-11-30")   # pub_* 폴백
+    assert got[1]["_content_url"] == "https://event.example.com/x" and source_event_id(got[1]) == "202611001"
+    pc_html = (
+        '<ul class="split col3 eventLstWrap"> <li class="colSec"> <dl class="eventCont"> <dt> '
+        '<a href="javascript:doView(\'202609012\',\'1\',\'\')"> <img src="/public/mw/event/202609012/'
+        '1790672130546.jpg" alt="" class="spot"> </a> </dt> <!-- FLAG 적용 --> <dd class="evLabel"> '
+        '<span class="ico_label ev ev03"><em>진행중</em></span> </dd> <dd class="evTit">「투자하는 연금」 '
+        '2026년 개인연금 입금 이벤트</dd> <dd class="evDate">2026.10.01 ~ 2026.12.31</dd> </dl> </li>'
+        '<li class="colSec"> <dl class="eventCont"> <dt> <a href="javascript:doView(\'202609013\',\'5\','
+        '\'\')"> <img src="/public/mw/event/202609013/1790666689428.png" alt="" class="spot"> </a> </dt> '
+        '<dd class="evTit">「투자하는 연금」2026년 퇴직연금 DC 이벤트</dd> '
+        '<dd class="evDate">2026.10.01 ~ 2026.12.31</dd> </dl> </li></ul>')
+    pc = ma.parse_pc_html(pc_html)
+    assert [source_event_id(e) for e in pc] == ["202609012", "202609013"], pc
+    assert pc[0]["event_url"] == got[0]["event_url"], "두 경로가 같은 상세 URL 을 만든다"
+    assert pc[1]["event_name"] == "「투자하는 연금」2026년 퇴직연금 DC 이벤트"
+    assert ma.parse_pc_html("<html>이벤트 없음</html>") == [] and ma.parse_api_items(None) == []
+    # 경로 순서: API 실패 → PC 목록으로 수집, 실패 사유는 남지 않는다
+    orig = (ma.fetch_api, ma.fetch_pc)
+    try:
+        def _down():
+            raise RuntimeError("api down")
+        ma.fetch_api, ma.fetch_pc = _down, (lambda: pc)
+        sb.note_failure(ma.FIRM, "redirected")
+        assert asyncio.run(ma.scrape(None)) == pc and ma.FIRM not in sb.FAIL_REASONS
+        ma.fetch_api = lambda: api_rows                      # API 가 되면 API 결과
+        assert len(asyncio.run(ma.scrape(None))) == 2
+        ma.fetch_api, ma.fetch_pc = (lambda: []), (lambda: [])   # 전부 0건 + 브라우저 없음
+        assert asyncio.run(ma.scrape(None)) == [] and sb.FAIL_REASONS.get(ma.FIRM) == "error"
+    finally:
+        ma.fetch_api, ma.fetch_pc = orig
+        sb.clear_failure(ma.FIRM)
+    print("OK P0-B1 미래에셋 대체 경로 (목록 API·PC 목록 파싱, 경로 순서, 식별자 연속성)")
+
+
 def test_p0_kst_date_and_llm_reasons():
     """C1: 기준일은 한국 날짜. C3: Gemini 호출을 캐시 미스 사유별로 집계."""
     from pension_monitor import config
@@ -1856,5 +1922,6 @@ if __name__ == "__main__":
     test_p0_volatile_view_counter_excluded_from_hash()
     test_p0_fail_reason_streak_and_report()
     test_p0_miraeasset_parse_items()
+    test_p0_miraeasset_api_and_pc_sources()
     test_p0_kst_date_and_llm_reasons()
-    print("P0(2026-11) 회귀 10종 통과")
+    print("P0(2026-11) 회귀 11종 통과")
