@@ -1,23 +1,45 @@
 {
- "run_at": "2026-11-10T04:22:18.669309+00:00",
+ "run_at": "2026-11-11T01:23:01.343357+00:00",
  "trigger": "weekly",
  "active": 29,
  "by_firm": {
+  "미래에셋증권": 4,
   "한국투자증권": 7,
   "삼성증권": 6,
   "KB증권": 6,
   "NH투자증권": 6
  },
- "firms_failed": [
-  "미래에셋증권"
- ],
- "new": 1,
+ "firms_failed": [],
+ "new": 0,
  "closed": 0,
- "changed": 5,
+ "changed": 0,
  "note": "",
- "llm_calls": 17,
- "cache_hits": 12,
+ "fail_reasons": {},
+ "timings": {
+  "list_sec": 18,
+  "detail_sec": 178,
+  "normalize_sec": 608,
+  "sync_sec": 21,
+  "total_sec": 826
+ },
+ "llm_calls": 14,
+ "cache_hits": 18,
  "retry_skips": 0,
  "fetch_failed": 0,
- "detail_fetch_failed": []
+ "llm_reasons": {
+  "schema": 2,
+  "hash_changed": 8,
+  "flag_retry": 4
+ },
+ "llm_failed": 3,
+ "llm_rate_limited": 2,
+ "llm_blocked": false,
+ "detail_fetch_failed": [],
+ "fail_streak": {},
+ "hash_changed": 1,
+ "hash_changed_parts": {
+  "text": 0,
+  "imgs": 1
+ },
+ "review_count": 6
 }
