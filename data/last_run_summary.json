@@ -1,5 +1,5 @@
 {
- "run_at": "2026-11-11T01:23:01.343357+00:00",
+ "run_at": "2026-11-12T02:19:09.634013+00:00",
  "trigger": "weekly",
  "active": 29,
  "by_firm": {
@@ -12,34 +12,35 @@
  "firms_failed": [],
  "new": 0,
  "closed": 0,
- "changed": 0,
+ "changed": 5,
  "note": "",
  "fail_reasons": {},
  "timings": {
-  "list_sec": 18,
-  "detail_sec": 178,
-  "normalize_sec": 608,
-  "sync_sec": 21,
-  "total_sec": 826
+  "list_sec": 16,
+  "detail_sec": 103,
+  "normalize_sec": 346,
+  "sync_sec": 17,
+  "total_sec": 485
  },
- "llm_calls": 14,
- "cache_hits": 18,
+ "llm_calls": 11,
+ "cache_hits": 20,
  "retry_skips": 0,
  "fetch_failed": 0,
  "llm_reasons": {
   "schema": 2,
-  "hash_changed": 8,
-  "flag_retry": 4
+  "hash_changed": 3,
+  "period_changed": 3,
+  "flag_retry": 3
  },
- "llm_failed": 3,
- "llm_rate_limited": 2,
+ "llm_failed": 0,
+ "llm_rate_limited": 0,
  "llm_blocked": false,
  "detail_fetch_failed": [],
  "fail_streak": {},
- "hash_changed": 1,
+ "hash_changed": 0,
  "hash_changed_parts": {
   "text": 0,
-  "imgs": 1
+  "imgs": 0
  },
- "review_count": 6
+ "review_count": 4
 }

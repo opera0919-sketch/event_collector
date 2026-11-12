@@ -1,5 +1,5 @@
 {
- "collected_at": "2026-11-11T01:12:32.658231+00:00",
+ "collected_at": "2026-11-12T02:13:06.176720+00:00",
  "note": "source_content_hash 입력 계측 (A1). text 는 공통 라인 제거본.",
  "events": [
   {
@@ -304,21 +304,7 @@
     "https://etcimg.kbsec.com/html/design/20260914163006/img_12.jpg"
    ],
    "text": "IRP 순입금(이전) 이벤트 시즌4\n2026/09/30 12:09:27",
-   "text_truncated": false,
-   "changed_from_prev": {
-    "imgs": {
-     "removed": [
-      "https://etcimg.kbsec.com/html/design/20260914163006/img2_04.jpg"
-     ],
-     "added": [
-      "https://etcimg.kbsec.com/html/design/20260914163006/img2_03.jpg"
-     ],
-     "n": [
-      12,
-      12
-     ]
-    }
-   }
+   "text_truncated": false
   },
   {
    "firm_name": "KB증권",
