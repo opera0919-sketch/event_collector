@@ -23,6 +23,16 @@ CREATE TABLE IF NOT EXISTS public.pension_event_multipliers (
 COMMENT ON TABLE public.pension_event_multipliers IS
   '이벤트별 순입금/실적/혜택 인정 배수. scope 로 인정금액(실적)·리워드금액(혜택)을 구분';
 
+-- Data API 권한. 2026-10-30 부터 Supabase 가 public 신규 테이블에 Data API 접근을
+-- 자동 부여하지 않는다 → CREATE TABLE 과 같은 마이그레이션에서 명시 부여해야 한다.
+-- (라이브 DB 는 자동 부여 시절에 적용돼 이미 권한이 있다. 이 블록은 스키마 재생성
+--  — 새 프로젝트·프리뷰 브랜치·`supabase db reset` — 에서 permission denied 가 나지
+--  않게 하기 위한 것이며, 재실행해도 무해하다.)
+GRANT SELECT ON public.pension_event_multipliers TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.pension_event_multipliers TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.pension_event_multipliers TO service_role;
+GRANT USAGE, SELECT ON SEQUENCE public.pension_event_multipliers_id_seq TO authenticated, service_role;
+
 -- 2) pension_events 추가 컬럼
 ALTER TABLE public.pension_events
   ADD COLUMN IF NOT EXISTS stackable              boolean,   -- 이벤트 내 복수 혜택 중복 수령 가능
