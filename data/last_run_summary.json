@@ -1,5 +1,5 @@
 {
- "run_at": "2026-11-13T01:51:52.579652+00:00",
+ "run_at": "2026-11-16T00:58:59.182289+00:00",
  "trigger": "weekly",
  "active": 29,
  "by_firm": {
@@ -16,11 +16,11 @@
  "note": "",
  "fail_reasons": {},
  "timings": {
-  "list_sec": 19,
-  "detail_sec": 191,
-  "normalize_sec": 196,
-  "sync_sec": 35,
-  "total_sec": 444
+  "list_sec": 16,
+  "detail_sec": 67,
+  "normalize_sec": 205,
+  "sync_sec": 18,
+  "total_sec": 313
  },
  "llm_calls": 6,
  "cache_hits": 23,
