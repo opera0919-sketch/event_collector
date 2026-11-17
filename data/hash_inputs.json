@@ -1,5 +1,5 @@
 {
- "collected_at": "2026-11-16T00:55:16.261547+00:00",
+ "collected_at": "2026-11-17T03:39:04.436215+00:00",
  "note": "source_content_hash 입력 계측 (A1). text 는 공통 라인 제거본.",
  "events": [
   {
@@ -23,32 +23,60 @@
    "source_event_id": "202609014",
    "event_name": "「투자하는 연금」2026년 IRP 입금 이벤트",
    "detail_status": "ok",
-   "hash": "25bace3c2d769ec6",
+   "hash": "4e580458e41c7c50",
    "text_sha": "6031bd0caf57a5c0",
    "text_len": 34,
-   "imgs_sha": "58dce1b42cc6b359",
+   "imgs_sha": "5f433a347462cda9",
    "n_imgs": 1,
    "imgs": [
-    "https://securities.miraeasset.com/public/mw/event/202609014/1790665202251.jpg"
+    "https://securities.miraeasset.com/public/mw/event/202609014/1794819519155.jpg"
    ],
    "text": "「투자하는 연금」2026년 IRP 입금 이벤트\nIRP 알아보기",
-   "text_truncated": false
+   "text_truncated": false,
+   "changed_from_prev": {
+    "imgs": {
+     "removed": [
+      "https://securities.miraeasset.com/public/mw/event/202609014/1790665202251.jpg"
+     ],
+     "added": [
+      "https://securities.miraeasset.com/public/mw/event/202609014/1794819519155.jpg"
+     ],
+     "n": [
+      1,
+      1
+     ]
+    }
+   }
   },
   {
    "firm_name": "미래에셋증권",
    "source_event_id": "202609013",
    "event_name": "「투자하는 연금」2026년 퇴직연금 DC 이벤트",
    "detail_status": "ok",
-   "hash": "892662b6fb5ba001",
+   "hash": "232537e0661e2e85",
    "text_sha": "8185f611e8c242f5",
    "text_len": 26,
-   "imgs_sha": "4347fe46841496e1",
+   "imgs_sha": "07034e3e353b5ab2",
    "n_imgs": 1,
    "imgs": [
-    "https://securities.miraeasset.com/public/mw/event/202609013/1790666689521.jpg"
+    "https://securities.miraeasset.com/public/mw/event/202609013/1794819888600.jpg"
    ],
    "text": "「투자하는 연금」2026년 퇴직연금 DC 이벤트",
-   "text_truncated": false
+   "text_truncated": false,
+   "changed_from_prev": {
+    "imgs": {
+     "removed": [
+      "https://securities.miraeasset.com/public/mw/event/202609013/1790666689521.jpg"
+     ],
+     "added": [
+      "https://securities.miraeasset.com/public/mw/event/202609013/1794819888600.jpg"
+     ],
+     "n": [
+      1,
+      1
+     ]
+    }
+   }
   },
   {
    "firm_name": "미래에셋증권",
