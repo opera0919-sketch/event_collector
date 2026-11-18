@@ -1,5 +1,5 @@
 {
- "run_at": "2026-11-17T03:44:23.911222+00:00",
+ "run_at": "2026-11-18T02:56:55.199797+00:00",
  "trigger": "weekly",
  "active": 29,
  "by_firm": {
@@ -12,34 +12,34 @@
  "firms_failed": [],
  "new": 0,
  "closed": 0,
- "changed": 5,
+ "changed": 2,
  "note": "",
  "fail_reasons": {},
  "timings": {
-  "list_sec": 17,
-  "detail_sec": 182,
-  "normalize_sec": 296,
-  "sync_sec": 23,
-  "total_sec": 520
+  "list_sec": 15,
+  "detail_sec": 167,
+  "normalize_sec": 282,
+  "sync_sec": 16,
+  "total_sec": 482
  },
- "llm_calls": 10,
- "cache_hits": 21,
+ "llm_calls": 8,
+ "cache_hits": 22,
  "retry_skips": 0,
  "fetch_failed": 0,
  "llm_reasons": {
-  "period_changed": 5,
-  "hash_changed": 4,
-  "flag_retry": 1
+  "period_changed": 4,
+  "hash_changed": 1,
+  "flag_retry": 3
  },
  "llm_failed": 0,
  "llm_rate_limited": 0,
  "llm_blocked": false,
  "detail_fetch_failed": [],
  "fail_streak": {},
- "hash_changed": 2,
+ "hash_changed": 1,
  "hash_changed_parts": {
   "text": 0,
-  "imgs": 2
+  "imgs": 1
  },
  "review_count": 3
 }
