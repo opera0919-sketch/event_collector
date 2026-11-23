@@ -62,6 +62,25 @@
 `benefit_text`(예: '신세계 모바일상품권 2만원') · `award_method`(전원/선착순/추첨/기타) ·
 `award_limit`(인원, int) · `source`
 
+### 마이그레이션 규칙 (필수)
+`public` 에 테이블을 새로 만들 때는 **같은 마이그레이션 안에 Data API 권한을 명시
+부여**한다. 2026-10-30 부터 Supabase 가 기존 프로젝트의 `public` 신규 테이블에
+Data API(PostgREST) 접근을 자동 부여하지 않으므로, 빼먹으면 수집 파이프라인이
+`permission denied` 로 멈춘다. 라이브 DB 의 기존 10개 테이블은 자동 부여 시절에
+생성돼 영향이 없지만, 스키마를 재생성하는 경로(새 프로젝트·프리뷰 브랜치·
+`supabase db reset`)에서는 그대로 재현된다.
+
+```sql
+GRANT SELECT ON public.<table> TO anon;                                  -- 읽기 전용 노출이 필요할 때만
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.<table> TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.<table> TO service_role;  -- 파이프라인이 쓰는 역할
+GRANT USAGE, SELECT ON SEQUENCE public.<table>_id_seq TO authenticated, service_role;  -- bigserial 이면
+```
+
+파이프라인은 `SUPABASE_SERVICE_ROLE_KEY` 로만 접근하므로 최소한 `service_role` 은
+반드시 필요하다. 감사·백업 전용 테이블은 `service_role` 만 준다(과거 스냅샷을
+익명/로그인 사용자에게 노출할 이유가 없다).
+
 ### 마이그레이션 절차
 1. 자식 테이블 신설 + 마스터 컬럼 추가
 2. 7/2 구코드 실행 오염 재정리: sid 재백필 → `(firm, sid)` 중복 재병합 → 만기 스윕
