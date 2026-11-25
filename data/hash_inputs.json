@@ -1,5 +1,5 @@
 {
- "collected_at": "2026-11-24T05:16:15.713555+00:00",
+ "collected_at": "2026-11-25T04:05:30.795173+00:00",
  "note": "source_content_hash 입력 계측 (A1). text 는 공통 라인 제거본.",
  "events": [
   {
@@ -7,16 +7,40 @@
    "source_event_id": "202609012",
    "event_name": "「투자하는 연금」 2026년 개인연금 입금 이벤트",
    "detail_status": "ok",
-   "hash": "022b9f4c8d24acb1",
-   "text_sha": "b0f2af7a79b97cdb",
-   "text_len": 37,
-   "imgs_sha": "0d8615e9b3004c1b",
+   "hash": "cb8ba1138e17b5a7",
+   "text_sha": "1f7fb44fc159ba67",
+   "text_len": 55,
+   "imgs_sha": "0b5f54ca40589391",
    "n_imgs": 1,
    "imgs": [
-    "https://securities.miraeasset.com/public/mw/event/202609012/1790672130640.jpg"
+    "https://securities.miraeasset.com/public/mw/event/202609012/1795573006204.jpg"
    ],
-   "text": "「투자하는 연금」 2026년 개인연금 입금 이벤트\n이벤트 참여 신청",
-   "text_truncated": false
+   "text": "「투자하는 연금」 2026년 개인연금 입금 이벤트\n2026년 개인연금 입금 이벤트\n이벤트 참여 신청",
+   "text_truncated": false,
+   "changed_from_prev": {
+    "text": {
+     "removed": [],
+     "added": [
+      "2026년 개인연금 입금 이벤트"
+     ],
+     "len": [
+      37,
+      55
+     ]
+    },
+    "imgs": {
+     "removed": [
+      "https://securities.miraeasset.com/public/mw/event/202609012/1790672130640.jpg"
+     ],
+     "added": [
+      "https://securities.miraeasset.com/public/mw/event/202609012/1795573006204.jpg"
+     ],
+     "n": [
+      1,
+      1
+     ]
+    }
+   }
   },
   {
    "firm_name": "미래에셋증권",
@@ -416,21 +440,7 @@
     "https://m.nhqv.com/fileUpload/namoCrossEditor/temp/1795480145491.png"
    ],
    "text": "N2연금저축계좌 연말정산 이벤트\nN2연금저축계좌 연말정산 이벤트\n2026.11.10",
-   "text_truncated": false,
-   "changed_from_prev": {
-    "imgs": {
-     "removed": [
-      "https://m.nhqv.com/fileUpload/namoCrossEditor/temp/1794267171839.png"
-     ],
-     "added": [
-      "https://m.nhqv.com/fileUpload/namoCrossEditor/temp/1795480145491.png"
-     ],
-     "n": [
-      1,
-      1
-     ]
-    }
-   }
+   "text_truncated": false
   },
   {
    "firm_name": "NH투자증권",
