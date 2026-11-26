@@ -1,5 +1,5 @@
 {
- "run_at": "2026-11-25T04:13:47.199291+00:00",
+ "run_at": "2026-11-26T03:34:21.371279+00:00",
  "trigger": "weekly",
  "active": 29,
  "by_firm": {
@@ -16,30 +16,29 @@
  "note": "",
  "fail_reasons": {},
  "timings": {
-  "list_sec": 16,
-  "detail_sec": 156,
-  "normalize_sec": 471,
-  "sync_sec": 24,
-  "total_sec": 670
+  "list_sec": 15,
+  "detail_sec": 172,
+  "normalize_sec": 199,
+  "sync_sec": 25,
+  "total_sec": 414
  },
- "llm_calls": 9,
- "cache_hits": 22,
+ "llm_calls": 6,
+ "cache_hits": 23,
  "retry_skips": 0,
  "fetch_failed": 0,
  "llm_reasons": {
-  "period_changed": 6,
-  "hash_changed": 2,
+  "period_changed": 5,
   "flag_retry": 1
  },
- "llm_failed": 1,
+ "llm_failed": 0,
  "llm_rate_limited": 0,
  "llm_blocked": false,
  "detail_fetch_failed": [],
  "fail_streak": {},
- "hash_changed": 1,
+ "hash_changed": 0,
  "hash_changed_parts": {
-  "text": 1,
-  "imgs": 1
+  "text": 0,
+  "imgs": 0
  },
  "review_count": 4
 }
