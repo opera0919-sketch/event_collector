@@ -1,5 +1,5 @@
 {
- "run_at": "2026-11-26T03:34:21.371279+00:00",
+ "run_at": "2026-11-27T03:39:23.495674+00:00",
  "trigger": "weekly",
  "active": 29,
  "by_firm": {
@@ -12,15 +12,15 @@
  "firms_failed": [],
  "new": 0,
  "closed": 0,
- "changed": 3,
+ "changed": 2,
  "note": "",
  "fail_reasons": {},
  "timings": {
-  "list_sec": 15,
-  "detail_sec": 172,
-  "normalize_sec": 199,
-  "sync_sec": 25,
-  "total_sec": 414
+  "list_sec": 19,
+  "detail_sec": 42,
+  "normalize_sec": 191,
+  "sync_sec": 32,
+  "total_sec": 287
  },
  "llm_calls": 6,
  "cache_hits": 23,
